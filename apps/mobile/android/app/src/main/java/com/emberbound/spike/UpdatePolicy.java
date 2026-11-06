@@ -8,8 +8,8 @@ import java.util.regex.Pattern;
 
 /** Shared, platform-independent trust and bounds checks. */
 final class UpdatePolicy {
-    static final String PACKAGE = "com.emberbound.spike.c2dev";
-    static final String CERT = "c354201bb4b84ad432a11c5a85771d1b0c6bdaff31e8947238f6f4c9a56f3d18";
+    static final String PACKAGE = "com.xariib.wyrdholt";
+    static final String CERT = "fc4252be43679975154230c0a90dad8f1853dcef2f7530809d9fd2ecdbf3ea93";
     static final String RELEASES = "https://api.github.com/repos/xariib/Wyrdholt/releases/latest";
     static final long MAX_APK = 256L * 1024 * 1024;
 

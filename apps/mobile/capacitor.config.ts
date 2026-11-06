@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "com.emberbound.spike",
+  appId: "com.xariib.wyrdholt",
   appName: "Wyrdholt: Idle",
   webDir: "dist",
   backgroundColor: "#0b0f18",

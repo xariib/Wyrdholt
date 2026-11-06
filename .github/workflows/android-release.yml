@@ -82,7 +82,7 @@ jobs:
           test -n "$WYRDHOLT_KEY_PASSWORD"
           sdkmanager "platforms;android-36" "build-tools;35.0.0" "build-tools;36.0.0"
           umask 077
-          export WYRDHOLT_KEYSTORE_FILE="$RUNNER_TEMP/wyrdholt-release.jks"
+          export WYRDHOLT_KEYSTORE_FILE="$RUNNER_TEMP/wyrdholt-release.p12"
           trap 'rm -f -- "$WYRDHOLT_KEYSTORE_FILE"' EXIT
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$WYRDHOLT_KEYSTORE_FILE"
           cd apps/mobile/android
@@ -94,9 +94,9 @@ jobs:
           apk="apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
           tools="$ANDROID_HOME/build-tools/36.0.0"
           signer="$("$tools/apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #[0-9]* certificate SHA-256 digest: //p')"
-          [[ "$signer" == "c354201bb4b84ad432a11c5a85771d1b0c6bdaff31e8947238f6f4c9a56f3d18" ]]
+          [[ "$signer" == "fc4252be43679975154230c0a90dad8f1853dcef2f7530809d9fd2ecdbf3ea93" ]]
           badging="$("$tools/aapt2" dump badging "$apk")"
-          [[ "$badging" == *"package: name='com.emberbound.spike.c2dev' versionCode='$WYRDHOLT_VERSION_CODE' versionName='$WYRDHOLT_VERSION_NAME'"* ]]
+          [[ "$badging" == *"package: name='com.xariib.wyrdholt' versionCode='$WYRDHOLT_VERSION_CODE' versionName='$WYRDHOLT_VERSION_NAME'"* ]]
           (( $(stat -c '%s' "$apk") <= 256 * 1024 * 1024 ))
           cp "$apk" Wyrdholt-Idle.apk
           sha256sum Wyrdholt-Idle.apk > Wyrdholt-Idle.apk.sha256

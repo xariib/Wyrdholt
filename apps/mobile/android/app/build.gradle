@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
-def wyrdholtVersionCode = (System.getenv("WYRDHOLT_VERSION_CODE") ?: "14").toInteger()
-def wyrdholtVersionName = System.getenv("WYRDHOLT_VERSION_NAME") ?: "0.1.0-c2dev.14"
+def wyrdholtVersionCode = (System.getenv("WYRDHOLT_VERSION_CODE") ?: "1").toInteger()
+def wyrdholtVersionName = System.getenv("WYRDHOLT_VERSION_NAME") ?: "0.2.0-dev"
 def wyrdholtKeystoreFile = System.getenv("WYRDHOLT_KEYSTORE_FILE")
 def wyrdholtKeystorePassword = System.getenv("WYRDHOLT_KEYSTORE_PASSWORD")
 def wyrdholtKeyAlias = System.getenv("WYRDHOLT_KEY_ALIAS")
@@ -11,9 +11,7 @@ android {
     namespace = "com.emberbound.spike"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.emberbound.spike"
-        // C2 development builds install next to the C1 playtest app and never touch its save.
-        applicationIdSuffix ".c2dev"
+        applicationId "com.xariib.wyrdholt"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode wyrdholtVersionCode
@@ -29,6 +27,7 @@ android {
         release {
             if (wyrdholtKeystoreFile) {
                 storeFile file(wyrdholtKeystoreFile)
+                storeType "PKCS12"
                 storePassword wyrdholtKeystorePassword
                 keyAlias wyrdholtKeyAlias
                 keyPassword wyrdholtKeyPassword
