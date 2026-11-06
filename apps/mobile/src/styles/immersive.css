@@ -486,7 +486,7 @@
 .forge-item { padding:14px 0; border-bottom:1px solid #2a4750; display:flex; flex-direction:column; gap:12px; }
 .forge-item-name { min-width:0; overflow-wrap:anywhere; }
 .forge-item .btn { min-height:48px; min-width:48px; }
-.forge-item summary, .forge-dev summary { min-height:44px; padding-block:12px; cursor:pointer; }
+.forge-item summary, .forge-dev summary, .inventory-filters-disclosure > summary { min-height:44px; padding-block:12px; cursor:pointer; }
 .forge-materials { margin:0; padding-left:22px; overflow-wrap:anywhere; }
 .forge-materials li { padding-block:5px; }
 .forge-stats { display:flex; flex-wrap:wrap; gap:8px 16px; }

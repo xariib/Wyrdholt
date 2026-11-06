@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { heroStatsFor, type Profile, type RunResult } from "@emberbound/game-core";
 import { session, type OfflineView } from "../../game/session";
 import { Bar, Modal } from "../components/Common";
@@ -6,6 +7,7 @@ import { DEV_TOOLS } from "../../platform/device";
 import { duration, hp, number, rarityColor } from "../format";
 import type { GearFocus } from "../screens/Gear";
 import { safeFarmZone } from "../adventureModel";
+import { isEquippedDuplicate, slotViews } from "../gearModel";
 import { attemptHistory, attemptLabel, buildChanges, type Attempt } from "../../game/attempts";
 
 /**
@@ -44,9 +46,11 @@ function AttemptTrail({ profile, zoneId }: { profile: Profile; zoneId: string })
 export function OfflineOverlay({
   data,
   onReview,
+  retryAction,
 }: {
   data: OfflineView;
-  onReview: (focus: GearFocus | null) => void;
+  onReview: (focus: GearFocus | "new") => void;
+  retryAction: ReactNode;
 }) {
   const content = session.content;
   const s = data.summary;
@@ -140,7 +144,7 @@ export function OfflineOverlay({
                   </div>
                 </span>
                 {data.kept && (
-                  <button className="btn small" onClick={() => onReview({ slot: item.slot, baseId: item.id })}>
+                  <button className="btn small" onClick={() => onReview({ slot: item.slot, baseId: item.id, instanceId: id })}>
                     Compare
                   </button>
                 )}
@@ -184,13 +188,14 @@ export function OfflineOverlay({
           {data.kept ? "" : " · benchmark only (not kept)"}
         </div>
       )}
-      <div className="row">
+      <div className="stack">
         {data.kept && s.itemsFound > 0 && (
-          <button className="btn block" onClick={() => onReview(null)}>
+          <button className="btn block" onClick={() => onReview("new")}>
             Review new gear
           </button>
         )}
-        <button className="btn primary block" onClick={() => session.dismissOffline()}>
+        {data.kept && retryAction}
+        <button className={data.kept && retryAction ? "btn ghost block" : "btn primary block"} onClick={() => session.dismissOffline()}>
           Continue
         </button>
       </div>
@@ -198,7 +203,10 @@ export function OfflineOverlay({
   );
 }
 
-export function RunResultOverlay({ result, profile, onChangeBuild }: { result: RunResult; profile: Profile; onChangeBuild: () => void }) {
+export function RunResultOverlay({ result, profile, newCount, onReview, onRetry }: {
+  result: RunResult; profile: Profile; newCount: number;
+  onReview: (focus: "new" | null) => void; onRetry: () => void;
+}) {
   const content = session.content;
   const zone = content.zone(result.zoneId);
   // After a failed Push the safe choice is the strongest cleared zone (or the first trail).
@@ -210,6 +218,15 @@ export function RunResultOverlay({ result, profile, onChangeBuild }: { result: R
   const farmLabel = farming ? `Keep farming ${farmName}` : `Farm ${farmName}`;
   const failedStage = zone.stages[Math.max(0, result.stage - 1)];
   const rank = heroStatsFor(profile, content).masteryRank;
+  const equipped = new Map(slotViews(profile, content).map(slot => [slot.slot, slot.equipped?.instance]));
+  const hasBuildOption = profile.inventory.instances.some(item => {
+    const worn = equipped.get(content.item(item.baseId).slot);
+    return item.id !== worn?.id && !isEquippedDuplicate(item, worn);
+  });
+  const review = (focus: "new" | null) => {
+    session.dismissRunResult();
+    onReview(focus);
+  };
   return (
     <Modal>
       <div>
@@ -239,21 +256,24 @@ export function RunResultOverlay({ result, profile, onChangeBuild }: { result: R
         {farming && <> Meanwhile you are farming {farmName}, so progress continues even if you close the game.</>}
       </div>
       <div className="stack">
-        <button className="btn primary block" onClick={() => session.dispatch({ type: "startPush", zoneId: zone.id })}>
-          Retry Push
-        </button>
-        <button
-          className="btn block"
-          onClick={() => {
-            session.dismissRunResult();
-            onChangeBuild();
-          }}
-        >
-          Change build
-        </button>
-        <button className="btn ghost block" onClick={() => session.dispatch({ type: "startFarm", zoneId: farmZone.id })}>
+        <div className="panel-title">What to do next</div>
+        {newCount > 0 ? (
+          <>
+            <p className="small">Review your new drops and compare them with your equipped gear.</p>
+            <button className="btn primary block" onClick={() => review("new")}>Review new gear ({newCount})</button>
+          </>
+        ) : hasBuildOption ? (
+          <>
+            <p className="small">You have other gear to try before your next attempt.</p>
+            <button className="btn primary block" onClick={() => review(null)}>Change build</button>
+          </>
+        ) : (
+          <p className="small">Farm {farmName} to gain levels, Mastery and a chance at different gear.</p>
+        )}
+        <button className={newCount || hasBuildOption ? "btn block" : "btn primary block"} onClick={() => session.dispatch({ type: "startFarm", zoneId: farmZone.id })}>
           {farmLabel}
         </button>
+        {result.mode === "push" && <button className="btn ghost block" onClick={onRetry}>Retry {zone.name}</button>}
       </div>
     </Modal>
   );

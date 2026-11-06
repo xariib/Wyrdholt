@@ -1,6 +1,6 @@
 import { SLOT_ORDER, type SlotId } from "@emberbound/shared-types";
-import { isItemLocked, previewSalvage, type ContentIndex, type Profile } from "@emberbound/game-core";
-import { filterGearGroups, type GearFilters, type ItemGroup } from "./gearModel";
+import { findInstance, isItemLocked, previewSalvage, type ContentIndex, type Profile } from "@emberbound/game-core";
+import { filterGearGroups, isEquippedDuplicate, type GearFilters, type ItemGroup } from "./gearModel";
 
 export interface InventoryFilters extends GearFilters {
   slot: SlotId | "";
@@ -10,7 +10,7 @@ export const EMPTY_INVENTORY_FILTERS: InventoryFilters = { search: "", slot: "",
 export const INVENTORY_PAGE_SIZE = 20;
 
 export interface InventoryGroup extends ItemGroup {
-  copies: { id: number; isNew: boolean; salvageEligible: boolean }[];
+  copies: { id: number; isNew: boolean; salvageEligible: boolean; equippedDuplicate: boolean }[];
   totalCount: number;
   lockedCount: number;
   eligibleCount: number;
@@ -19,6 +19,7 @@ export interface InventoryGroup extends ItemGroup {
 /** One grouped overview of ownership. Quotes stay authoritative in the existing core. */
 export function inventoryGroups(profile: Profile, content: ContentIndex): InventoryGroup[] {
   const groups = new Map<string, InventoryGroup>();
+  const equipped = new Map(SLOT_ORDER.map(slot => [slot, findInstance(profile, profile.equipment[slot] ?? 0)]));
   for (const instance of profile.inventory.instances) {
     const item = content.item(instance.baseId);
     let group = groups.get(item.id);
@@ -29,7 +30,7 @@ export function inventoryGroups(profile: Profile, content: ContentIndex): Invent
     }
     const salvageEligible = previewSalvage(profile, content, instance.id).ok;
     group.ids.push(instance.id);
-    group.copies.push({ id: instance.id, isNew: instance.isNew, salvageEligible });
+    group.copies.push({ id: instance.id, isNew: instance.isNew, salvageEligible, equippedDuplicate: isEquippedDuplicate(instance, equipped.get(item.slot)) });
     group.totalCount++;
     if (instance.isNew) group.newCount++;
     if (isItemLocked(profile, instance.id)) group.lockedCount++;

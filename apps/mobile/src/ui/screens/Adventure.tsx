@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { safeFarmZone, zoneViews, type ZoneView } from "../adventureModel";
@@ -7,7 +7,7 @@ import { CombatView } from "../components/CombatView";
 import { FarmIcon, PushIcon } from "../components/icons";
 import { number } from "../format";
 
-export function AdventureScreen({ profile, active }: { profile: Profile; active: boolean }) {
+export function AdventureScreen({ profile, active, nextAttempt }: { profile: Profile; active: boolean; nextAttempt: ReactNode }) {
   const content = session.content;
   const adv = profile.adventure;
   const zone = content.zone(adv.zoneId);
@@ -111,6 +111,7 @@ export function AdventureScreen({ profile, active }: { profile: Profile; active:
         </button>
       </section>
 
+      {nextAttempt}
       {nextZones.map((z) => (
         <section key={z.id} className="panel row spread">
           <div>

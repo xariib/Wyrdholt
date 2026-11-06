@@ -2,7 +2,7 @@ import { CopyControls } from "./GearCopies";
 import { InventorySheet, type InventorySelection } from "./Inventory";
 import { ForgeSheet } from "./Forge";
 import { SalvageConfirmation, BulkSalvageConfirmation } from "./Salvage";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ItemDef, SlotId } from "@emberbound/shared-types";
 import { findInstance, isFightActive, isItemLocked, previewSalvage, previewBulkSalvage, type BulkSalvageReceipt, type Profile, type SalvageReceipt } from "@emberbound/game-core";
 import { session } from "../../game/session";
@@ -17,8 +17,10 @@ export interface GearFocus {
   instanceId?: number;
 }
 
-export function GearScreen({ profile, focus, onFocusHandled }: { profile: Profile; focus: GearFocus | null; onFocusHandled: () => void }) {
-  const [inventoryOpen, setInventoryOpen] = useState(false);
+export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
+  profile: Profile; focus: GearFocus | "new" | null; onFocusHandled: () => void; retryAction: ReactNode;
+}) {
+  const [inventory, setInventory] = useState<{ newOnly: boolean; key: number } | null>(null);
   const [forgeOpen, setForgeOpen] = useState(false);
   const content = session.content;
   const [openSlot, setOpenSlot] = useState<SlotId | null>(null);
@@ -30,9 +32,16 @@ export function GearScreen({ profile, focus, onFocusHandled }: { profile: Profil
 
   useEffect(() => {
     if (!focus) return;
-    setOpenSlot(focus.slot);
-    setInitialBase(focus.baseId);
-    setInitialInstance(focus.instanceId);
+    setForgeOpen(false);
+    if (focus === "new") {
+      setOpenSlot(null);
+      setInventory(current => ({ newOnly: true, key: (current?.key ?? 0) + 1 }));
+    } else {
+      setInventory(null);
+      setOpenSlot(focus.slot);
+      setInitialBase(focus.baseId);
+      setInitialInstance(focus.instanceId);
+    }
     onFocusHandled();
   }, [focus, onFocusHandled]);
 
@@ -43,7 +52,8 @@ export function GearScreen({ profile, focus, onFocusHandled }: { profile: Profil
           <h2 style={{ fontSize: 20 }}>Loadout</h2>
           <button className="btn" onClick={() => setForgeOpen(true)}>Forge</button>
         </div>
-        <button className="btn gold block inventory-entry" onClick={() => setInventoryOpen(true)}>Inventory · {number(profile.inventory.instances.length)} copies · all slots</button>
+        {!inventory && !forgeOpen && !openSlot && retryAction}
+        <button className="btn gold block inventory-entry" onClick={() => setInventory({ newOnly: false, key: 0 })}>Inventory · {number(profile.inventory.instances.length)} copies · all slots</button>
         <div className="loadout-stage">
           <svg className="loadout-links" viewBox="0 0 360 320" preserveAspectRatio="none" aria-hidden="true"><g stroke="currentColor" fill="none"><path d="M95 55H145L180 85 M265 55H215L195 120 M95 155H145L165 160 M265 155H215L200 160 M95 265H145L180 230 M265 265H225L204 178"/></g></svg>
           <div className="loadout-hero"><SpriteImage name={content.classDef(profile.character.activeClassId).sprite} portrait/><span>Lv. {profile.character.level} · {content.classDef(profile.character.activeClassId).name}</span></div>
@@ -110,7 +120,8 @@ export function GearScreen({ profile, focus, onFocusHandled }: { profile: Profil
         )}
       </section>
 
-      {inventoryOpen && <InventorySheet profile={profile} onClose={() => setInventoryOpen(false)} renderComparison={(focus, selection, back) =>
+      {inventory && <InventorySheet key={inventory.key} profile={profile} initiallyNewOnly={inventory.newOnly} retryAction={retryAction}
+        onClose={() => setInventory(null)} renderComparison={(focus, selection, back) =>
         <SlotSheet key={focus.instanceId} profile={profile} slot={focus.slot} initialBaseId={focus.baseId}
           initialInstanceId={focus.instanceId} selection={selection} onClose={back} />
       } />}

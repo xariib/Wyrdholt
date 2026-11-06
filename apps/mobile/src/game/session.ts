@@ -30,7 +30,7 @@ import { SaveGuard, initialSaveGate, type GateInfo, type SaveOutcome, type Actio
 export type { GateInfo, SaveOutcome, ActionOutcome, SaveIntent, SaveSlot } from "./saveGuard";
 import { runOfflineCatchUp } from "./offlineRunner";
 import { resumeAfterDefeat, settlementTelemetry, type SettlementTelemetry } from "./settlement";
-import { buildState, recordAttempt } from "./attempts";
+import { buildState, recordAttempt, setRetryTarget } from "./attempts";
 
 /**
  * GameSession owns the authoritative profile on the client and the
@@ -403,7 +403,9 @@ export class GameSession {
       resumed && failed
         ? `${failed.mode} ${this.content.zone(failed.zoneId).name} failed at stage ${failed.stage}; started ${resumed.mode} ${this.content.zone(resumed.zoneId).name}`
         : null;
+    const resumedRetry = resumed && failed?.mode === "push" ? { zoneId: failed.zoneId, stage: failed.stage } : null;
     if (elapsed < 1_000 || working.adventure.activity === "idle") {
+      if (resumedRetry) setRetryTarget(working, resumedRetry);
       working.clock.lastSettledWallMs = Math.max(profile.clock.lastSettledWallMs, nowWallMs);
       this.bump({ profile: working, phase: "playing" });
       return;
@@ -430,6 +432,14 @@ export class GameSession {
       this.cache.clearFights();
       this.lastFight = null;
       const telemetry = settlementTelemetry(this.content, profile, result.profile, result.summary, resumedFrom);
+      // Keep the simulated replacement private until the actual main is read back.
+      const receipt = await this.track(this.guard.write(() => serializeSave(result.profile, Date.now()), {
+        isCurrent: () => epoch === this.ownerEpoch && this.profile === profile,
+      }));
+      if (receipt.status !== "saved" || epoch !== this.ownerEpoch || this.profile !== profile) return;
+      this.acknowledge(receipt);
+      this.lastSettlement = telemetry;
+      if (resumedRetry) setRetryTarget(result.profile, resumedRetry);
       const push = result.summary.push;
       if (push.status !== "none" && push.zoneId) {
         // The offline Push runs at the start of the absence, with the build the player left.
@@ -443,13 +453,6 @@ export class GameSession {
           buildState(profile, this.content),
         );
       }
-      // Keep the simulated replacement private until the actual main is read back.
-      const receipt = await this.track(this.guard.write(() => serializeSave(result.profile, Date.now()), {
-        isCurrent: () => epoch === this.ownerEpoch && this.profile === profile,
-      }));
-      if (receipt.status !== "saved" || epoch !== this.ownerEpoch || this.profile !== profile) return;
-      this.acknowledge(receipt);
-      this.lastSettlement = telemetry;
       const show = elapsed >= SHOW_OFFLINE_SUMMARY_MS || result.summary.push.status !== "none";
       this.bump({
         profile: result.profile,
@@ -706,6 +709,7 @@ export class GameSession {
     if (!result.ok) {
       patch.toast = this.makeToast(result.error, "warning");
     } else {
+      if (command.type === "startPush") setRetryTarget(profile, null);
       if (command.type === "startPush" || command.type === "startFarm") patch.runResult = null;
       if (result.queued) patch.toast = this.makeToast("Queued — applies when this fight ends", "info");
     }

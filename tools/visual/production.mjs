@@ -37,7 +37,8 @@ try{for(const [width,height] of [[360,640],[390,844],[412,915],[480,854]]){
  await load("safe-farm");await shot("safe-farm");
  await p.evaluate(()=>{window.__hide(true);window.__offset+=7200000;window.__hide(false);});await p.getByText("While you were away…").waitFor();await shot("offline-summary");await p.getByRole("button",{name:"Continue",exact:true}).tap();
  await load("failure");await p.getByText("Defeated",{exact:true}).waitFor({timeout:30000});await shot("push-failure");
- await p.getByRole("button",{name:"Change build",exact:true}).tap();
+ await p.locator(".modal").getByRole("button",{name:/^(Keep farming|Farm) /}).tap();
+ await p.locator(".nav-btn").getByText("Gear",{exact:true}).tap();
  await p.evaluate(()=>{document.documentElement.style.setProperty("--safe-area-inset-top","24px");document.documentElement.style.setProperty("--safe-area-inset-bottom","24px");});
  const header=await p.locator(".header").boundingBox();
  if(header.y<24)throw Error("Top safe area ignored");

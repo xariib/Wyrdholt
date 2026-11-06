@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { registerBackAction } from "./platform/backNavigation";
 import { session } from "./game/session";
+import { retryTarget } from "./game/attempts";
 import { DEV_TOOLS } from "./platform/device";
 import { Busy, Header, ToastView } from "./ui/components/Common";
 import { NavIcon } from "./ui/components/icons";
@@ -37,7 +38,7 @@ export function App() {
   const [tab, setTab] = useState<Tab>("adventure");
   const [debugOpen, setDebugOpen] = useState(false);
   const [overlay, setOverlayState] = useState(readOverlayPref);
-  const [gearFocus, setGearFocus] = useState<GearFocus | null>(null);
+  const [gearFocus, setGearFocus] = useState<GearFocus | "new" | null>(null);
   const clearFocus = useCallback(() => setGearFocus(null), []);
 
   useEffect(() => registerBackAction(() => {
@@ -90,14 +91,37 @@ export function App() {
     );
   }
 
-  const profile = ui.profile;
+  const { profile, runResult } = ui;
   const newCount = totalNew(profile);
+  const retry = retryTarget(profile, session.content);
+  const openGear = (focus: GearFocus | "new" | null) => {
+    setGearFocus(focus);
+    setTab("gear");
+  };
+  const retryPush = (zoneId: string) => {
+    if (!session.dispatch({ type: "startPush", zoneId }).ok) return;
+    session.dismissOffline();
+    setGearFocus(null);
+    setTab("adventure");
+  };
+  const retryAction: ReactNode = retry && (
+    <button className="btn primary block" onClick={() => retryPush(retry.zoneId)}>
+      Retry {session.content.zone(retry.zoneId).name}
+    </button>
+  );
 
   return (
     <div className="app immersive">
       <Header profile={profile} {...(DEV_TOOLS ? { onDebug: () => setDebugOpen(true) } : {})} />
       <main className="screen adventure-screen" hidden={tab !== "adventure"}>
-        <AdventureScreen profile={profile} active={tab === "adventure" && !debugOpen} />
+        <AdventureScreen profile={profile} active={tab === "adventure" && !debugOpen} nextAttempt={retry && !ui.runResult && !ui.offline && (
+          <section className="panel stack" aria-label="Next attempt">
+            <div className="panel-title">Next attempt</div>
+            <p className="small muted">Last Push: {session.content.zone(retry.zoneId).name} · stage {retry.stage}</p>
+            {newCount > 0 && <button className="btn block" onClick={() => openGear("new")}>Review new gear ({newCount})</button>}
+            {retryAction}
+          </section>
+        )} />
       </main>
       {tab === "character" && (
         <main className="screen character-screen">
@@ -106,7 +130,7 @@ export function App() {
       )}
       {tab === "gear" && (
         <main className="screen gear-screen">
-          <GearScreen profile={profile} focus={gearFocus} onFocusHandled={clearFocus} />
+          <GearScreen profile={profile} focus={gearFocus} onFocusHandled={clearFocus} retryAction={ui.offline || runResult ? null : retryAction} />
         </main>
       )}
       {tab === "challenges" && (
@@ -130,13 +154,14 @@ export function App() {
           data={ui.offline}
           onReview={(focus) => {
             session.dismissOffline();
-            setGearFocus(focus);
-            setTab("gear");
+            openGear(focus);
           }}
+          retryAction={retryAction}
         />
       )}
-      {!ui.offline && ui.runResult && (
-        <RunResultOverlay result={ui.runResult} profile={profile} onChangeBuild={() => setTab("gear")} />
+      {!ui.offline && runResult && (
+        <RunResultOverlay result={runResult} profile={profile} newCount={newCount}
+          onReview={openGear} onRetry={() => retryPush(runResult.zoneId)} />
       )}
       {ui.busy && <Busy text={ui.busy} />}
       {debugOpen && <DebugPanel onClose={() => setDebugOpen(false)} overlay={overlay} setOverlay={setOverlay} />}

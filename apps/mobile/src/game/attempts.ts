@@ -31,6 +31,41 @@ function characterKey(profile: Profile): string {
   return `${profile.createdAtWallMs}-${profile.masterSeed}`;
 }
 
+export interface RetryTarget {
+  zoneId: string;
+  stage: number;
+}
+
+let retryFallback: { key: string; target: RetryTarget | null } | undefined;
+
+export function setRetryTarget(profile: Profile, target: RetryTarget | null): void {
+  const key = `emberbound.retry.v1:${characterKey(profile)}`;
+  try {
+    if (target) globalThis.localStorage.setItem(key, JSON.stringify(target));
+    else globalThis.localStorage.removeItem(key);
+    retryFallback = undefined;
+  } catch {
+    retryFallback = { key, target };
+  }
+}
+
+export function retryTarget(profile: Profile, content: ContentIndex): RetryTarget | null {
+  if (profile.adventure.activity === "push") return null;
+  const key = `emberbound.retry.v1:${characterKey(profile)}`;
+  try {
+    const target: RetryTarget | null = retryFallback?.key === key
+      ? retryFallback.target
+      : JSON.parse(globalThis.localStorage.getItem(key) ?? "null");
+    if (!target) return null;
+    const zone = content.zones.get(target.zoneId);
+    const progress = profile.adventure.zones[target.zoneId];
+    return zone?.implemented && !zone.hidden && progress?.unlocked && !progress.cleared
+      && Number.isInteger(target.stage) && target.stage > 0 && target.stage <= zone.stages.length ? target : null;
+  } catch {
+    return null;
+  }
+}
+
 function read(): Store {
   try {
     const raw = globalThis.localStorage?.getItem(KEY);
@@ -82,6 +117,7 @@ export function recordAttempt(
   });
   if (list.length > PER_ZONE) list.splice(0, list.length - PER_ZONE);
   write(store);
+  setRetryTarget(profile, result.cleared ? null : { zoneId: result.zoneId, stage: result.stage });
 }
 
 export function attemptHistory(profile: Profile, zoneId: string): Attempt[] {

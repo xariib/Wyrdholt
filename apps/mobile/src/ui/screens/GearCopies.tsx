@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import type { SlotId } from "@emberbound/shared-types";
 import { findInstance, isItemLocked, previewSalvage, type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
-import type { ItemGroup } from "../gearModel";
+import { isEquippedDuplicate, type ItemGroup } from "../gearModel";
 
 /** Bound the DOM for large duplicate inventories while exposing every exact copy. */
 export function CopyControls({ profile, slot, group, selectedInstance, onSelect, onSalvage, bulkIds, onToggleSalvage, initiallyExpanded = false }: {
@@ -17,6 +17,7 @@ export function CopyControls({ profile, slot, group, selectedInstance, onSelect,
   const [error, setError] = useState("");
   const working = useRef(false);
   const currentPage = Math.min(page, Math.max(0, Math.ceil(group.ids.length / pageSize) - 1));
+  const equippedItem = findInstance(profile, profile.equipment[slot] ?? 0);
   const copies = group.ids.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
   const changeLock = async (id: number) => {
     if (working.current) return;
@@ -42,6 +43,7 @@ export function CopyControls({ profile, slot, group, selectedInstance, onSelect,
             {equipped && <span className="tag">Equipped</span>}{queued && <span className="tag queued">Queued</span>}
             {instance.isNew && <span className="tag new">NEW</span>}<span className={`tag ${locked ? "locked" : ""}`}>{locked ? "Locked" : "Unlocked"}</span>
           </div>
+          {isEquippedDuplicate(instance, equippedItem) && <div className="small muted">Duplicate of equipped item · same stats and effects</div>}
           <label className="bulk-salvage-choice">
             <input type="checkbox" checked={bulkIds.has(id)} disabled={saving !== null || (!bulkIds.has(id) && !previewSalvage(profile, session.content, id).ok)} aria-label={`Select for salvage copy #${id}`} onChange={() => onToggleSalvage(id)} />
             <span>Select for bulk salvage</span>

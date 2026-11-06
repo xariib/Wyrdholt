@@ -1,5 +1,5 @@
 import { SLOT_ORDER, type ItemDef, type ItemInstance, type SlotId } from "@emberbound/shared-types";
-import { findInstance, heroStatsFor, type ContentIndex, type Profile } from "@emberbound/game-core";
+import { canonicalJson, findInstance, heroStatsFor, type ContentIndex, type Profile } from "@emberbound/game-core";
 
 export interface SlotView {
   slot: SlotId;
@@ -53,6 +53,16 @@ export function slotViews(profile: Profile, content: ContentIndex): SlotView[] {
       newCount: newBySlot.get(slot) ?? 0,
     };
   });
+}
+
+/** Copies with the same catalog definition and instance bonuses play identically. */
+export function isEquippedDuplicate(candidate: ItemInstance, equipped: ItemInstance | undefined): boolean {
+  return !!equipped && candidate.id !== equipped.id && candidate.baseId === equipped.baseId
+    && itemBonuses(candidate) === itemBonuses(equipped);
+}
+
+function itemBonuses({ rolls, modifiers, upgrade, seasonal }: ItemInstance): string {
+  return canonicalJson({ rolls, modifiers, upgrade, seasonal });
 }
 
 export function totalNew(profile: Profile): number {

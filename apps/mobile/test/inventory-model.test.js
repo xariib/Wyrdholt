@@ -51,6 +51,21 @@ describe("combined inventory view", () => {
     });
   }
 
+  it("flags exact duplicates among the visible copies without flagging equipped or modified gear", () => {
+    const { p } = fixture();
+    const equipped = p.inventory.instances.find(i => i.id === p.equipment.weapon);
+    const duplicate = createInstance(p, equipped.baseId, { isNew: true });
+    const rolled = createInstance(p, equipped.baseId, { isNew: true });
+    rolled.rolls = { attack: 2 };
+
+    const groups = inventoryGroups(p, content);
+    const group = groups.find(g => g.baseId === equipped.baseId);
+    expect(group.copies.find(copy => copy.id === equipped.id).equippedDuplicate).toBe(false);
+    const [visible] = filterInventoryGroups([group], { ...EMPTY_INVENTORY_FILTERS, newOnly: true });
+    expect(visible.copies.filter(copy => copy.equippedDuplicate).map(copy => copy.id)).toEqual([duplicate.id]);
+    expect(visible.ids).toContain(rolled.id);
+  });
+
   it("searches effect descriptions with multiple case-insensitive terms", () => {
     const { p } = fixture(); const groups = inventoryGroups(p, content);
     const words = " ATTACK speed ";

@@ -17,12 +17,12 @@ export interface InventorySelection {
 }
 
 /** Selection belongs to the overview, independently of filters, pages and comparison. */
-export function InventorySheet({ profile, onClose, renderComparison }: {
-  profile: Profile; onClose: () => void;
+export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction, renderComparison }: {
+  profile: Profile; onClose: () => void; initiallyNewOnly: boolean; retryAction: ReactNode;
   renderComparison: (focus: GearFocus, selection: InventorySelection, back: () => void) => ReactNode;
 }) {
   const content = session.content;
-  const [filters, setFilters] = useState<InventoryFilters>({ ...EMPTY_INVENTORY_FILTERS });
+  const [filters, setFilters] = useState<InventoryFilters>({ ...EMPTY_INVENTORY_FILTERS, newOnly: initiallyNewOnly });
   const [page, setPage] = useState(0);
   const [manageBase, setManageBase] = useState<string | null>(null);
   const [comparison, setComparison] = useState<GearFocus | null>(null);
@@ -49,21 +49,7 @@ export function InventorySheet({ profile, onClose, renderComparison }: {
   // comparison alone marks the targeted copy reviewed; browsing/selection never does.
   if (comparison) return renderComparison(comparison, { ids, setIds, hiddenCount: counts.hidden }, () => setComparison(null));
 
-  return <Sheet label="Gear inventory" onClose={onClose} scrollKey={bulkQuote ? "bulk" : singleQuote ? "single" : manageBase ?? `page-${pagination.page}`}>
-    <div className="row spread">
-      <h2>Gear inventory</h2>
-      <button className="btn small ghost sheet-close" aria-label="Close inventory" onClick={onClose}>×</button>
-    </div>
-    {notice && <p className="small" role="status">{notice}</p>}
-    {bulkQuote ? <BulkSalvageConfirmation profile={profile} quote={bulkQuote} onCancel={() => setBulkQuote(null)} onSaved={receipt => {
-      setNotice(`${receipt.copies.length.toLocaleString()} selected copies salvaged for ${receipt.gold.toLocaleString()} Gold and saved.`);
-      setBulkQuote(null); setIds(new Set()); setError("");
-    }} /> : singleQuote ? <SalvageConfirmation profile={profile} quote={singleQuote} onCancel={() => setSingleQuote(null)} onSaved={receipt => {
-      setNotice(`Copy #${receipt.instanceId} salvaged for ${receipt.gold} Gold and saved.`);
-      // Keep even consumed selected IDs: a later batch must reject stale selections.
-      setSingleQuote(null);
-    }} /> : <>
-      <p className="small muted">All six slots. Find gear, manage its copies, or compare a specific copy before equipping.</p>
+  const filterControls = (
       <div className="gear-filters">
         <label className="gear-search"><span>Search inventory</span>
           <input type="search" value={filters.search} placeholder="Item name or effect" onChange={e => changeFilters({ ...filters, search: e.target.value })} />
@@ -82,7 +68,31 @@ export function InventorySheet({ profile, onClose, renderComparison }: {
         <label className="gear-new-filter"><input type="checkbox" checked={filters.newOnly} onChange={e => changeFilters({ ...filters, newOnly: e.target.checked })} /><span>Only NEW</span></label>
         {hasFilters && <button className="btn ghost gear-clear" onClick={() => changeFilters({ ...EMPTY_INVENTORY_FILTERS })}>Clear filters</button>}
       </div>
-      <section className="stack inventory-selection" aria-label="Inventory salvage selection">
+  );
+
+  return <Sheet label="Gear inventory" onClose={onClose} scrollKey={bulkQuote ? "bulk" : singleQuote ? "single" : manageBase ?? `page-${pagination.page}`}>
+    <div className="row spread">
+      <h2>{initiallyNewOnly ? "Review new gear" : "Gear inventory"}</h2>
+      <button className="btn small ghost sheet-close" aria-label="Close inventory" onClick={onClose}>×</button>
+    </div>
+    {notice && <p className="small" role="status">{notice}</p>}
+    {bulkQuote ? <BulkSalvageConfirmation profile={profile} quote={bulkQuote} onCancel={() => setBulkQuote(null)} onSaved={receipt => {
+      setNotice(`${receipt.copies.length.toLocaleString()} selected copies salvaged for ${receipt.gold.toLocaleString()} Gold and saved.`);
+      setBulkQuote(null); setIds(new Set()); setError("");
+    }} /> : singleQuote ? <SalvageConfirmation profile={profile} quote={singleQuote} onCancel={() => setSingleQuote(null)} onSaved={receipt => {
+      setNotice(`Copy #${receipt.instanceId} salvaged for ${receipt.gold} Gold and saved.`);
+      // Keep even consumed selected IDs: a later batch must reject stale selections.
+      setSingleQuote(null);
+    }} /> : <>
+      {retryAction}
+      <p className="small muted">{initiallyNewOnly
+        ? "Compare new drops with what you’re wearing before your next Push."
+        : "All six slots. Find gear, manage its copies, or compare a specific copy before equipping."}</p>
+      {initiallyNewOnly ? <details className="inventory-filters-disclosure">
+        <summary>Inventory filters</summary>
+        {filterControls}
+      </details> : filterControls}
+      {(!initiallyNewOnly || ids.size > 0) && <section className="stack inventory-selection" aria-label="Inventory salvage selection">
         <p className="small" role="status">{number(counts.total)} copies selected for salvage · {number(counts.hidden)} outside current filters.</p>
         <p className="small muted">Choose exact copies manually in Manage copies. Selection stays across slots, item types, filters and pages. Review includes every selected ID.</p>
         <div className="gear-copy-actions">
@@ -94,7 +104,7 @@ export function InventorySheet({ profile, onClose, renderComparison }: {
           <button className="btn ghost" disabled={!ids.size} onClick={() => { setIds(new Set()); setError(""); }}>Clear selection</button>
         </div>
         {error && <p role="alert">{error}</p>}
-      </section>
+      </section>}
       <p className="small muted gear-result-count" role="status">{visible.length} of {groups.length} item types · {number(copyCount)} matching copies of {number(profile.inventory.instances.length)} owned</p>
       {managed && <section className="inventory-managed stack" aria-label="Manage inventory copies">
         <InventoryItem group={managed} />
@@ -127,6 +137,7 @@ export function InventorySheet({ profile, onClose, renderComparison }: {
 
 function InventoryItem({ group }: { group: InventoryGroup }) {
   const content = session.content, item = group.item;
+  const duplicates = group.copies.filter(copy => copy.equippedDuplicate).length;
   return <>
     <div className="row">
       <ItemIcon icon={item.icon} rarityColor={rarityColor(content, item.rarity)} size={40} />
@@ -140,6 +151,7 @@ function InventoryItem({ group }: { group: InventoryGroup }) {
       {group.newCount > 0 && <span className="tag new">{number(group.newCount)} NEW matching</span>}
       {group.lockedCount > 0 && <span className="tag locked">{number(group.lockedCount)} locked</span>}
       {group.equippedHere && <span className="tag">Equipped</span>}
+      {duplicates > 0 && <span className="tag" title="Same stats and effects as your equipped item">{number(duplicates)} {duplicates === 1 ? "duplicate" : "duplicates"} of equipped</span>}
       {group.queuedHere && <span className="tag queued">Queued</span>}
     </div>
     <div className="small"><strong>{item.effect?.name ?? "No special effect"}</strong>{item.effect && <p className="muted">{item.effect.description}</p>}</div>
