@@ -1,0 +1,15 @@
+{
+  "name": "@emberbound/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Spike only: Node replay tool proving the game-core can validate fights server-side. Not a production backend.",
+  "scripts": {
+    "replay": "tsx src/replay-cli.ts"
+  },
+  "dependencies": {
+    "@emberbound/game-core": "0.1.0",
+    "@emberbound/game-content": "0.1.0",
+    "@emberbound/shared-types": "0.1.0"
+  }
+}

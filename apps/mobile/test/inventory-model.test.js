@@ -1,0 +1,94 @@
+import { describe, expect, it } from "vitest";
+import { SLOT_ORDER } from "@emberbound/shared-types";
+import { CONTENT } from "@emberbound/game-content";
+import { ContentIndex, createInstance, createProfile, previewSalvage, setItemLock } from "@emberbound/game-core";
+import { EMPTY_INVENTORY_FILTERS, filterInventoryGroups, inventoryGroups, inventoryPage, inventorySelectionCounts } from "../src/ui/inventoryModel";
+
+const content = new ContentIndex(CONTENT);
+function fixture() {
+  const p = createProfile(content, { name: "Inventory", activeClassId: "monk", alternateClassId: "mage", masterSeed: 1042, nowWallMs: 0 });
+  p.inventory.instances = []; p.equipment = {};
+  const ids = [];
+  for (const item of content.snapshot.items) {
+    ids.push(createInstance(p, item.id, { isNew: true }).id);
+    ids.push(createInstance(p, item.id, { isNew: false }).id);
+  }
+  for (const slot of SLOT_ORDER) {
+    const instances = p.inventory.instances.filter(i => content.item(i.baseId).slot === slot);
+    p.equipment[slot] = instances[0].id;
+    p.pending ??= { equipment: {} };
+    p.pending.equipment[slot] = instances[1].id;
+    setItemLock(p, instances[2].id, true);
+  }
+  return { p, ids };
+}
+
+describe("combined inventory view", () => {
+  it("groups every owned copy once in all six slots with correct protections", () => {
+    const { p, ids } = fixture(), before = structuredClone(p);
+    const groups = inventoryGroups(p, content);
+    expect(new Set(groups.map(g => g.item.slot))).toEqual(new Set(SLOT_ORDER));
+    expect(groups.flatMap(g => g.ids).sort((a, b) => a - b)).toEqual(ids);
+    for (const g of groups) {
+      expect(g.totalCount).toBe(2); expect(g.newCount).toBe(1);
+      expect(g.lockedCount).toBe(g.ids.filter(id => p.itemLocks.lockedInstanceIds.includes(id)).length);
+      expect(g.eligibleCount).toBe(g.ids.filter(id => previewSalvage(p, content, id).ok).length);
+    }
+    expect(p).toEqual(before);
+  });
+
+  for (const slot of SLOT_ORDER) for (const rarity of ["common", "uncommon", "rare", "epic", "legendary"]) {
+    it(`intersects name/effect, NEW and eligibility for ${slot}/${rarity}`, () => {
+      const { p } = fixture(); const groups = inventoryGroups(p, content);
+      const item = content.snapshot.items.find(i => i.slot === slot && i.rarity === rarity);
+      const search = `  ${item.name.toUpperCase()} ${item.effect?.name ?? ""}  `;
+      for (const salvage of ["", "eligible", "protected"]) {
+        const filtered = filterInventoryGroups(groups, { search, slot, rarityId: rarity, newOnly: true, salvage });
+        const expected = p.inventory.instances.filter(i => i.baseId === item.id && i.isNew
+          && (!salvage || previewSalvage(p, content, i.id).ok === (salvage === "eligible"))).map(i => i.id);
+        expect(filtered.flatMap(g => g.ids)).toEqual(expected);
+      }
+    });
+  }
+
+  it("searches effect descriptions with multiple case-insensitive terms", () => {
+    const { p } = fixture(); const groups = inventoryGroups(p, content);
+    const words = " ATTACK speed ";
+    const expected = groups.filter(g => {
+      const text = `${g.item.name} ${g.item.effect?.name ?? ""} ${g.item.effect?.description ?? ""}`.toLowerCase();
+      return text.includes("attack") && text.includes("speed");
+    });
+    expect(expected.length).toBeGreaterThan(0);
+    expect(filterInventoryGroups(groups, { ...EMPTY_INVENTORY_FILTERS, search: words }).map(g => g.baseId)).toEqual(expected.map(g => g.baseId));
+  });
+
+  it("NEW and eligibility must match one copy, not two different copies of a type", () => {
+    const { p } = fixture(); const group = inventoryGroups(p, content).find(g => g.lockedCount);
+    const rows = filterInventoryGroups([group], { ...EMPTY_INVENTORY_FILTERS, newOnly: true, salvage: "eligible" });
+    expect(rows).toEqual([]);
+  });
+
+  it("filters and pagination preserve manual IDs including stale/missing selections", () => {
+    const { p, ids } = fixture(); const groups = inventoryGroups(p, content);
+    const selected = new Set([groups.find(g => g.item.slot === "weapon").ids[0], groups.find(g => g.item.slot === "ring").ids[0], 99999]); const before = [...selected];
+    const filtered = filterInventoryGroups(groups, { ...EMPTY_INVENTORY_FILTERS, slot: "weapon" });
+    expect(inventorySelectionCounts(selected, filtered)).toEqual({ total: 3, matching: 1, hidden: 2 });
+    for (const page of [0, 1, 999]) expect(inventoryPage(groups, page).rows.length).toBeLessThanOrEqual(20);
+    expect([...selected]).toEqual(before);
+    expect(inventorySelectionCounts(selected, filterInventoryGroups(groups, { ...EMPTY_INVENTORY_FILTERS, search: "no such gear" }))).toEqual({ total: 3, matching: 0, hidden: 3 });
+    expect(inventoryPage([], 99)).toEqual({ page: 0, pages: 1, rows: [] });
+    expect(inventoryPage(groups, 99).page).toBe(Math.ceil(groups.length / 20) - 1);
+  });
+
+  it("6000 copies stay complete through pagination and intersected filters", () => {
+    const { p } = fixture();
+    p.inventory.instances = []; p.equipment = {}; delete p.pending; delete p.itemLocks;
+    for (let n = 0; n < 6000; n++) createInstance(p, content.snapshot.items[n % content.snapshot.items.length].id, { isNew: n % 2 === 0 });
+    const groups = inventoryGroups(p, content), selected = new Set(p.inventory.instances.filter((_, n) => n % 100 === 0).map(i => i.id));
+    expect(groups.reduce((n, g) => n + g.totalCount, 0)).toBe(6000);
+    const result = filterInventoryGroups(groups, { ...EMPTY_INVENTORY_FILTERS, slot: "ring", newOnly: true, salvage: "eligible" });
+    expect(result.flatMap(g => g.ids)).toEqual(groups.filter(g => g.item.slot === "ring").flatMap(g => g.copies.filter(c => c.isNew).map(c => c.id)));
+    const pages = Array.from({ length: Math.ceil(groups.length / 20) }, (_, n) => inventoryPage(groups, n).rows).flat();
+    expect(pages).toEqual(groups); expect(selected.size).toBe(60);
+  });
+});

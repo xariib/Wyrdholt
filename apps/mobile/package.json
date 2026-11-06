@@ -1,0 +1,38 @@
+{
+  "name": "@emberbound/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Emberbound mobile app: React UI + PixiJS combat + Capacitor shell. The same build is the browser preview.",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview --host",
+    "cap:sync": "cap sync",
+    "android:apk": "cd android && ./gradlew assembleDebug",
+    "android:release": "cd android && ./gradlew assembleRelease",
+    "android:open": "cap open android",
+    "ios:open": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/filesystem": "^8.1.3",
+    "@capacitor/ios": "^8.5.2",
+    "@emberbound/game-content": "0.1.0",
+    "@emberbound/game-core": "0.1.0",
+    "@emberbound/shared-types": "0.1.0",
+    "@fontsource/cinzel": "^5.3.0",
+    "pixi.js": "^8.20.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "vite": "^8.3.0"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "rulesVersion": "emberbound-rules/0.3.0",
+  "contentVersion": "emberbound-content/0.2.1-c1",
+  "contentHash": "97fae433324da1ae22172f5a1c7f307ba52399a8646e84c375bcfecb577f0382",
+  "generatedBy": "node v22.22.2",
+  "cases": {
+    "fight-monk-m1-l1-stage1": "d253eca75bf0043fd6f9a840c74a20f07a8e0f8ca45f73b67db326e97e02d411",
+    "fight-monk-m20-l7-elite": "d08393f525b504b007d68f510b11c22e47ab3db242ff93e8acf50e1946a03837",
+    "fight-monk-m15-venom-three": "3b506652e6745404d026e43160f419b4abba750bde82d5d414786a8d8c42d792",
+    "fight-mage-m20-l6-three": "ff9ac76a19598342fbfcc6f7619501775e3c73e1ea61a84978a1d47becb9fc46",
+    "fight-mage-m1-l2-boss": "297f43152f8edaf44f33cd49a2f2b6459026acbed50922e24a1d7d86fdb752cb",
+    "fight-monk-m5-low-hp": "b2263e8fb77463ec441053ce96ef9be834514e41df452f82eb5b6552e520fe24",
+    "fight-rule-hook-hardy": "76b1f301abdb7aaea3c0623c97f74beed68f23cc138f7f582e5c2492fe9f43e3",
+    "fight-timeout": "34324a93ee7b3c1f9ad0270278023f609657d95b7e228bf37136e6c8eb33abe9",
+    "fight-time-window-rule": "dc5b85a4a715c6fdbb0a01de358b5d1c139c13104a93e6fad8fb896d0b0a641c",
+    "adventure-push-12min-chunked": "4b5f7aa929124e4863b3bd172d719dd2077f3aa0c3d324b866f6d004f29da7cf",
+    "offline-2h-push-fallback": "282e10a0c9b3332ad6ea10ae6eea8323f7748e09cd77ce31bf036c310b2c5436",
+    "build-snapshot-rule": "63034475ff1fa9ab8a6c36da1891ed1ecd6105c98864556da0d1745081bbb265"
+  }
+}

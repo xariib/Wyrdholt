@@ -1,0 +1,26 @@
+{
+  "rulesVersion": "emberbound-rules/0.3.0",
+  "contentVersion": "emberbound-content/0.4.0-c2",
+  "contentHash": "2ed5fd9e3ac1559d4c5ae3a24e81a73594a1e4ad471696fbe6e1a15426c8ce09",
+  "generatedBy": "node v22.22.2",
+  "cases": {
+    "fight-monk-m1-l1-stage1": "f8fd6acae556305873c198ac9568ce5d27bfb63f1a7ecfc7768b02930ba747fb",
+    "fight-monk-m20-l7-elite": "2a177038050b77ccda00a7c88fce0a25985597db83f5dfe4961b4b8d5efbc816",
+    "fight-monk-m15-venom-three": "4f548380304f3c6d6a109e1f9536c0833b7b45c03cb148f6eadc0f22d497cd10",
+    "fight-mage-m20-l6-three": "885bfb228bbdf54e1c0e9fce1b87ce0869b3766b9609920c5df0a591c85fcfc9",
+    "fight-mage-m1-l2-boss": "4637f4f5a855d29a6f42870ff77123af8984c8926d2426b8b93a3074033303bc",
+    "fight-monk-m5-low-hp": "fb54e96a1572d7bd0b92759bde96f969fe939f60766fee2c15f55bf37cf67fe6",
+    "fight-rule-hook-hardy": "6a8968a8e55054be170b26e2409e24e0b92cfd78f999491c26ca6577ec5e3d74",
+    "fight-timeout": "11eb7703e5abc459d28bddbfcc323637ad554294b4e44595fb52a3c3f8dfcb29",
+    "fight-time-window-rule": "8e21d7644de10715992e5986ba3350c8a7ea9354a03f9b0fb9988cde923b62db",
+    "fight-warrior-m10-l8-elite": "04c1c46f04277e56118dd2eb8cec8f04549e13a7f8a8e97ec8cf9be5ceb2bc5d",
+    "fight-warrior-m20-bleed-owners-boss": "78249ad462d7cddc35df733ce483c39af43088a0fe5a92e4a1e3d827fe11cba0",
+    "fight-ranger-m5-l6-two": "3ea49f8f41b9d415a8ddc3f9747e5315a46f6423629a0961b30b0af4957cc3d3",
+    "fight-ranger-m20-venom-three": "a8231b47310797cb82de00310c9766828feaaef18e93a9edb20078beee3dffc3",
+    "fight-mage-ward-m7-l10-boss": "301b7754788dca5ebb056817933123749422cfe79a27fb2e29115382564775df",
+    "adventure-ranger-warrior-offline": "330c3a6fea119e344073002163765aeb77cf738554f17aee51f044a99da3a524",
+    "adventure-push-12min-chunked": "6121d10c98eddce26ef3129940bc868ea735a7a26e499cb9da37831b70f5aff9",
+    "offline-2h-push-fallback": "c71c2e8eea3b478d7d1b526e65c8966cfd38dd08b0275a520c35700860429880",
+    "build-snapshot-rule": "37bf2dc9b9a62e49943d1bbb4836deda063c79e08ba5a2f2072d1e93bd9a3b99"
+  }
+}

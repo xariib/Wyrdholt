@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "apps/server/src",
+    "packages/*/test",
+    "vitest.config.js"
+  ]
+}

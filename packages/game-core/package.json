@@ -1,0 +1,12 @@
+{
+  "name": "@emberbound/game-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure, deterministic Emberbound simulation. No React, PixiJS, DOM, browser or Capacitor dependencies.",
+  "exports": { ".": "./src/index.ts" },
+  "sideEffects": false,
+  "dependencies": {
+    "@emberbound/shared-types": "0.1.0"
+  }
+}

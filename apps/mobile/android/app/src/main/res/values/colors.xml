@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same value as the bg design token in apps/mobile/src/styles/app.css and backgroundColor in capacitor.config.ts. -->
+    <color name="ember_background">#0B0F18</color>
+</resources>

@@ -1,0 +1,21 @@
+import {spawnSync} from 'node:child_process';
+import {createServer} from 'node:http';
+import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {chromium,webkit} from 'playwright';
+import assert from 'node:assert/strict';
+const out=process.argv[2]??'tools/parity/out/forge';mkdirSync(out,{recursive:true});
+const selected=(process.env.FORGE_PARITY_ENGINES??'node,bun,chromium,webkit').split(',');
+assert(selected.length&&selected.every(e=>['node','bun','chromium','webkit'].includes(e)));
+const bun=process.env.BUN_EXECUTABLE_PATH??(process.platform==='win32'?'.local-tools/node_modules/bun/bin/bun.exe':'bun');
+const run=(cmd,args)=>{const r=spawnSync(cmd,args,{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr+r.stdout);return r.stdout.trim();};
+const reports=[];
+if(selected.includes('node'))reports.push({engine:'Node V8',...JSON.parse(run(process.execPath,['--import','tsx','tools/parity/forge-run.ts']))});
+if(selected.includes('bun'))reports.push({engine:'Bun JSC',...JSON.parse(run(bun,['tools/parity/forge-run.ts']))});
+run(bun,['build','tools/parity/forge-browser.ts','--target=browser','--format=iife',`--outfile=${out}/forge-parity.js`]);
+const server=createServer((req,res)=>{res.setHeader('Content-Type',req.url==='/v.js'?'text/javascript':'text/html');res.end(req.url==='/v.js'?readFileSync(`${out}/forge-parity.js`):'<script src="/v.js"></script>');});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+try{for(const engine of [chromium,webkit].filter(e=>selected.includes(e.name()))){const browser=await engine.launch(engine===chromium&&process.env.CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{});try{const page=await browser.newPage();await page.goto(`http://127.0.0.1:${server.address().port}/`);await page.waitForFunction(()=>window.__forgeParity);reports.push({engine:engine.name(),version:browser.version(),...await page.evaluate(()=>window.__forgeParity)});}finally{await browser.close();}}}finally{server.close();}
+for(const r of reports)assert.deepEqual({count:r.count,hash:r.hash},{count:reports[0].count,hash:reports[0].hash});
+const golden=JSON.parse(readFileSync('tools/parity/forge-golden.json','utf8'));assert.equal(reports[0].hash,golden.hash);assert.equal(reports[0].count,golden.count);
+const result={pass:true,selected,notRun:['node','bun','chromium','webkit'].filter(e=>!selected.includes(e)),reports};
+writeFileSync(`${out}/forge-parity.json`,JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));

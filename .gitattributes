@@ -1,0 +1,8 @@
+
+# Approved handoff files must remain byte-identical across checkouts.
+apps/mobile/public/art/darkwood/** -text
+docs/art/darkwood-production-v1/** -text
+
+# The compatibility tests pin the exact fixture bytes.
+packages/game-core/test/fixtures/legacy-schema1.json -text
+apps/mobile/android/gradlew text eol=lf

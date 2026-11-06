@@ -1,0 +1,22 @@
+{
+  "rulesVersion": "emberbound-rules/0.3.0",
+  "contentVersion": "emberbound-content/0.2.1-c1",
+  "contentHash": "97fae433324da1ae22172f5a1c7f307ba52399a8646e84c375bcfecb577f0382",
+  "cases": {
+    "offline-8h-greenfields-monk": "138765c562f1f24a8e53a40be587d2dc443717d5d0b28dafd829a9b48e9c1a20",
+    "boss-fight-greenfields-monk": "ee3472da99ca5da71df44032e1393ada1f1545aab5b885116698324f55e25c9d",
+    "offline-8h-greenfields-mage": "ee78b607a10569bddf6c44fecde67502510b6772dcf4b1f884e2fe299d35c294",
+    "boss-fight-greenfields-mage": "8dd17f144c33267eb3c4950dfe456842a3d152d6eaabcced56ec0bcde2812a06",
+    "offline-8h-darkwood-monk": "55a698e39488a14065c7ab8de63d54312a35e50751cf9770b12c41682bd457d4",
+    "boss-fight-darkwood-monk": "eeb0eee1a1b97d8e3df424d100348ec754cd16df4300d2538d133ca232d74635",
+    "offline-8h-darkwood-mage": "b97860e620c184bf288a12cace1b4a08cca5537582baac0ddfdbdb9a39066101",
+    "boss-fight-darkwood-mage": "c290129144583bcef25fe3ffb28ab229afefb4a53ff1360b2c4d10913fc83ab3",
+    "offline-8h-ashen_mountains-monk": "e3a832ab4a07f1a9a683350ee3facc454ee9c802fc5df1ffb5222cb5463db073",
+    "boss-fight-ashen_mountains-monk": "e6012f882cb4f79aacb5ffefd2faac9c51a74731594719aa5d0c98c0c3306aaf",
+    "offline-8h-ashen_mountains-mage": "2670cabf9985b8ad7b5fa162bf81b634a68d66aacca9b361d135b54267ccce32",
+    "boss-fight-ashen_mountains-mage": "7168eefada5404ee3107e6b707c5fe4f3a3be1a8edbe48014140e6adf9b3a9aa",
+    "offline-30h-cap-greenfields-monk": "4fd4747f5ea55ee0779f3e9023fd4f561ee5738288b84313e3d5b2ad4c31c327",
+    "offline-24h-darkwood-fail-then-safe-farm-mage": "7b675a19a9c0cd96e91d5d69fb3645ecc9977283a4bcd9eac371e5758d0cc242",
+    "mastery-foundation-l11-m1-m20": "b6b9524d00d80134c08b0b2532c326af33e53a29aa3de1816315dcc93dab7f86"
+  }
+}

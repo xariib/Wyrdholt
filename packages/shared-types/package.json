@@ -1,0 +1,9 @@
+{
+  "name": "@emberbound/shared-types",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Types shared by game-core, game-content, the mobile app and the server: content schema, snapshots and replay records.",
+  "exports": { ".": "./src/index.ts" },
+  "sideEffects": false
+}

@@ -1,0 +1,12 @@
+{
+  "name": "@emberbound/game-content",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Emberbound content data (classes, mastery, items, enemies, zones, loot, rules). Data only.",
+  "exports": { ".": "./src/index.ts" },
+  "sideEffects": false,
+  "dependencies": {
+    "@emberbound/shared-types": "0.1.0"
+  }
+}

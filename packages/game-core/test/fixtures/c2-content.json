@@ -1,0 +1,2147 @@
+{
+  "contentVersion": "emberbound-content/0.4.0-c2",
+  "config": {
+    "recoveryBp": 1800,
+    "restMs": 1200,
+    "completionRestMs": 2000,
+    "defeatRestMs": 6000,
+    "maxFightMs": 120000,
+    "offlineCapMs": 86400000,
+    "critMultiplierBp": 15000,
+    "damageVarianceBp": 700,
+    "minDamage100": 100,
+    "heroFirstAttackMs": 450,
+    "enemyStaggerMs": 180,
+    "minAttackIntervalMs": 120,
+    "levelXp": {
+      "steps": [
+        40,
+        40,
+        60,
+        140,
+        210,
+        14000,
+        25000,
+        50000,
+        150000,
+        220000,
+        280000,
+        330000,
+        360000,
+        380000,
+        410000,
+        410000,
+        440000,
+        440000,
+        2300000,
+        3100000,
+        4100000,
+        5400000,
+        6800000,
+        7800000,
+        9500000,
+        11000000,
+        14000000,
+        15000000,
+        19000000
+      ]
+    },
+    "maxCharacterLevel": 30,
+    "masteryStageBase10": 20,
+    "masteryStagePerLevel10": 4,
+    "masteryBossMultiplier": 3,
+    "notableOfflineMax": 3,
+    "lootFullChanceMs": 10000
+  },
+  "rarities": [
+    {
+      "id": "common",
+      "name": "Common",
+      "order": 0,
+      "color": "#b9b3a6",
+      "notable": false
+    },
+    {
+      "id": "uncommon",
+      "name": "Uncommon",
+      "order": 1,
+      "color": "#6fbf5a",
+      "notable": false
+    },
+    {
+      "id": "rare",
+      "name": "Rare",
+      "order": 2,
+      "color": "#4f8fe6",
+      "notable": true
+    },
+    {
+      "id": "epic",
+      "name": "Epic",
+      "order": 3,
+      "color": "#a45ee5",
+      "notable": true
+    },
+    {
+      "id": "legendary",
+      "name": "Legendary",
+      "order": 4,
+      "color": "#e8a13a",
+      "notable": true
+    }
+  ],
+  "classes": [
+    {
+      "id": "monk",
+      "name": "Monk",
+      "parentClassId": null,
+      "tier": 1,
+      "unlockRequirements": [],
+      "masteryTrackId": "mastery_monk",
+      "implemented": true,
+      "damageType": "physical",
+      "identity": [
+        "Fast",
+        "Combo",
+        "Sustain"
+      ],
+      "tagline": "Discipline fuels inner strength.",
+      "base": {
+        "hp": 105,
+        "attack": 10,
+        "armor": 3,
+        "attackRateMilli": 1400,
+        "critBp": 500
+      },
+      "growth": {
+        "hp": 10,
+        "attack": 2,
+        "armor": 1
+      },
+      "sprite": "monk"
+    },
+    {
+      "id": "mage",
+      "name": "Mage",
+      "parentClassId": null,
+      "tier": 1,
+      "unlockRequirements": [],
+      "masteryTrackId": "mastery_mage",
+      "implemented": true,
+      "damageType": "magic",
+      "identity": [
+        "Burn",
+        "AoE",
+        "Ward",
+        "Spell procs"
+      ],
+      "tagline": "Knowledge shapes reality.",
+      "base": {
+        "hp": 100,
+        "attack": 14,
+        "armor": 2,
+        "attackRateMilli": 1000,
+        "critBp": 500
+      },
+      "growth": {
+        "hp": 10,
+        "attack": 3,
+        "armor": 1
+      },
+      "sprite": "mage"
+    },
+    {
+      "id": "warrior",
+      "name": "Warrior",
+      "parentClassId": null,
+      "tier": 1,
+      "unlockRequirements": [],
+      "masteryTrackId": "mastery_warrior",
+      "implemented": true,
+      "damageType": "physical",
+      "identity": [
+        "Bleed",
+        "Retaliation",
+        "Execute"
+      ],
+      "tagline": "Strike hard and finish what you start.",
+      "base": {
+        "hp": 130,
+        "attack": 11,
+        "armor": 6,
+        "attackRateMilli": 900,
+        "critBp": 500
+      },
+      "growth": {
+        "hp": 16,
+        "attack": 3,
+        "armor": 2
+      },
+      "sprite": "warrior"
+    },
+    {
+      "id": "ranger",
+      "name": "Ranger",
+      "parentClassId": null,
+      "tier": 1,
+      "unlockRequirements": [],
+      "masteryTrackId": "mastery_ranger",
+      "implemented": true,
+      "damageType": "physical",
+      "identity": [
+        "Crit",
+        "Poison",
+        "Multi-target",
+        "Armor pierce"
+      ],
+      "tagline": "Find your mark in the wild.",
+      "base": {
+        "hp": 90,
+        "attack": 11,
+        "armor": 3,
+        "attackRateMilli": 1150,
+        "critBp": 1000
+      },
+      "growth": {
+        "hp": 17,
+        "attack": 2,
+        "armor": 2
+      },
+      "sprite": "ranger"
+    }
+  ],
+  "masteryTracks": [
+    {
+      "id": "mastery_monk",
+      "maxRank": 20,
+      "milestones": [
+        1,
+        5,
+        10,
+        15,
+        20
+      ],
+      "foundationAttackBpPerRank": 250,
+      "xp": {
+        "steps": [
+          50,
+          160,
+          3100,
+          7700,
+          13000,
+          31000,
+          41000,
+          41000,
+          41000,
+          53000,
+          62000,
+          72000,
+          91000,
+          99000,
+          200000,
+          330000,
+          400000,
+          480000,
+          590000
+        ]
+      },
+      "techniques": [
+        {
+          "id": "monk_restoring_rhythm",
+          "name": "Restoring Rhythm",
+          "unlockRank": 1,
+          "description": "Every third hit restores 30% attack as health. At most one heal per 8 seconds.",
+          "add": [
+            {
+              "kind": "nth_hit_heal",
+              "id": "restoring_rhythm",
+              "every": 3,
+              "potencyBp": 3000,
+              "cooldownMs": 8000
+            }
+          ]
+        },
+        {
+          "id": "monk_combo_strike",
+          "name": "Combo Strike",
+          "unlockRank": 5,
+          "description": "Every third hit adds a 60% attack combo.",
+          "add": [
+            {
+              "kind": "nth_hit_extra_damage",
+              "id": "combo_strike",
+              "every": 3,
+              "potencyBp": 6000,
+              "damageType": "physical"
+            }
+          ]
+        },
+        {
+          "id": "monk_flow_state",
+          "name": "Flow State",
+          "unlockRank": 10,
+          "description": "Every ninth hit grants 30% haste for 4 seconds.",
+          "add": [
+            {
+              "kind": "nth_hit_haste",
+              "id": "flow_state",
+              "every": 9,
+              "statusId": "flow",
+              "hasteBp": 3000,
+              "durationMs": 4000
+            }
+          ]
+        },
+        {
+          "id": "monk_practiced_rhythm",
+          "name": "Practiced Rhythm",
+          "unlockRank": 15,
+          "description": "Combo Strike potency rises to 95% attack. Flow grants 35% haste.",
+          "patch": [
+            {
+              "mechanicId": "combo_strike",
+              "set": {
+                "potencyBp": 9500
+              }
+            },
+            {
+              "mechanicId": "flow_state",
+              "set": {
+                "hasteBp": 3500
+              }
+            }
+          ]
+        },
+        {
+          "id": "monk_flowing_combo",
+          "name": "Flowing Combo",
+          "unlockRank": 20,
+          "description": "Flow lasts 5 seconds. Third hits during Flow add a further 40% attack combo.",
+          "patch": [
+            {
+              "mechanicId": "flow_state",
+              "set": {
+                "durationMs": 5000
+              }
+            }
+          ],
+          "add": [
+            {
+              "kind": "nth_hit_extra_damage",
+              "id": "flowing_combo",
+              "every": 3,
+              "potencyBp": 4000,
+              "damageType": "physical",
+              "requiresStatus": "flow"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mastery_mage",
+      "maxRank": 20,
+      "milestones": [
+        1,
+        5,
+        10,
+        15,
+        20
+      ],
+      "foundationAttackBpPerRank": 250,
+      "xp": {
+        "steps": [
+          50,
+          160,
+          3100,
+          7700,
+          13000,
+          31000,
+          41000,
+          41000,
+          41000,
+          53000,
+          62000,
+          72000,
+          91000,
+          99000,
+          200000,
+          330000,
+          400000,
+          480000,
+          590000
+        ]
+      },
+      "techniques": [
+        {
+          "id": "mage_ignition",
+          "name": "Ignition",
+          "unlockRank": 1,
+          "description": "Fireballs apply Burn, up to 1 class stack.",
+          "add": [
+            {
+              "kind": "on_hit_dot",
+              "id": "ignition",
+              "statusId": "burn",
+              "chanceBp": 10000,
+              "maxStacks": 1,
+              "tickMs": 1000,
+              "durationMs": 4000,
+              "potencyBp": 2000
+            }
+          ]
+        },
+        {
+          "id": "mage_arcane_ward",
+          "name": "Arcane Ward",
+          "unlockRank": 1,
+          "description": "Every fourth spell adds 7% attack to a ward that absorbs damage before health, up to 20% max health. The ward fades after each fight.",
+          "add": [
+            {
+              "kind": "ward",
+              "id": "arcane_ward",
+              "startBp": 0,
+              "every": 4,
+              "potencyBp": 700,
+              "capBp": 2000
+            }
+          ]
+        },
+        {
+          "id": "mage_wildfire",
+          "name": "Wildfire",
+          "unlockRank": 5,
+          "description": "Every fourth spell splashes all enemies.",
+          "add": [
+            {
+              "kind": "nth_attack_splash",
+              "id": "wildfire",
+              "every": 4,
+              "potencyBp": 8000,
+              "damageType": "magic"
+            }
+          ]
+        },
+        {
+          "id": "mage_spell_echo",
+          "name": "Spell Echo",
+          "unlockRank": 10,
+          "description": "Attacks have a 20% chance to echo for 90% attack damage.",
+          "add": [
+            {
+              "kind": "on_hit_echo",
+              "id": "spell_echo",
+              "chanceBp": 2000,
+              "potencyBp": 9000,
+              "damageType": "magic"
+            }
+          ]
+        },
+        {
+          "id": "mage_kindled_flame",
+          "name": "Kindled Flame",
+          "unlockRank": 15,
+          "description": "Class Burn reaches 2 stacks.",
+          "patch": [
+            {
+              "mechanicId": "ignition",
+              "set": {
+                "maxStacks": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "mage_spellstorm",
+          "name": "Spellstorm",
+          "unlockRank": 20,
+          "description": "Wildfire triggers every third spell. Echo chance rises to 30%.",
+          "patch": [
+            {
+              "mechanicId": "wildfire",
+              "set": {
+                "every": 3
+              }
+            },
+            {
+              "mechanicId": "spell_echo",
+              "set": {
+                "chanceBp": 3000
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mastery_warrior",
+      "maxRank": 20,
+      "milestones": [
+        1,
+        5,
+        10,
+        15,
+        20
+      ],
+      "foundationAttackBpPerRank": 250,
+      "xp": {
+        "steps": [
+          50,
+          160,
+          3100,
+          7700,
+          13000,
+          31000,
+          41000,
+          41000,
+          41000,
+          53000,
+          62000,
+          72000,
+          91000,
+          99000,
+          200000,
+          330000,
+          400000,
+          480000,
+          590000
+        ]
+      },
+      "techniques": [
+        {
+          "id": "warrior_bleeding_strikes",
+          "name": "Bleeding Strikes",
+          "unlockRank": 1,
+          "description": "Every hit applies Bleed: 12% attack per second per stack for 5 seconds, up to 3 stacks per enemy.",
+          "add": [
+            {
+              "kind": "on_hit_dot",
+              "id": "bleeding_strikes",
+              "statusId": "bleed",
+              "chanceBp": 10000,
+              "maxStacks": 3,
+              "tickMs": 1000,
+              "durationMs": 5000,
+              "potencyBp": 1200
+            }
+          ]
+        },
+        {
+          "id": "warrior_retaliation",
+          "name": "Retaliation",
+          "unlockRank": 5,
+          "description": "When an enemy hits you, 35% chance to strike it back for 100% attack. At most once per second.",
+          "add": [
+            {
+              "kind": "on_damaged_retaliate",
+              "id": "retaliation",
+              "chanceBp": 3500,
+              "potencyBp": 10000,
+              "damageType": "physical",
+              "cooldownMs": 1000,
+              "appliesDots": 0
+            }
+          ]
+        },
+        {
+          "id": "warrior_execute",
+          "name": "Execute",
+          "unlockRank": 10,
+          "description": "Your hits deal 40% more damage to enemies at or below 30% health.",
+          "add": [
+            {
+              "kind": "execute",
+              "id": "execute",
+              "thresholdBp": 3000,
+              "bonusBp": 4000
+            }
+          ]
+        },
+        {
+          "id": "warrior_deep_wounds",
+          "name": "Deep Wounds",
+          "unlockRank": 15,
+          "description": "Bleed stacks up to 5 and deals 14% attack per stack. Retaliation also applies Bleed.",
+          "patch": [
+            {
+              "mechanicId": "bleeding_strikes",
+              "set": {
+                "maxStacks": 5,
+                "potencyBp": 1400
+              }
+            },
+            {
+              "mechanicId": "retaliation",
+              "set": {
+                "appliesDots": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "warrior_relentless_finish",
+          "name": "Relentless Finish",
+          "unlockRank": 20,
+          "description": "Execute range rises to 35%. Every hit on an enemy in Execute range adds a 40% attack finishing blow.",
+          "patch": [
+            {
+              "mechanicId": "execute",
+              "set": {
+                "thresholdBp": 3500
+              }
+            }
+          ],
+          "add": [
+            {
+              "kind": "nth_hit_extra_damage",
+              "id": "relentless_finish",
+              "every": 1,
+              "potencyBp": 4000,
+              "damageType": "physical",
+              "requiresTargetHpBelowBp": 3500
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mastery_ranger",
+      "maxRank": 20,
+      "milestones": [
+        1,
+        5,
+        10,
+        15,
+        20
+      ],
+      "foundationAttackBpPerRank": 250,
+      "xp": {
+        "steps": [
+          50,
+          160,
+          3100,
+          7700,
+          13000,
+          31000,
+          41000,
+          41000,
+          41000,
+          53000,
+          62000,
+          72000,
+          91000,
+          99000,
+          200000,
+          330000,
+          400000,
+          480000,
+          590000
+        ]
+      },
+      "techniques": [
+        {
+          "id": "ranger_poisoned_shots",
+          "name": "Poisoned Shots",
+          "unlockRank": 1,
+          "description": "Every shot applies Poison: 14% attack per second per stack for 6 seconds, up to 4 stacks per enemy.",
+          "add": [
+            {
+              "kind": "on_hit_dot",
+              "id": "poisoned_shots",
+              "statusId": "poison",
+              "chanceBp": 10000,
+              "maxStacks": 4,
+              "tickMs": 1000,
+              "durationMs": 6000,
+              "potencyBp": 1400
+            }
+          ]
+        },
+        {
+          "id": "ranger_split_arrow",
+          "name": "Split Arrow",
+          "unlockRank": 5,
+          "description": "Every second shot also hits another enemy for 80% attack and poisons it.",
+          "add": [
+            {
+              "kind": "nth_attack_split",
+              "id": "split_arrow",
+              "every": 2,
+              "targets": 1,
+              "potencyBp": 8000,
+              "damageType": "physical",
+              "appliesDots": 1
+            }
+          ]
+        },
+        {
+          "id": "ranger_piercing_shot",
+          "name": "Piercing Shot",
+          "unlockRank": 10,
+          "description": "Your shots ignore 40% of enemy armor. Every third shot strikes through for an extra 100% attack.",
+          "add": [
+            {
+              "kind": "armor_pierce",
+              "id": "piercing_shot",
+              "pierceBp": 4000
+            },
+            {
+              "kind": "nth_hit_extra_damage",
+              "id": "piercing_strike",
+              "every": 3,
+              "potencyBp": 10000,
+              "damageType": "physical"
+            }
+          ]
+        },
+        {
+          "id": "ranger_lingering_hunt",
+          "name": "Lingering Hunt",
+          "unlockRank": 15,
+          "description": "Poison lasts 9 seconds and stacks up to 6. Split Arrow hits two other enemies.",
+          "patch": [
+            {
+              "mechanicId": "poisoned_shots",
+              "set": {
+                "maxStacks": 6,
+                "durationMs": 9000
+              }
+            },
+            {
+              "mechanicId": "split_arrow",
+              "set": {
+                "targets": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "ranger_venom_burst",
+          "name": "Venom Burst",
+          "unlockRank": 20,
+          "description": "A shot that brings an enemy to 6 Poison stacks bursts them: 4 seconds of that Poison at once.",
+          "add": [
+            {
+              "kind": "stack_burst",
+              "id": "venom_burst",
+              "statusId": "poison",
+              "minStacks": 6,
+              "potencyBp": 40000
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "wayfarer_blade",
+      "name": "Wayfarer Blade",
+      "slot": "weapon",
+      "rarity": "common",
+      "stats": {
+        "attack": 3
+      },
+      "minEncounterLevel": 1,
+      "tags": [],
+      "icon": "blade"
+    },
+    {
+      "id": "linen_hood",
+      "name": "Linen Hood",
+      "slot": "head",
+      "rarity": "common",
+      "stats": {
+        "hp": 8
+      },
+      "minEncounterLevel": 1,
+      "tags": [],
+      "icon": "hood"
+    },
+    {
+      "id": "trail_tunic",
+      "name": "Trail Tunic",
+      "slot": "chest",
+      "rarity": "common",
+      "stats": {
+        "hp": 12,
+        "armor": 2
+      },
+      "minEncounterLevel": 1,
+      "tags": [],
+      "icon": "tunic"
+    },
+    {
+      "id": "worn_grips",
+      "name": "Worn Grips",
+      "slot": "gloves",
+      "rarity": "common",
+      "stats": {
+        "attackRateMilli": 50
+      },
+      "minEncounterLevel": 1,
+      "tags": [],
+      "icon": "gloves"
+    },
+    {
+      "id": "road_boots",
+      "name": "Road Boots",
+      "slot": "boots",
+      "rarity": "common",
+      "stats": {
+        "hp": 6,
+        "armor": 1
+      },
+      "minEncounterLevel": 1,
+      "tags": [],
+      "icon": "boots"
+    },
+    {
+      "id": "copper_band",
+      "name": "Copper Band",
+      "slot": "ring",
+      "rarity": "common",
+      "stats": {
+        "attack": 1,
+        "critBp": 100
+      },
+      "minEncounterLevel": 1,
+      "tags": [],
+      "icon": "ring"
+    },
+    {
+      "id": "briar_edge",
+      "name": "Briar Edge",
+      "slot": "weapon",
+      "rarity": "uncommon",
+      "stats": {
+        "attack": 6
+      },
+      "minEncounterLevel": 1,
+      "tags": [],
+      "icon": "blade"
+    },
+    {
+      "id": "scout_hood",
+      "name": "Scout Hood",
+      "slot": "head",
+      "rarity": "uncommon",
+      "stats": {
+        "hp": 14,
+        "critBp": 150
+      },
+      "minEncounterLevel": 1,
+      "tags": [
+        "CRIT"
+      ],
+      "icon": "hood"
+    },
+    {
+      "id": "rootwoven_coat",
+      "name": "Rootwoven Coat",
+      "slot": "chest",
+      "rarity": "uncommon",
+      "stats": {
+        "hp": 24,
+        "armor": 4
+      },
+      "minEncounterLevel": 1,
+      "tags": [],
+      "icon": "tunic"
+    },
+    {
+      "id": "duelist_gloves",
+      "name": "Duelist Gloves",
+      "slot": "gloves",
+      "rarity": "uncommon",
+      "stats": {
+        "attack": 2,
+        "attackRateMilli": 80
+      },
+      "minEncounterLevel": 1,
+      "tags": [
+        "FAST ATTACKS"
+      ],
+      "icon": "gloves"
+    },
+    {
+      "id": "windstep_boots",
+      "name": "Windstep Boots",
+      "slot": "boots",
+      "rarity": "uncommon",
+      "stats": {
+        "armor": 2,
+        "attackRateMilli": 60
+      },
+      "minEncounterLevel": 1,
+      "tags": [
+        "FAST ATTACKS"
+      ],
+      "icon": "boots"
+    },
+    {
+      "id": "amber_ring",
+      "name": "Amber Ring",
+      "slot": "ring",
+      "rarity": "uncommon",
+      "stats": {
+        "attack": 3,
+        "hp": 10
+      },
+      "minEncounterLevel": 1,
+      "tags": [],
+      "icon": "ring"
+    },
+    {
+      "id": "bloodletter",
+      "name": "Bloodletter",
+      "slot": "weapon",
+      "rarity": "rare",
+      "stats": {
+        "attack": 9,
+        "critBp": 300
+      },
+      "effect": {
+        "name": "Rend",
+        "description": "20% chance on hit to apply Bleed for 4s (25% attack per second).",
+        "mechanics": [
+          {
+            "kind": "on_hit_dot",
+            "id": "rend",
+            "statusId": "bleed",
+            "chanceBp": 2000,
+            "maxStacks": 1,
+            "tickMs": 1000,
+            "durationMs": 4000,
+            "potencyBp": 2500
+          }
+        ]
+      },
+      "minEncounterLevel": 5,
+      "tags": [
+        "DOT",
+        "CRIT"
+      ],
+      "icon": "blade"
+    },
+    {
+      "id": "seers_circlet",
+      "name": "Seer's Circlet",
+      "slot": "head",
+      "rarity": "rare",
+      "stats": {
+        "attack": 3,
+        "hp": 12,
+        "critBp": 400
+      },
+      "minEncounterLevel": 5,
+      "tags": [
+        "CRIT"
+      ],
+      "icon": "circlet"
+    },
+    {
+      "id": "ironbark_mantle",
+      "name": "Ironbark Mantle",
+      "slot": "chest",
+      "rarity": "rare",
+      "stats": {
+        "hp": 40,
+        "armor": 8
+      },
+      "minEncounterLevel": 5,
+      "tags": [
+        "SUSTAIN"
+      ],
+      "icon": "tunic"
+    },
+    {
+      "id": "flowing_wraps",
+      "name": "Flowing Wraps",
+      "slot": "gloves",
+      "rarity": "rare",
+      "stats": {
+        "attack": 6,
+        "attackRateMilli": 120,
+        "armor": 4,
+        "critBp": 500
+      },
+      "effect": {
+        "name": "Flow",
+        "description": "After 3 consecutive hits, gain +15% attack speed for 3s.",
+        "mechanics": [
+          {
+            "kind": "nth_hit_haste",
+            "id": "wraps_flow",
+            "every": 3,
+            "statusId": "wraps_flow",
+            "hasteBp": 1500,
+            "durationMs": 3000
+          }
+        ]
+      },
+      "minEncounterLevel": 5,
+      "tags": [
+        "FAST ATTACKS"
+      ],
+      "icon": "wraps"
+    },
+    {
+      "id": "huntsmans_stride",
+      "name": "Huntsman's Stride",
+      "slot": "boots",
+      "rarity": "rare",
+      "stats": {
+        "hp": 10,
+        "attackRateMilli": 90,
+        "critBp": 300
+      },
+      "minEncounterLevel": 5,
+      "tags": [
+        "FAST ATTACKS",
+        "CRIT"
+      ],
+      "icon": "boots"
+    },
+    {
+      "id": "ember_seal",
+      "name": "Ember Seal",
+      "slot": "ring",
+      "rarity": "rare",
+      "stats": {
+        "attack": 4
+      },
+      "effect": {
+        "name": "Kindling",
+        "description": "15% chance on hit to apply Ember Burn for 3s (30% attack per second).",
+        "mechanics": [
+          {
+            "kind": "on_hit_dot",
+            "id": "kindling",
+            "statusId": "ember_burn",
+            "chanceBp": 1500,
+            "maxStacks": 1,
+            "tickMs": 1000,
+            "durationMs": 3000,
+            "potencyBp": 3000
+          }
+        ]
+      },
+      "minEncounterLevel": 5,
+      "tags": [
+        "DOT",
+        "BURN"
+      ],
+      "icon": "ring"
+    },
+    {
+      "id": "stormcaller",
+      "name": "Stormcaller",
+      "slot": "weapon",
+      "rarity": "epic",
+      "stats": {
+        "attack": 12,
+        "critBp": 200
+      },
+      "effect": {
+        "name": "Stormcall",
+        "description": "12% chance on hit to chain lightning to another enemy for 60% attack.",
+        "mechanics": [
+          {
+            "kind": "on_hit_chain",
+            "id": "stormcall",
+            "chanceBp": 1200,
+            "potencyBp": 6000,
+            "damageType": "magic"
+          }
+        ]
+      },
+      "minEncounterLevel": 9,
+      "tags": [
+        "ON-HIT",
+        "MULTI-TARGET"
+      ],
+      "icon": "staff"
+    },
+    {
+      "id": "crown_of_thorns",
+      "name": "Crown of Thorns",
+      "slot": "head",
+      "rarity": "epic",
+      "stats": {
+        "hp": 30,
+        "armor": 6,
+        "critBp": 300
+      },
+      "minEncounterLevel": 9,
+      "tags": [
+        "CRIT"
+      ],
+      "icon": "circlet"
+    },
+    {
+      "id": "cinderweave",
+      "name": "Cinderweave",
+      "slot": "chest",
+      "rarity": "epic",
+      "stats": {
+        "hp": 55,
+        "armor": 12,
+        "attack": 3
+      },
+      "minEncounterLevel": 9,
+      "tags": [
+        "SUSTAIN"
+      ],
+      "icon": "tunic"
+    },
+    {
+      "id": "venom_grips",
+      "name": "Venom Grips",
+      "slot": "gloves",
+      "rarity": "epic",
+      "stats": {
+        "attack": 5,
+        "attackRateMilli": 180,
+        "armor": 6,
+        "critBp": 800
+      },
+      "effect": {
+        "name": "Poison Touch",
+        "description": "30% chance on hit to apply Poison for 4s (25% attack per second).",
+        "mechanics": [
+          {
+            "kind": "on_hit_dot",
+            "id": "poison_touch",
+            "statusId": "poison",
+            "chanceBp": 3000,
+            "maxStacks": 1,
+            "tickMs": 1000,
+            "durationMs": 4000,
+            "potencyBp": 2500
+          }
+        ]
+      },
+      "minEncounterLevel": 9,
+      "tags": [
+        "POISON",
+        "FAST ATTACKS"
+      ],
+      "icon": "wraps"
+    },
+    {
+      "id": "pilgrims_pace",
+      "name": "Pilgrim's Pace",
+      "slot": "boots",
+      "rarity": "epic",
+      "stats": {
+        "hp": 20,
+        "armor": 4,
+        "attackRateMilli": 140
+      },
+      "minEncounterLevel": 9,
+      "tags": [
+        "FAST ATTACKS"
+      ],
+      "icon": "boots"
+    },
+    {
+      "id": "moonlit_loop",
+      "name": "Moonlit Loop",
+      "slot": "ring",
+      "rarity": "epic",
+      "stats": {
+        "attack": 7,
+        "hp": 15,
+        "critBp": 600
+      },
+      "minEncounterLevel": 9,
+      "tags": [
+        "CRIT"
+      ],
+      "icon": "ring"
+    },
+    {
+      "id": "venomstring",
+      "name": "Venomstring",
+      "slot": "weapon",
+      "rarity": "legendary",
+      "stats": {
+        "attack": 18,
+        "attackRateMilli": 60,
+        "critBp": 400
+      },
+      "minEncounterLevel": 13,
+      "tags": [
+        "FAST ATTACKS",
+        "CRIT"
+      ],
+      "icon": "bow"
+    },
+    {
+      "id": "cinder_crown",
+      "name": "Cinder Crown",
+      "slot": "head",
+      "rarity": "legendary",
+      "stats": {
+        "attack": 5,
+        "hp": 40,
+        "critBp": 500
+      },
+      "minEncounterLevel": 13,
+      "tags": [
+        "CRIT"
+      ],
+      "icon": "circlet"
+    },
+    {
+      "id": "last_light_vest",
+      "name": "Last-light Vest",
+      "slot": "chest",
+      "rarity": "legendary",
+      "stats": {
+        "hp": 85,
+        "armor": 18
+      },
+      "minEncounterLevel": 13,
+      "tags": [
+        "SUSTAIN"
+      ],
+      "icon": "tunic"
+    },
+    {
+      "id": "hands_of_the_dawn",
+      "name": "Hands of the Dawn",
+      "slot": "gloves",
+      "rarity": "legendary",
+      "stats": {
+        "attack": 9,
+        "attackRateMilli": 240,
+        "armor": 6,
+        "critBp": 600
+      },
+      "minEncounterLevel": 13,
+      "tags": [
+        "FAST ATTACKS",
+        "CRIT"
+      ],
+      "icon": "wraps"
+    },
+    {
+      "id": "ghostwalk",
+      "name": "Ghostwalk",
+      "slot": "boots",
+      "rarity": "legendary",
+      "stats": {
+        "hp": 30,
+        "armor": 8,
+        "attackRateMilli": 180,
+        "critBp": 300
+      },
+      "minEncounterLevel": 13,
+      "tags": [
+        "FAST ATTACKS"
+      ],
+      "icon": "boots"
+    },
+    {
+      "id": "oath_of_embers",
+      "name": "Oath of Embers",
+      "slot": "ring",
+      "rarity": "legendary",
+      "stats": {
+        "attack": 11,
+        "hp": 25,
+        "critBp": 400
+      },
+      "minEncounterLevel": 13,
+      "tags": [
+        "CRIT"
+      ],
+      "icon": "ring"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "meadow_slime",
+      "name": "Meadow Slime",
+      "hpWeight": 8,
+      "damageWeight": 7,
+      "attackRateMilli": 800,
+      "armor": 0,
+      "damageType": "physical",
+      "sprite": "slime"
+    },
+    {
+      "id": "bristle_boar",
+      "name": "Bristle Boar",
+      "hpWeight": 12,
+      "damageWeight": 10,
+      "attackRateMilli": 700,
+      "armor": 4,
+      "damageType": "physical",
+      "sprite": "boar"
+    },
+    {
+      "id": "field_wolf",
+      "name": "Field Wolf",
+      "hpWeight": 9,
+      "damageWeight": 11,
+      "attackRateMilli": 1200,
+      "armor": 1,
+      "damageType": "physical",
+      "sprite": "wolf"
+    },
+    {
+      "id": "thornback_boar",
+      "name": "Thornback Boar",
+      "hpWeight": 14,
+      "damageWeight": 12,
+      "attackRateMilli": 750,
+      "armor": 8,
+      "damageType": "physical",
+      "sprite": "boar_elite"
+    },
+    {
+      "id": "elder_root",
+      "name": "Elder Root",
+      "hpWeight": 20,
+      "damageWeight": 14,
+      "attackRateMilli": 600,
+      "armor": 6,
+      "damageType": "magic",
+      "sprite": "root_boss"
+    },
+    {
+      "id": "sproutling",
+      "name": "Sproutling",
+      "hpWeight": 4,
+      "damageWeight": 5,
+      "attackRateMilli": 900,
+      "armor": 0,
+      "damageType": "magic",
+      "sprite": "sprout"
+    },
+    {
+      "id": "gloom_spider",
+      "name": "Gloom Spider",
+      "hpWeight": 7,
+      "damageWeight": 9,
+      "attackRateMilli": 1300,
+      "armor": 1,
+      "damageType": "physical",
+      "sprite": "spider"
+    },
+    {
+      "id": "hollow_wisp",
+      "name": "Hollow Wisp",
+      "hpWeight": 6,
+      "damageWeight": 12,
+      "attackRateMilli": 900,
+      "armor": 0,
+      "damageType": "magic",
+      "sprite": "wisp"
+    },
+    {
+      "id": "barkhide_brute",
+      "name": "Barkhide Brute",
+      "hpWeight": 16,
+      "damageWeight": 11,
+      "attackRateMilli": 600,
+      "armor": 10,
+      "damageType": "physical",
+      "sprite": "brute"
+    },
+    {
+      "id": "thornwarden",
+      "name": "Thornwarden",
+      "hpWeight": 18,
+      "damageWeight": 13,
+      "attackRateMilli": 800,
+      "armor": 12,
+      "damageType": "physical",
+      "sprite": "warden"
+    },
+    {
+      "id": "hollow_matron",
+      "name": "Hollow Matron",
+      "hpWeight": 22,
+      "damageWeight": 14,
+      "attackRateMilli": 750,
+      "armor": 8,
+      "damageType": "magic",
+      "sprite": "matron"
+    },
+    {
+      "id": "matron_brood",
+      "name": "Matron's Brood",
+      "hpWeight": 4,
+      "damageWeight": 5,
+      "attackRateMilli": 1100,
+      "armor": 0,
+      "damageType": "physical",
+      "sprite": "spider"
+    },
+    {
+      "id": "cinder_imp",
+      "name": "Cinder Imp",
+      "hpWeight": 6,
+      "damageWeight": 10,
+      "attackRateMilli": 1400,
+      "armor": 2,
+      "damageType": "magic",
+      "sprite": "imp"
+    },
+    {
+      "id": "ash_hound",
+      "name": "Ash Hound",
+      "hpWeight": 10,
+      "damageWeight": 12,
+      "attackRateMilli": 1200,
+      "armor": 4,
+      "damageType": "physical",
+      "sprite": "hound"
+    },
+    {
+      "id": "basalt_golem",
+      "name": "Basalt Golem",
+      "hpWeight": 18,
+      "damageWeight": 12,
+      "attackRateMilli": 550,
+      "armor": 16,
+      "damageType": "physical",
+      "sprite": "golem"
+    },
+    {
+      "id": "ember_warlord",
+      "name": "Ember Warlord",
+      "hpWeight": 18,
+      "damageWeight": 14,
+      "attackRateMilli": 900,
+      "armor": 12,
+      "damageType": "physical",
+      "sprite": "warlord"
+    },
+    {
+      "id": "caldera_drake",
+      "name": "Caldera Drake",
+      "hpWeight": 26,
+      "damageWeight": 16,
+      "attackRateMilli": 700,
+      "armor": 14,
+      "damageType": "magic",
+      "sprite": "drake"
+    }
+  ],
+  "zones": [
+    {
+      "id": "greenfields",
+      "name": "Greenfields",
+      "description": "Sunlit meadows on the edge of the old road.",
+      "order": 1,
+      "implemented": true,
+      "stages": [
+        {
+          "index": 0,
+          "role": "normal",
+          "level": 1,
+          "hpBudget": 353,
+          "dpsBudget100": 431,
+          "enemies": [
+            "meadow_slime"
+          ]
+        },
+        {
+          "index": 1,
+          "role": "normal",
+          "level": 1,
+          "hpBudget": 346,
+          "dpsBudget100": 444,
+          "enemies": [
+            "meadow_slime",
+            "meadow_slime"
+          ]
+        },
+        {
+          "index": 2,
+          "role": "normal",
+          "level": 2,
+          "hpBudget": 355,
+          "dpsBudget100": 457,
+          "enemies": [
+            "bristle_boar"
+          ]
+        },
+        {
+          "index": 3,
+          "role": "normal",
+          "level": 2,
+          "hpBudget": 367,
+          "dpsBudget100": 470,
+          "enemies": [
+            "field_wolf",
+            "meadow_slime"
+          ]
+        },
+        {
+          "index": 4,
+          "role": "elite",
+          "level": 3,
+          "hpBudget": 721,
+          "dpsBudget100": 461,
+          "enemies": [
+            "thornback_boar"
+          ]
+        },
+        {
+          "index": 5,
+          "role": "normal",
+          "level": 3,
+          "hpBudget": 382,
+          "dpsBudget100": 495,
+          "enemies": [
+            "bristle_boar",
+            "field_wolf"
+          ]
+        },
+        {
+          "index": 6,
+          "role": "normal",
+          "level": 4,
+          "hpBudget": 401,
+          "dpsBudget100": 508,
+          "enemies": [
+            "field_wolf",
+            "field_wolf",
+            "meadow_slime"
+          ]
+        },
+        {
+          "index": 7,
+          "role": "normal",
+          "level": 4,
+          "hpBudget": 410,
+          "dpsBudget100": 521,
+          "enemies": [
+            "bristle_boar",
+            "bristle_boar"
+          ]
+        },
+        {
+          "index": 8,
+          "role": "normal",
+          "level": 5,
+          "hpBudget": 424,
+          "dpsBudget100": 534,
+          "enemies": [
+            "field_wolf",
+            "bristle_boar",
+            "field_wolf"
+          ]
+        },
+        {
+          "index": 9,
+          "role": "boss",
+          "level": 6,
+          "hpBudget": 1469,
+          "dpsBudget100": 553,
+          "enemies": [
+            "elder_root",
+            "sproutling"
+          ]
+        }
+      ],
+      "unlocks": [
+        "darkwood"
+      ],
+      "lootTableId": "greenfields_farm",
+      "bossLootTableId": "greenfields_boss",
+      "cacheLootTableId": "greenfields_cache",
+      "stageRewards": {
+        "xpBase": 4,
+        "xpPerLevel": 2,
+        "goldBase": 2,
+        "goldPerLevel": 2,
+        "eliteMultiplier": 3,
+        "bossMultiplier": 6
+      },
+      "cache": {
+        "xp": 40,
+        "gold": 60,
+        "mastery": 10,
+        "rolls": 1,
+        "repeatRollChanceBp": 400
+      },
+      "firstClearGold": 100,
+      "trailStageIndex": 0,
+      "background": "greenfields"
+    },
+    {
+      "id": "darkwood",
+      "name": "Darkwood",
+      "description": "Gloomy paths under a canopy that never quite ends.",
+      "order": 2,
+      "implemented": true,
+      "stages": [
+        {
+          "index": 0,
+          "role": "normal",
+          "level": 7,
+          "hpBudget": 1409,
+          "dpsBudget100": 776,
+          "enemies": [
+            "gloom_spider",
+            "gloom_spider"
+          ]
+        },
+        {
+          "index": 1,
+          "role": "normal",
+          "level": 8,
+          "hpBudget": 1412,
+          "dpsBudget100": 799,
+          "enemies": [
+            "barkhide_brute"
+          ]
+        },
+        {
+          "index": 2,
+          "role": "normal",
+          "level": 8,
+          "hpBudget": 1450,
+          "dpsBudget100": 822,
+          "enemies": [
+            "hollow_wisp",
+            "gloom_spider"
+          ]
+        },
+        {
+          "index": 3,
+          "role": "normal",
+          "level": 9,
+          "hpBudget": 1488,
+          "dpsBudget100": 845,
+          "enemies": [
+            "gloom_spider",
+            "gloom_spider",
+            "hollow_wisp"
+          ]
+        },
+        {
+          "index": 4,
+          "role": "elite",
+          "level": 10,
+          "hpBudget": 3160,
+          "dpsBudget100": 829,
+          "enemies": [
+            "thornwarden"
+          ]
+        },
+        {
+          "index": 5,
+          "role": "normal",
+          "level": 11,
+          "hpBudget": 1559,
+          "dpsBudget100": 892,
+          "enemies": [
+            "barkhide_brute",
+            "hollow_wisp"
+          ]
+        },
+        {
+          "index": 6,
+          "role": "normal",
+          "level": 12,
+          "hpBudget": 1658,
+          "dpsBudget100": 915,
+          "enemies": [
+            "hollow_wisp",
+            "hollow_wisp",
+            "gloom_spider"
+          ]
+        },
+        {
+          "index": 7,
+          "role": "normal",
+          "level": 12,
+          "hpBudget": 1603,
+          "dpsBudget100": 939,
+          "enemies": [
+            "barkhide_brute",
+            "barkhide_brute"
+          ]
+        },
+        {
+          "index": 8,
+          "role": "normal",
+          "level": 13,
+          "hpBudget": 1624,
+          "dpsBudget100": 962,
+          "enemies": [
+            "gloom_spider",
+            "barkhide_brute",
+            "hollow_wisp"
+          ]
+        },
+        {
+          "index": 9,
+          "role": "boss",
+          "level": 14,
+          "hpBudget": 6534,
+          "dpsBudget100": 995,
+          "enemies": [
+            "hollow_matron",
+            "matron_brood",
+            "matron_brood"
+          ]
+        }
+      ],
+      "unlocks": [
+        "ashen_mountains"
+      ],
+      "lootTableId": "darkwood_farm",
+      "bossLootTableId": "darkwood_boss",
+      "cacheLootTableId": "darkwood_cache",
+      "stageRewards": {
+        "xpBase": 8,
+        "xpPerLevel": 3,
+        "goldBase": 4,
+        "goldPerLevel": 3,
+        "eliteMultiplier": 3,
+        "bossMultiplier": 6
+      },
+      "cache": {
+        "xp": 150,
+        "gold": 200,
+        "mastery": 20,
+        "rolls": 1,
+        "repeatRollChanceBp": 400
+      },
+      "firstClearGold": 300,
+      "trailStageIndex": 0,
+      "background": "darkwood"
+    },
+    {
+      "id": "ashen_mountains",
+      "name": "Ashen Mountains",
+      "description": "Smouldering peaks where the ground is never cold.",
+      "order": 3,
+      "implemented": true,
+      "stages": [
+        {
+          "index": 0,
+          "role": "normal",
+          "level": 14,
+          "hpBudget": 2640,
+          "dpsBudget100": 1175,
+          "enemies": [
+            "ash_hound",
+            "cinder_imp"
+          ]
+        },
+        {
+          "index": 1,
+          "role": "normal",
+          "level": 15,
+          "hpBudget": 2345,
+          "dpsBudget100": 1210,
+          "enemies": [
+            "basalt_golem"
+          ]
+        },
+        {
+          "index": 2,
+          "role": "normal",
+          "level": 15,
+          "hpBudget": 2689,
+          "dpsBudget100": 1246,
+          "enemies": [
+            "cinder_imp",
+            "cinder_imp",
+            "ash_hound"
+          ]
+        },
+        {
+          "index": 3,
+          "role": "normal",
+          "level": 16,
+          "hpBudget": 2788,
+          "dpsBudget100": 1281,
+          "enemies": [
+            "ash_hound",
+            "ash_hound"
+          ]
+        },
+        {
+          "index": 4,
+          "role": "elite",
+          "level": 17,
+          "hpBudget": 5723,
+          "dpsBudget100": 1256,
+          "enemies": [
+            "ember_warlord"
+          ]
+        },
+        {
+          "index": 5,
+          "role": "normal",
+          "level": 17,
+          "hpBudget": 2676,
+          "dpsBudget100": 1351,
+          "enemies": [
+            "basalt_golem",
+            "cinder_imp"
+          ]
+        },
+        {
+          "index": 6,
+          "role": "normal",
+          "level": 18,
+          "hpBudget": 3111,
+          "dpsBudget100": 1387,
+          "enemies": [
+            "ash_hound",
+            "cinder_imp",
+            "cinder_imp"
+          ]
+        },
+        {
+          "index": 7,
+          "role": "normal",
+          "level": 19,
+          "hpBudget": 2991,
+          "dpsBudget100": 1422,
+          "enemies": [
+            "basalt_golem",
+            "ash_hound"
+          ]
+        },
+        {
+          "index": 8,
+          "role": "normal",
+          "level": 19,
+          "hpBudget": 3147,
+          "dpsBudget100": 1457,
+          "enemies": [
+            "cinder_imp",
+            "basalt_golem",
+            "ash_hound"
+          ]
+        },
+        {
+          "index": 9,
+          "role": "boss",
+          "level": 20,
+          "hpBudget": 12061,
+          "dpsBudget100": 1507,
+          "enemies": [
+            "caldera_drake"
+          ]
+        }
+      ],
+      "unlocks": [],
+      "lootTableId": "ashen_farm",
+      "bossLootTableId": "ashen_boss",
+      "cacheLootTableId": "ashen_cache",
+      "stageRewards": {
+        "xpBase": 12,
+        "xpPerLevel": 4,
+        "goldBase": 6,
+        "goldPerLevel": 4,
+        "eliteMultiplier": 3,
+        "bossMultiplier": 6
+      },
+      "cache": {
+        "xp": 400,
+        "gold": 500,
+        "mastery": 35,
+        "rolls": 1,
+        "repeatRollChanceBp": 400
+      },
+      "firstClearGold": 600,
+      "trailStageIndex": 0,
+      "background": "ashen"
+    },
+    {
+      "id": "test_grounds",
+      "name": "Test Grounds",
+      "description": "Automated test zone.",
+      "order": 99,
+      "implemented": true,
+      "stages": [
+        {
+          "index": 0,
+          "role": "normal",
+          "level": 1,
+          "hpBudget": 353,
+          "dpsBudget100": 431,
+          "enemies": [
+            "meadow_slime"
+          ]
+        },
+        {
+          "index": 1,
+          "role": "normal",
+          "level": 1,
+          "hpBudget": 346,
+          "dpsBudget100": 444,
+          "enemies": [
+            "meadow_slime",
+            "meadow_slime"
+          ]
+        },
+        {
+          "index": 2,
+          "role": "normal",
+          "level": 2,
+          "hpBudget": 355,
+          "dpsBudget100": 457,
+          "enemies": [
+            "bristle_boar"
+          ]
+        },
+        {
+          "index": 3,
+          "role": "normal",
+          "level": 2,
+          "hpBudget": 367,
+          "dpsBudget100": 470,
+          "enemies": [
+            "field_wolf",
+            "meadow_slime"
+          ]
+        },
+        {
+          "index": 4,
+          "role": "elite",
+          "level": 3,
+          "hpBudget": 721,
+          "dpsBudget100": 461,
+          "enemies": [
+            "thornback_boar"
+          ]
+        },
+        {
+          "index": 5,
+          "role": "normal",
+          "level": 3,
+          "hpBudget": 382,
+          "dpsBudget100": 495,
+          "enemies": [
+            "bristle_boar",
+            "field_wolf"
+          ]
+        },
+        {
+          "index": 6,
+          "role": "normal",
+          "level": 4,
+          "hpBudget": 401,
+          "dpsBudget100": 508,
+          "enemies": [
+            "field_wolf",
+            "field_wolf",
+            "meadow_slime"
+          ]
+        },
+        {
+          "index": 7,
+          "role": "normal",
+          "level": 4,
+          "hpBudget": 410,
+          "dpsBudget100": 521,
+          "enemies": [
+            "bristle_boar",
+            "bristle_boar"
+          ]
+        },
+        {
+          "index": 8,
+          "role": "normal",
+          "level": 5,
+          "hpBudget": 424,
+          "dpsBudget100": 534,
+          "enemies": [
+            "field_wolf",
+            "bristle_boar",
+            "field_wolf"
+          ]
+        },
+        {
+          "index": 9,
+          "role": "boss",
+          "level": 6,
+          "hpBudget": 1469,
+          "dpsBudget100": 553,
+          "enemies": [
+            "elder_root",
+            "sproutling"
+          ]
+        }
+      ],
+      "unlocks": [],
+      "lootTableId": "greenfields_farm",
+      "bossLootTableId": "greenfields_boss",
+      "cacheLootTableId": "greenfields_cache",
+      "stageRewards": {
+        "xpBase": 4,
+        "xpPerLevel": 2,
+        "goldBase": 2,
+        "goldPerLevel": 2,
+        "eliteMultiplier": 3,
+        "bossMultiplier": 6
+      },
+      "cache": {
+        "xp": 40,
+        "gold": 60,
+        "mastery": 10,
+        "rolls": 1,
+        "repeatRollChanceBp": 400
+      },
+      "firstClearGold": 100,
+      "trailStageIndex": 0,
+      "background": "greenfields",
+      "hidden": true,
+      "ruleIds": [
+        "test_enemy_hp_150"
+      ]
+    }
+  ],
+  "lootTables": [
+    {
+      "id": "greenfields_farm",
+      "dropChanceBp": 150,
+      "weights": {
+        "common": 48,
+        "uncommon": 34,
+        "rare": 18
+      },
+      "maxRarity": "rare"
+    },
+    {
+      "id": "greenfields_boss",
+      "dropChanceBp": 400,
+      "weights": {
+        "uncommon": 35,
+        "rare": 65
+      },
+      "maxRarity": "rare"
+    },
+    {
+      "id": "greenfields_cache",
+      "dropChanceBp": 10000,
+      "weights": {
+        "uncommon": 35,
+        "rare": 65
+      },
+      "maxRarity": "rare"
+    },
+    {
+      "id": "darkwood_farm",
+      "dropChanceBp": 150,
+      "weights": {
+        "common": 32,
+        "uncommon": 35,
+        "rare": 24,
+        "epic": 9
+      },
+      "maxRarity": "epic"
+    },
+    {
+      "id": "darkwood_boss",
+      "dropChanceBp": 400,
+      "weights": {
+        "uncommon": 15,
+        "rare": 55,
+        "epic": 30
+      },
+      "maxRarity": "epic"
+    },
+    {
+      "id": "darkwood_cache",
+      "dropChanceBp": 10000,
+      "weights": {
+        "uncommon": 15,
+        "rare": 55,
+        "epic": 30
+      },
+      "maxRarity": "epic"
+    },
+    {
+      "id": "ashen_farm",
+      "dropChanceBp": 150,
+      "weights": {
+        "common": 20,
+        "uncommon": 31,
+        "rare": 33,
+        "epic": 13,
+        "legendary": 3
+      },
+      "maxRarity": "legendary"
+    },
+    {
+      "id": "ashen_boss",
+      "dropChanceBp": 400,
+      "weights": {
+        "uncommon": 5,
+        "rare": 45,
+        "epic": 40,
+        "legendary": 10
+      },
+      "maxRarity": "legendary"
+    },
+    {
+      "id": "ashen_cache",
+      "dropChanceBp": 10000,
+      "weights": {
+        "uncommon": 5,
+        "rare": 45,
+        "epic": 40,
+        "legendary": 10
+      },
+      "maxRarity": "legendary"
+    }
+  ],
+  "rules": [
+    {
+      "id": "test_enemy_hp_150",
+      "name": "Test: Hardy Foes",
+      "kind": "enemy_hp_bp",
+      "valueBp": 15000,
+      "testOnly": true
+    },
+    {
+      "id": "test_enemy_soft",
+      "name": "Test: Soft Hits",
+      "kind": "enemy_damage_bp",
+      "valueBp": 100,
+      "testOnly": true
+    },
+    {
+      "id": "test_enemy_tough",
+      "name": "Test: Iron Hide",
+      "kind": "enemy_hp_bp",
+      "valueBp": 400000,
+      "testOnly": true
+    },
+    {
+      "id": "test_windowed_embers",
+      "name": "Test: Windowed Embers",
+      "kind": "dot_damage_bp",
+      "valueBp": 20000,
+      "testOnly": true,
+      "availability": {
+        "startMs": 1000000,
+        "endMs": 2000000
+      }
+    }
+  ],
+  "starterItems": [
+    "wayfarer_blade",
+    "linen_hood",
+    "trail_tunic",
+    "worn_grips",
+    "road_boots",
+    "copper_band"
+  ]
+}

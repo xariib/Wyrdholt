@@ -1,0 +1,1344 @@
+{
+  "name": "Wyrdholt: Idle - Darkwood vertical slice - canonical presentation metadata",
+  "version": "darkwood-production-v1",
+  "status": "LOCKED / APPROVED",
+  "paths_relative_to": "APPROVED_PRODUCTION_ASSETS/",
+  "runtime_contract": "See RUNTIME_CONTRACT.md. Frame sizes are NOT global: every animation declares its own frame + anchor; place frames by anchor so world position is constant; never fit-scale; combat 2x, portraits 3x; presentation only - ms are proposals, gameplay timing/outcomes are authoritative outside the art.",
+  "scales": {
+    "combat": 2,
+    "gear_character_portrait": 3
+  },
+  "palette": "palette/wyrdholt_master_palette_v03.json",
+  "heroes": {
+    "monk": {
+      "animations": {
+        "idle": {
+          "ms": [
+            180,
+            180,
+            180,
+            180
+          ],
+          "loop": true,
+          "frames": [
+            {
+              "file": "heroes/monk/monk_idle_00.png",
+              "ms": 180
+            },
+            {
+              "file": "heroes/monk/monk_idle_01.png",
+              "ms": 180
+            },
+            {
+              "file": "heroes/monk/monk_idle_02.png",
+              "ms": 180
+            },
+            {
+              "file": "heroes/monk/monk_idle_03.png",
+              "ms": 180
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/monk_idle_strip.png"
+        },
+        "attack": {
+          "ms": [
+            120,
+            60,
+            100,
+            140
+          ],
+          "loop": false,
+          "impact_frame": 1,
+          "hold_frame": 2,
+          "crit_hold_ms": 160,
+          "min_ms": [
+            60,
+            60,
+            60,
+            0
+          ],
+          "frames": [
+            {
+              "file": "heroes/monk/monk_attack_00.png",
+              "ms": 120
+            },
+            {
+              "file": "heroes/monk/monk_attack_01.png",
+              "ms": 60
+            },
+            {
+              "file": "heroes/monk/monk_attack_02.png",
+              "ms": 100
+            },
+            {
+              "file": "heroes/monk/monk_attack_03.png",
+              "ms": 140
+            }
+          ],
+          "fx_fist_point": [
+            56,
+            25
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/monk_attack_strip.png"
+        },
+        "hit": {
+          "ms": [
+            80,
+            120
+          ],
+          "loop": false,
+          "frames": [
+            {
+              "file": "heroes/monk/monk_hit_00.png",
+              "ms": 80
+            },
+            {
+              "file": "heroes/monk/monk_hit_01.png",
+              "ms": 120
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/monk_hit_strip.png"
+        },
+        "death": {
+          "ms": [
+            100,
+            140,
+            160,
+            0
+          ],
+          "loop": false,
+          "hold_last": true,
+          "frames": [
+            {
+              "file": "heroes/monk/monk_death_00.png",
+              "ms": 100
+            },
+            {
+              "file": "heroes/monk/monk_death_01.png",
+              "ms": 140
+            },
+            {
+              "file": "heroes/monk/monk_death_02.png",
+              "ms": 160
+            },
+            {
+              "file": "heroes/monk/monk_death_03.png",
+              "ms": 0
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/monk_death_strip.png"
+        }
+      },
+      "hit_flash": "heroes/monk/monk_hit_flash.png",
+      "portrait_scale": 3
+    },
+    "mage": {
+      "animations": {
+        "idle": {
+          "ms": [
+            220,
+            220,
+            220,
+            220
+          ],
+          "loop": true,
+          "frames": [
+            {
+              "file": "heroes/mage/mage_idle_00.png",
+              "ms": 220
+            },
+            {
+              "file": "heroes/mage/mage_idle_01.png",
+              "ms": 220
+            },
+            {
+              "file": "heroes/mage/mage_idle_02.png",
+              "ms": 220
+            },
+            {
+              "file": "heroes/mage/mage_idle_03.png",
+              "ms": 220
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/mage_idle_strip.png"
+        },
+        "attack": {
+          "ms": [
+            160,
+            60,
+            120,
+            160
+          ],
+          "loop": false,
+          "impact_frame": 1,
+          "hold_frame": 2,
+          "crit_hold_ms": 180,
+          "min_ms": [
+            80,
+            60,
+            60,
+            0
+          ],
+          "frames": [
+            {
+              "file": "heroes/mage/mage_attack_00.png",
+              "ms": 160
+            },
+            {
+              "file": "heroes/mage/mage_attack_01.png",
+              "ms": 60
+            },
+            {
+              "file": "heroes/mage/mage_attack_02.png",
+              "ms": 120
+            },
+            {
+              "file": "heroes/mage/mage_attack_03.png",
+              "ms": 160
+            }
+          ],
+          "fx_projectile_spawn": [
+            49,
+            12
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/mage_attack_strip.png"
+        },
+        "hit": {
+          "ms": [
+            90,
+            130
+          ],
+          "loop": false,
+          "frames": [
+            {
+              "file": "heroes/mage/mage_hit_00.png",
+              "ms": 90
+            },
+            {
+              "file": "heroes/mage/mage_hit_01.png",
+              "ms": 130
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/mage_hit_strip.png"
+        },
+        "death": {
+          "ms": [
+            120,
+            160,
+            180,
+            0
+          ],
+          "loop": false,
+          "hold_last": true,
+          "frames": [
+            {
+              "file": "heroes/mage/mage_death_00.png",
+              "ms": 120
+            },
+            {
+              "file": "heroes/mage/mage_death_01.png",
+              "ms": 160
+            },
+            {
+              "file": "heroes/mage/mage_death_02.png",
+              "ms": 180
+            },
+            {
+              "file": "heroes/mage/mage_death_03.png",
+              "ms": 0
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/mage_death_strip.png"
+        }
+      },
+      "hit_flash": "heroes/mage/mage_hit_flash.png",
+      "portrait_scale": 3
+    },
+    "ranger": {
+      "animations": {
+        "idle": {
+          "ms": [
+            200,
+            200,
+            200,
+            200
+          ],
+          "loop": true,
+          "frames": [
+            {
+              "file": "heroes/ranger/ranger_idle_00.png",
+              "ms": 200
+            },
+            {
+              "file": "heroes/ranger/ranger_idle_01.png",
+              "ms": 200
+            },
+            {
+              "file": "heroes/ranger/ranger_idle_02.png",
+              "ms": 200
+            },
+            {
+              "file": "heroes/ranger/ranger_idle_03.png",
+              "ms": 200
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/ranger_idle_strip.png"
+        },
+        "attack": {
+          "ms": [
+            140,
+            60,
+            100,
+            160
+          ],
+          "loop": false,
+          "impact_frame": 1,
+          "hold_frame": 2,
+          "crit_hold_ms": 160,
+          "min_ms": [
+            70,
+            60,
+            60,
+            0
+          ],
+          "note": "frame 1 = release: spawn arrow",
+          "frames": [
+            {
+              "file": "heroes/ranger/ranger_attack_00.png",
+              "ms": 140
+            },
+            {
+              "file": "heroes/ranger/ranger_attack_01.png",
+              "ms": 60
+            },
+            {
+              "file": "heroes/ranger/ranger_attack_02.png",
+              "ms": 100
+            },
+            {
+              "file": "heroes/ranger/ranger_attack_03.png",
+              "ms": 160
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "fx_projectile_spawn": [
+            51,
+            28
+          ],
+          "sprite_strip": "sprite_strips/ranger_attack_strip.png"
+        },
+        "hit": {
+          "ms": [
+            80,
+            120
+          ],
+          "loop": false,
+          "frames": [
+            {
+              "file": "heroes/ranger/ranger_hit_00.png",
+              "ms": 80
+            },
+            {
+              "file": "heroes/ranger/ranger_hit_01.png",
+              "ms": 120
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/ranger_hit_strip.png"
+        },
+        "death": {
+          "ms": [
+            110,
+            150,
+            170,
+            0
+          ],
+          "loop": false,
+          "hold_last": true,
+          "frames": [
+            {
+              "file": "heroes/ranger/ranger_death_00.png",
+              "ms": 110
+            },
+            {
+              "file": "heroes/ranger/ranger_death_01.png",
+              "ms": 150
+            },
+            {
+              "file": "heroes/ranger/ranger_death_02.png",
+              "ms": 170
+            },
+            {
+              "file": "heroes/ranger/ranger_death_03.png",
+              "ms": 0
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/ranger_death_strip.png"
+        }
+      },
+      "hit_flash": "heroes/ranger/ranger_hit_flash.png",
+      "portrait_scale": 3
+    },
+    "warrior": {
+      "animations": {
+        "idle": {
+          "ms": [
+            240,
+            240,
+            240,
+            240
+          ],
+          "loop": true,
+          "frames": [
+            {
+              "file": "heroes/warrior/warrior_idle_00.png",
+              "ms": 240
+            },
+            {
+              "file": "heroes/warrior/warrior_idle_01.png",
+              "ms": 240
+            },
+            {
+              "file": "heroes/warrior/warrior_idle_02.png",
+              "ms": 240
+            },
+            {
+              "file": "heroes/warrior/warrior_idle_03.png",
+              "ms": 240
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/warrior_idle_strip.png"
+        },
+        "attack": {
+          "ms": [
+            160,
+            70,
+            110,
+            170
+          ],
+          "loop": false,
+          "impact_frame": 1,
+          "hold_frame": 2,
+          "crit_hold_ms": 190,
+          "min_ms": [
+            90,
+            70,
+            60,
+            0
+          ],
+          "note": "frame 1 = cleave: slash overlay + impact on target",
+          "frames": [
+            {
+              "file": "heroes/warrior/warrior_attack_00.png",
+              "ms": 160
+            },
+            {
+              "file": "heroes/warrior/warrior_attack_01.png",
+              "ms": 70
+            },
+            {
+              "file": "heroes/warrior/warrior_attack_02.png",
+              "ms": 110
+            },
+            {
+              "file": "heroes/warrior/warrior_attack_03.png",
+              "ms": 170
+            }
+          ],
+          "frame": [
+            72,
+            72
+          ],
+          "anchor": [
+            36,
+            64
+          ],
+          "fx_slash_centre": [
+            46,
+            34
+          ],
+          "sprite_strip": "sprite_strips/warrior_attack_strip.png"
+        },
+        "hit": {
+          "ms": [
+            90,
+            130
+          ],
+          "loop": false,
+          "frames": [
+            {
+              "file": "heroes/warrior/warrior_hit_00.png",
+              "ms": 90
+            },
+            {
+              "file": "heroes/warrior/warrior_hit_01.png",
+              "ms": 130
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/warrior_hit_strip.png"
+        },
+        "death": {
+          "ms": [
+            120,
+            170,
+            190,
+            0
+          ],
+          "loop": false,
+          "hold_last": true,
+          "frames": [
+            {
+              "file": "heroes/warrior/warrior_death_00.png",
+              "ms": 120
+            },
+            {
+              "file": "heroes/warrior/warrior_death_01.png",
+              "ms": 170
+            },
+            {
+              "file": "heroes/warrior/warrior_death_02.png",
+              "ms": 190
+            },
+            {
+              "file": "heroes/warrior/warrior_death_03.png",
+              "ms": 0
+            }
+          ],
+          "frame": [
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ],
+          "sprite_strip": "sprite_strips/warrior_death_strip.png"
+        }
+      },
+      "hit_flash": "heroes/warrior/warrior_hit_flash.png",
+      "portrait_scale": 3
+    }
+  },
+  "enemies": {
+    "dire_wolf": {
+      "animations": {
+        "idle": {
+          "ms": [
+            200,
+            200,
+            160,
+            200
+          ],
+          "loop": true,
+          "frames": [
+            {
+              "file": "enemies/dire_wolf/dire_wolf_idle_00.png",
+              "ms": 200
+            },
+            {
+              "file": "enemies/dire_wolf/dire_wolf_idle_01.png",
+              "ms": 200
+            },
+            {
+              "file": "enemies/dire_wolf/dire_wolf_idle_02.png",
+              "ms": 160
+            },
+            {
+              "file": "enemies/dire_wolf/dire_wolf_idle_03.png",
+              "ms": 200
+            }
+          ],
+          "frame": [
+            64,
+            48
+          ],
+          "anchor": [
+            32,
+            44
+          ],
+          "sprite_strip": "sprite_strips/dire_wolf_idle_strip.png"
+        },
+        "attack": {
+          "ms": [
+            150,
+            60,
+            110,
+            150
+          ],
+          "loop": false,
+          "impact_frame": 1,
+          "hold_frame": 2,
+          "crit_hold_ms": 170,
+          "min_ms": [
+            80,
+            60,
+            60,
+            0
+          ],
+          "note": "lunge-bite; grown 72x56 frame",
+          "frames": [
+            {
+              "file": "enemies/dire_wolf/dire_wolf_attack_00.png",
+              "ms": 150
+            },
+            {
+              "file": "enemies/dire_wolf/dire_wolf_attack_01.png",
+              "ms": 60
+            },
+            {
+              "file": "enemies/dire_wolf/dire_wolf_attack_02.png",
+              "ms": 110
+            },
+            {
+              "file": "enemies/dire_wolf/dire_wolf_attack_03.png",
+              "ms": 150
+            }
+          ],
+          "frame": [
+            72,
+            56
+          ],
+          "anchor": [
+            36,
+            48
+          ],
+          "sprite_strip": "sprite_strips/dire_wolf_attack_strip.png"
+        },
+        "hit": {
+          "ms": [
+            80,
+            120
+          ],
+          "loop": false,
+          "frames": [
+            {
+              "file": "enemies/dire_wolf/dire_wolf_hit_00.png",
+              "ms": 80
+            },
+            {
+              "file": "enemies/dire_wolf/dire_wolf_hit_01.png",
+              "ms": 120
+            }
+          ],
+          "frame": [
+            64,
+            48
+          ],
+          "anchor": [
+            32,
+            44
+          ],
+          "sprite_strip": "sprite_strips/dire_wolf_hit_strip.png"
+        },
+        "death": {
+          "ms": [
+            100,
+            140,
+            170,
+            0
+          ],
+          "loop": false,
+          "hold_last": true,
+          "frames": [
+            {
+              "file": "enemies/dire_wolf/dire_wolf_death_00.png",
+              "ms": 100
+            },
+            {
+              "file": "enemies/dire_wolf/dire_wolf_death_01.png",
+              "ms": 140
+            },
+            {
+              "file": "enemies/dire_wolf/dire_wolf_death_02.png",
+              "ms": 170
+            },
+            {
+              "file": "enemies/dire_wolf/dire_wolf_death_03.png",
+              "ms": 0
+            }
+          ],
+          "frame": [
+            64,
+            48
+          ],
+          "anchor": [
+            32,
+            44
+          ],
+          "sprite_strip": "sprite_strips/dire_wolf_death_strip.png"
+        }
+      },
+      "hit_flash": "enemies/dire_wolf/dire_wolf_hit_flash.png",
+      "locked_idle": "enemies/dire_wolf/dire_wolf_idle_00.png"
+    },
+    "gloom_spider": {
+      "animations": {
+        "idle": {
+          "ms": [
+            170,
+            170,
+            170,
+            170
+          ],
+          "loop": true,
+          "frames": [
+            {
+              "file": "enemies/gloom_spider/gloom_spider_idle_00.png",
+              "ms": 170
+            },
+            {
+              "file": "enemies/gloom_spider/gloom_spider_idle_01.png",
+              "ms": 170
+            },
+            {
+              "file": "enemies/gloom_spider/gloom_spider_idle_02.png",
+              "ms": 170
+            },
+            {
+              "file": "enemies/gloom_spider/gloom_spider_idle_03.png",
+              "ms": 170
+            }
+          ],
+          "frame": [
+            56,
+            48
+          ],
+          "anchor": [
+            28,
+            44
+          ],
+          "sprite_strip": "sprite_strips/gloom_spider_idle_strip.png"
+        },
+        "attack": {
+          "ms": [
+            170,
+            60,
+            110,
+            150
+          ],
+          "loop": false,
+          "impact_frame": 1,
+          "hold_frame": 2,
+          "crit_hold_ms": 170,
+          "min_ms": [
+            90,
+            60,
+            60,
+            0
+          ],
+          "note": "rear up + spit; frame 1 spawns venom",
+          "frames": [
+            {
+              "file": "enemies/gloom_spider/gloom_spider_attack_00.png",
+              "ms": 170
+            },
+            {
+              "file": "enemies/gloom_spider/gloom_spider_attack_01.png",
+              "ms": 60
+            },
+            {
+              "file": "enemies/gloom_spider/gloom_spider_attack_02.png",
+              "ms": 110
+            },
+            {
+              "file": "enemies/gloom_spider/gloom_spider_attack_03.png",
+              "ms": 150
+            }
+          ],
+          "frame": [
+            56,
+            48
+          ],
+          "anchor": [
+            28,
+            44
+          ],
+          "fx_projectile_spawn": [
+            3,
+            36
+          ],
+          "sprite_strip": "sprite_strips/gloom_spider_attack_strip.png"
+        },
+        "hit": {
+          "ms": [
+            80,
+            120
+          ],
+          "loop": false,
+          "frames": [
+            {
+              "file": "enemies/gloom_spider/gloom_spider_hit_00.png",
+              "ms": 80
+            },
+            {
+              "file": "enemies/gloom_spider/gloom_spider_hit_01.png",
+              "ms": 120
+            }
+          ],
+          "frame": [
+            56,
+            48
+          ],
+          "anchor": [
+            28,
+            44
+          ],
+          "sprite_strip": "sprite_strips/gloom_spider_hit_strip.png"
+        },
+        "death": {
+          "ms": [
+            100,
+            140,
+            170,
+            0
+          ],
+          "loop": false,
+          "hold_last": true,
+          "frames": [
+            {
+              "file": "enemies/gloom_spider/gloom_spider_death_00.png",
+              "ms": 100
+            },
+            {
+              "file": "enemies/gloom_spider/gloom_spider_death_01.png",
+              "ms": 140
+            },
+            {
+              "file": "enemies/gloom_spider/gloom_spider_death_02.png",
+              "ms": 170
+            },
+            {
+              "file": "enemies/gloom_spider/gloom_spider_death_03.png",
+              "ms": 0
+            }
+          ],
+          "frame": [
+            56,
+            48
+          ],
+          "anchor": [
+            28,
+            44
+          ],
+          "sprite_strip": "sprite_strips/gloom_spider_death_strip.png"
+        }
+      },
+      "hit_flash": "enemies/gloom_spider/gloom_spider_hit_flash.png",
+      "locked_idle": "enemies/gloom_spider/gloom_spider_idle_00.png"
+    }
+  },
+  "vfx": {
+    "monk_impact": {
+      "frame": [
+        20,
+        20
+      ],
+      "count": 3,
+      "ms": [
+        50,
+        70,
+        80
+      ],
+      "attach": "centre on the TARGET contact point (runtime-owned, e.g. enemy frame front at chest height); starts on the hero impact frame",
+      "frames": [
+        "vfx/monk_impact_00.png",
+        "vfx/monk_impact_01.png",
+        "vfx/monk_impact_02.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_monk_impact_strip.png"
+    },
+    "monk_impact_crit": {
+      "frame": [
+        28,
+        28
+      ],
+      "count": 3,
+      "ms": [
+        60,
+        90,
+        100
+      ],
+      "attach": "centre on the TARGET contact point; CRIT only (replaces monk_impact)",
+      "frames": [
+        "vfx/monk_impact_crit_00.png",
+        "vfx/monk_impact_crit_01.png",
+        "vfx/monk_impact_crit_02.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_monk_impact_crit_strip.png"
+    },
+    "arcane_bolt": {
+      "frame": [
+        18,
+        12
+      ],
+      "count": 2,
+      "ms": [
+        70,
+        70
+      ],
+      "attach": "spawn at mage attack fx_projectile_spawn; loops while travelling; head = right edge",
+      "frames": [
+        "vfx/arcane_bolt_00.png",
+        "vfx/arcane_bolt_01.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_arcane_bolt_strip.png"
+    },
+    "arcane_bolt_hit": {
+      "frame": [
+        20,
+        20
+      ],
+      "count": 3,
+      "ms": [
+        50,
+        70,
+        80
+      ],
+      "attach": "centre on target contact point",
+      "frames": [
+        "vfx/arcane_bolt_hit_00.png",
+        "vfx/arcane_bolt_hit_01.png",
+        "vfx/arcane_bolt_hit_02.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_arcane_bolt_hit_strip.png"
+    },
+    "arcane_ward_back": {
+      "frame": [
+        72,
+        72
+      ],
+      "count": 12,
+      "ms": {
+        "form": 70,
+        "idle_loop": 150,
+        "absorb_hit": [
+          60,
+          90
+        ],
+        "break": 70
+      },
+      "attach": "72x72, anchor (36, 64) == hero anchor; draw UNDER the mage",
+      "segments": {
+        "form": [
+          0,
+          1,
+          2
+        ],
+        "idle_loop": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "absorb_hit": [
+          7,
+          8
+        ],
+        "break": [
+          9,
+          10,
+          11
+        ]
+      },
+      "frames": [
+        "vfx/arcane_ward_back_00.png",
+        "vfx/arcane_ward_back_01.png",
+        "vfx/arcane_ward_back_02.png",
+        "vfx/arcane_ward_back_03.png",
+        "vfx/arcane_ward_back_04.png",
+        "vfx/arcane_ward_back_05.png",
+        "vfx/arcane_ward_back_06.png",
+        "vfx/arcane_ward_back_07.png",
+        "vfx/arcane_ward_back_08.png",
+        "vfx/arcane_ward_back_09.png",
+        "vfx/arcane_ward_back_10.png",
+        "vfx/arcane_ward_back_11.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_arcane_ward_back_strip.png",
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    "arcane_ward_front": {
+      "frame": [
+        72,
+        72
+      ],
+      "count": 12,
+      "ms": {
+        "form": 70,
+        "idle_loop": 150,
+        "absorb_hit": [
+          60,
+          90
+        ],
+        "break": 70
+      },
+      "attach": "72x72, anchor (36, 64) == hero anchor; draw OVER the mage",
+      "segments": {
+        "form": [
+          0,
+          1,
+          2
+        ],
+        "idle_loop": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "absorb_hit": [
+          7,
+          8
+        ],
+        "break": [
+          9,
+          10,
+          11
+        ]
+      },
+      "frames": [
+        "vfx/arcane_ward_front_00.png",
+        "vfx/arcane_ward_front_01.png",
+        "vfx/arcane_ward_front_02.png",
+        "vfx/arcane_ward_front_03.png",
+        "vfx/arcane_ward_front_04.png",
+        "vfx/arcane_ward_front_05.png",
+        "vfx/arcane_ward_front_06.png",
+        "vfx/arcane_ward_front_07.png",
+        "vfx/arcane_ward_front_08.png",
+        "vfx/arcane_ward_front_09.png",
+        "vfx/arcane_ward_front_10.png",
+        "vfx/arcane_ward_front_11.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_arcane_ward_front_strip.png",
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    "arrow": {
+      "frame": [
+        16,
+        7
+      ],
+      "count": 2,
+      "ms": [
+        60,
+        60
+      ],
+      "attach": "spawn at ranger attack fx_projectile_spawn (release frame); head = right edge; alternate frames while travelling",
+      "frames": [
+        "vfx/arrow_00.png",
+        "vfx/arrow_01.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_arrow_strip.png"
+    },
+    "arrow_hit": {
+      "frame": [
+        16,
+        16
+      ],
+      "count": 3,
+      "ms": [
+        50,
+        70,
+        80
+      ],
+      "attach": "centre on target contact point",
+      "frames": [
+        "vfx/arrow_hit_00.png",
+        "vfx/arrow_hit_01.png",
+        "vfx/arrow_hit_02.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_arrow_hit_strip.png"
+    },
+    "warrior_impact": {
+      "frame": [
+        20,
+        20
+      ],
+      "count": 3,
+      "ms": [
+        50,
+        70,
+        80
+      ],
+      "attach": "centre on target contact point, starts on warrior impact frame",
+      "frames": [
+        "vfx/warrior_impact_00.png",
+        "vfx/warrior_impact_01.png",
+        "vfx/warrior_impact_02.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_warrior_impact_strip.png"
+    },
+    "warrior_impact_crit": {
+      "frame": [
+        28,
+        28
+      ],
+      "count": 3,
+      "ms": [
+        60,
+        90,
+        100
+      ],
+      "attach": "CRIT only, replaces warrior_impact",
+      "frames": [
+        "vfx/warrior_impact_crit_00.png",
+        "vfx/warrior_impact_crit_01.png",
+        "vfx/warrior_impact_crit_02.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_warrior_impact_crit_strip.png"
+    },
+    "warrior_slash": {
+      "frame": [
+        72,
+        72
+      ],
+      "count": 2,
+      "ms": [
+        70,
+        110
+      ],
+      "attach": "72x72 overlay sharing the Warrior attack frame and its anchor (36,64): frame 0 with attack frame 1, frame 1 with attack frame 2; draw OVER the hero",
+      "anchor": [
+        36,
+        64
+      ],
+      "frames": [
+        "vfx/warrior_slash_00.png",
+        "vfx/warrior_slash_01.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_warrior_slash_strip.png"
+    },
+    "wolf_bite": {
+      "frame": [
+        20,
+        20
+      ],
+      "count": 3,
+      "ms": [
+        50,
+        70,
+        80
+      ],
+      "attach": "centre on the HERO contact point; starts on the wolf impact frame (Crimson = hostile/damage)",
+      "frames": [
+        "vfx/wolf_bite_00.png",
+        "vfx/wolf_bite_01.png",
+        "vfx/wolf_bite_02.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_wolf_bite_strip.png"
+    },
+    "venom_glob": {
+      "frame": [
+        14,
+        11
+      ],
+      "count": 2,
+      "ms": [
+        70,
+        70
+      ],
+      "attach": "spawn at gloom_spider attack fx_projectile_spawn; travels LEFT; alternate frames",
+      "frames": [
+        "vfx/venom_glob_00.png",
+        "vfx/venom_glob_01.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_venom_glob_strip.png"
+    },
+    "venom_splash": {
+      "frame": [
+        20,
+        20
+      ],
+      "count": 3,
+      "ms": [
+        50,
+        70,
+        90
+      ],
+      "attach": "centre on the HERO contact point (Witchlight = Darkwood enemy accent)",
+      "frames": [
+        "vfx/venom_splash_00.png",
+        "vfx/venom_splash_01.png",
+        "vfx/venom_splash_02.png"
+      ],
+      "display_scale": 2,
+      "sprite_strip": "sprite_strips/vfx_venom_splash_strip.png"
+    }
+  },
+  "environment": {
+    "darkwood_combat": {
+      "file": "environment/bg_darkwood_combat.png",
+      "size": [
+        224,
+        272
+      ],
+      "ground_line_y": 222,
+      "visible_stage_x": [
+        14,
+        208
+      ],
+      "visible_stage_width": 195,
+      "display_scale": 2,
+      "placement": "bottom-centre; crop sides on narrow screens (bleed)",
+      "reference_world_anchors": {
+        "hero": [
+          50,
+          222
+        ],
+        "dire_wolf_front_slot": [
+          119,
+          222
+        ],
+        "gloom_spider_front_slot": [
+          171,
+          222
+        ]
+      },
+      "hero_zone_mound_option": "A (current). Option B (darker mounds behind hero zone) is still open and NOT included."
+    }
+  },
+  "layer_order": [
+    "background",
+    "shadow",
+    "ward_back",
+    "actor",
+    "ward_front / warrior_slash",
+    "projectiles",
+    "impact_vfx",
+    "ui (frame-relative)"
+  ],
+  "event_priority": [
+    "DEATH",
+    "HIT",
+    "ATTACK",
+    "IDLE"
+  ]
+}

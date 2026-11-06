@@ -1,0 +1,19 @@
+// Local read-only assessment of a user-supplied export; never import or hosted access.
+// node --import tsx tools/c3-playtest/assess-save.mjs input.json output.json
+import assert from 'node:assert/strict';
+import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {dirname} from 'node:path';
+import {CONTENT,FORGE_V1,DEV_SAMPLE_ITEMS} from '@emberbound/game-content';
+import {ContentIndex,parseSave,masteryRank,currentBuild,resolveHeroStats,forgeCeiling,eligibleForgeIds,previewSalvage,canonicalJson} from '@emberbound/game-core';
+const [input,out]=process.argv.slice(2);assert(input&&out,'Usage: assess-save.mjs input.json output.json');
+const parsed=parseSave(readFileSync(input,'utf8'));assert(parsed.ok,'Supplied save failed strict parse/checksum/profile validation');
+const p=parsed.profile,c=new ContentIndex(CONTENT),before=canonicalJson(p),instances=new Map(p.inventory.instances.map(i=>[i.id,i])),byRarity={};
+let salvageGold=0,eligible=0;
+for(const i of p.inventory.instances){const rarity=c.item(i.baseId).rarity;byRarity[rarity]=(byRarity[rarity]??0)+1;const q=previewSalvage(p,c,i.id);if(q.ok){salvageGold+=q.salvage.gold;eligible++;}}
+const materialOpportunities=[];
+for(const slot of ['weapon','head','chest','gloves','boots','ring'])for(const [rarity,recipe] of Object.entries(FORGE_V1.recipes)){
+ const ids=eligibleForgeIds(p,c,slot,rarity);if(ids.length>=recipe.count)materialOpportunities.push({slot,rarity,materialBatches:Math.floor(ids.length/recipe.count),eligibleIds:ids.slice(0,recipe.count),goldPrice:recipe.gold,gateOpen:forgeCeiling(p,FORGE_V1)>=FORGE_V1.rarities.indexOf(rarity)+1});
+}
+const sampleBlocks=p.inventory.instances.filter(i=>i.baseId===DEV_SAMPLE_ITEMS[0]&&DEV_SAMPLE_ITEMS.every((base,n)=>instances.get(i.id+n)?.baseId===base)).map(i=>({start:i.id,end:i.id+DEV_SAMPLE_ITEMS.length-1,matchesDevCatalog:true}));
+const report={status:'PASS read-only parse/contract assessment; human acceptance NOT RUN',source:'User-pasted export, local read-only copy; no hosted access/import/write',checksumValid:true,schema:p.schema,classId:p.character.activeClassId,level:p.character.level,mastery:masteryRank(c,p.character.activeClassId,p.character.masteryXp[p.character.activeClassId]),gold:p.gold,copies:p.inventory.instances.length,newCopies:p.inventory.instances.filter(i=>i.isNew).length,byRarity,equipped:Object.fromEntries(Object.entries(p.equipment).map(([slot,id])=>[slot,{id,baseId:instances.get(id).baseId}])),activeItemEffects:resolveHeroStats(c,currentBuild(p),instances).activeEffects.filter(e=>e.source==='item'),pending:p.pending,itemLocks:p.itemLocks??null,hasForgeState:!!p.forge,nextInstanceId:p.inventory.nextInstanceId,activity:p.adventure.activity,farmMode:p.adventure.run?.mode??null,lastDefeat:p.adventure.lastResult?.kind==='defeat'?{zone:p.adventure.lastResult.zoneId,stage:p.adventure.lastResult.stage}:null,zones:p.adventure.zones,forgeCeiling:forgeCeiling(p,FORGE_V1),materialOpportunities,salvagePotential:{eligibleCopies:eligible,gold:salvageGold,upperBoundNotAdvice:true},pacingEvidence:{simulatedMs:p.clock.simulatedMs,wallSinceCreationMs:parsed.envelope.savedAtWallMs-p.createdAtWallMs,itemsFound:p.stats.itemsFound,extraCopiesBeyondStarterAndDrops:p.inventory.instances.length-CONTENT.starterItems.length-p.stats.itemsFound,devSampleCatalogLength:DEV_SAMPLE_ITEMS.length,sampleBlocks,warning:'Matching sample sequences and progression counters are snapshot indicators, not an authoritative action history. This assessment never establishes human/no-DEV pacing or balance acceptance.'},snapshotUnchanged:canonicalJson(p)===before,rawSaveCommitted:false};
+assert(report.snapshotUnchanged);mkdirSync(dirname(out),{recursive:true});writeFileSync(out,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({pass:true,schema:report.schema,classId:report.classId,level:report.level,mastery:report.mastery,copies:report.copies,forgeCeiling:report.forgeCeiling,readOnly:true}));

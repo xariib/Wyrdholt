@@ -1,0 +1,12 @@
+/* Presentation exploration only. Production app.css does not import this file. */
+:root {
+ --w-bg:#0b1417; --w-surface:#142326; --w-raised:#1c3033; --w-line:#3b5355;
+ --w-text:#f1ead9; --w-muted:#afc0b9; --w-amber:#efbd64; --w-moss:#91b47d;
+ --w-success:var(--w-moss); --w-warning:var(--w-amber); --w-danger:#f18e85; --w-info:#8ec4ee; --w-common:#c1c1b9; --w-uncommon:#a4c68c;
+ --w-rare:#8ebcfa; --w-epic:#ceacfa; --w-legendary:#efbd64;
+ --w-font:system-ui,sans-serif; --w-display:Georgia,serif;
+ --w-xs:12px; --w-sm:14px; --w-body:16px; --w-title:24px;
+ --w-space-1:4px; --w-space-2:8px; --w-space-3:12px; --w-space-4:16px; --w-space-6:24px;
+ --w-touch:48px; --w-border:1px solid var(--w-line); --w-radius:8px; --w-radius-small:4px;
+ --w-shadow:0 8px 24px #0005; --w-layer-nav:10; --w-layer-sheet:20; --w-layer-toast:30;
+}

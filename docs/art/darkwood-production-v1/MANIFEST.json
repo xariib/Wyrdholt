@@ -1,0 +1,4841 @@
+{
+  "package": "wyrdholt_darkwood_production_v1",
+  "status": "CANONICAL",
+  "approved_production_assets_root": "APPROVED_PRODUCTION_ASSETS/",
+  "approved_production_file_count": 187,
+  "approved_production_files": [
+    {
+      "path": "animation_meta.json",
+      "bytes": 31176,
+      "sha256": "66d2a5ba15d6ec07703281b6052b4c52bd772c411d9cd61a460b4b33fe568258",
+      "kind": "metadata"
+    },
+    {
+      "path": "environment/bg_darkwood_combat.png",
+      "bytes": 8761,
+      "sha256": "a023d7d6cb443f9736438615fc2a474f3cea1109e34865f9f3a3e1d328d21d1f",
+      "size": [
+        224,
+        272
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "environment",
+      "frame": [
+        224,
+        272
+      ]
+    },
+    {
+      "path": "palette/wyrdholt_master_palette_v03.json",
+      "bytes": 7536,
+      "sha256": "b7e965301da0b9a77e699ca8107ffe9191767f583346edc5dea512cf49fe86ac",
+      "kind": "metadata"
+    },
+    {
+      "path": "vfx/arcane_bolt_00.png",
+      "bytes": 202,
+      "sha256": "792b878427e8023235b5bb67e999e1d256bc5a760e3a4fbbe26fab4c4a233f4e",
+      "size": [
+        18,
+        12
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_bolt",
+      "frame_index": 0,
+      "frame": [
+        18,
+        12
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/arcane_bolt_01.png",
+      "bytes": 216,
+      "sha256": "e558c7267cb76ff3f9ad7370276535ba06650d2e3463fe046bc573ee2440b9f5",
+      "size": [
+        18,
+        12
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_bolt",
+      "frame_index": 1,
+      "frame": [
+        18,
+        12
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/arcane_bolt_hit_00.png",
+      "bytes": 130,
+      "sha256": "00d071ad4d8aeddf6ccfb8f7f8eed963e2a600b5de25a86c8c7df8980174eeb0",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_bolt_hit",
+      "frame_index": 0,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/arcane_bolt_hit_01.png",
+      "bytes": 126,
+      "sha256": "ea269fca8dd3a38a844bb4dfc378cabcc2ce284229778ad2d614de0ebf95a01c",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_bolt_hit",
+      "frame_index": 1,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/arcane_bolt_hit_02.png",
+      "bytes": 95,
+      "sha256": "2e1e857d6e125cc9fa64b75a96084f30f0326e04a6b00990a805fead4a297509",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_bolt_hit",
+      "frame_index": 2,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/arcane_ward_back_00.png",
+      "bytes": 133,
+      "sha256": "e37ceed026ed265e08f92e88eb4cffdc99182c7f1a08dcd69b8113a7af7c21d2",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_back",
+      "frame_index": 0,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_back_01.png",
+      "bytes": 157,
+      "sha256": "2b551e16dd34a26c6ecdbedb7dd9c19a228076f35fe4e028acc03d70ee8619e7",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_back",
+      "frame_index": 1,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_back_02.png",
+      "bytes": 165,
+      "sha256": "a40489d71ee8045ecaa2cd2d93e43f135e73d284c878efff42f85a2f9e1cb2e9",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_back",
+      "frame_index": 2,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_back_03.png",
+      "bytes": 166,
+      "sha256": "c38fb1ed5ed6adb3a114984bdee1c93f1b6866797407f6b068fec756b47fdc49",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_back",
+      "frame_index": 3,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_back_04.png",
+      "bytes": 164,
+      "sha256": "be9ed190158508b7a390619946459df852191006e4c07543951285c4954a5a79",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_back",
+      "frame_index": 4,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_back_05.png",
+      "bytes": 158,
+      "sha256": "a619b448570cca272bb0c9843f3606dd6b57cfc6e04427e0b097b1ebc11c5e50",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_back",
+      "frame_index": 5,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_back_06.png",
+      "bytes": 164,
+      "sha256": "ae5e9691abc15f2c5f21b93c3945eee997c3651da753fb4a1e4a8e3a4cee83ea",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_back",
+      "frame_index": 6,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_back_07.png",
+      "bytes": 165,
+      "sha256": "a40489d71ee8045ecaa2cd2d93e43f135e73d284c878efff42f85a2f9e1cb2e9",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_back",
+      "frame_index": 7,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_back_08.png",
+      "bytes": 165,
+      "sha256": "a40489d71ee8045ecaa2cd2d93e43f135e73d284c878efff42f85a2f9e1cb2e9",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_back",
+      "frame_index": 8,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_back_09.png",
+      "bytes": 100,
+      "sha256": "2476e1a5bda976a58e327fc5dd8b3bfc228a74ac60944f6747faee4d393f92c7",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_back",
+      "frame_index": 9,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_back_10.png",
+      "bytes": 100,
+      "sha256": "2476e1a5bda976a58e327fc5dd8b3bfc228a74ac60944f6747faee4d393f92c7",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_back",
+      "frame_index": 10,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_back_11.png",
+      "bytes": 100,
+      "sha256": "2476e1a5bda976a58e327fc5dd8b3bfc228a74ac60944f6747faee4d393f92c7",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_back",
+      "frame_index": 11,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_front_00.png",
+      "bytes": 136,
+      "sha256": "35e1bf571577740e9ee839ffc8c92574c9fa21a97d6c6c80e78e62115cdc2ae3",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_front",
+      "frame_index": 0,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_front_01.png",
+      "bytes": 285,
+      "sha256": "9b11acb8f880a414e1245a76c8aa774ffcf5695df6b25fcf2d55470f72fc42bb",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_front",
+      "frame_index": 1,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_front_02.png",
+      "bytes": 419,
+      "sha256": "ae16afc89ce3e92e9137baab72c1c0445a3133ce2464b3dd2bade31b5cbb8028",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_front",
+      "frame_index": 2,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_front_03.png",
+      "bytes": 411,
+      "sha256": "af87cb67aaf7f0c1c8d52626cec67528407cabb5558998cc694b6cba7bb7d581",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_front",
+      "frame_index": 3,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_front_04.png",
+      "bytes": 410,
+      "sha256": "190c18c278cf34540c781cd55040380070217b41c4e3f124051d0de75df47e09",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_front",
+      "frame_index": 4,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_front_05.png",
+      "bytes": 420,
+      "sha256": "4933088bf7cc5e5c601240743db9bf67c9ce7402929ac2503a5df98cdef00968",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_front",
+      "frame_index": 5,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_front_06.png",
+      "bytes": 415,
+      "sha256": "14f59445b13eefe282821cc7f9e8240ab90d2d70abebf752b82b4e0c93389ca3",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_front",
+      "frame_index": 6,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_front_07.png",
+      "bytes": 311,
+      "sha256": "6d6ffebeabb13607aa4a26ada35307ed365a10a18ceeff3df29b34a60e43f1c4",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_front",
+      "frame_index": 7,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_front_08.png",
+      "bytes": 274,
+      "sha256": "7845e897ac640822e970ea337efff226f371c2ef392b3711c38eedda6cb2f691",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_front",
+      "frame_index": 8,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_front_09.png",
+      "bytes": 165,
+      "sha256": "1fe71346c571f3f6b06fb03ac9dcd7594a5c11c2d2afb5aa2f43f1dc04f47b4d",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_front",
+      "frame_index": 9,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_front_10.png",
+      "bytes": 145,
+      "sha256": "15051e1224e37fbe0bb010acbc73150fdf023776cff60053e9f7380dcd3b4150",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_front",
+      "frame_index": 10,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arcane_ward_front_11.png",
+      "bytes": 120,
+      "sha256": "b603554819f7562d6bc9ac84abfaf5602560632a0c0e2f4a57476f359811eb5e",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arcane_ward_front",
+      "frame_index": 11,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/arrow_00.png",
+      "bytes": 147,
+      "sha256": "34d581741e354730dcb5b86d616fbd2856c67fe308351063f65a6d274c696480",
+      "size": [
+        16,
+        7
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arrow",
+      "frame_index": 0,
+      "frame": [
+        16,
+        7
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/arrow_01.png",
+      "bytes": 151,
+      "sha256": "cefd1d9df03e9485e3fdeb199d9a5b8f4f17b90f7fb03302c484cd9c8dda059a",
+      "size": [
+        16,
+        7
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arrow",
+      "frame_index": 1,
+      "frame": [
+        16,
+        7
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/arrow_hit_00.png",
+      "bytes": 107,
+      "sha256": "f081ab02fd27eca7412c68471badc80d645e84963f14e0ccf164736dc472632b",
+      "size": [
+        16,
+        16
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arrow_hit",
+      "frame_index": 0,
+      "frame": [
+        16,
+        16
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/arrow_hit_01.png",
+      "bytes": 121,
+      "sha256": "7a7cd272ec9a5d35d237bc4fd1415882858fb1dc79caa7ca78f267b9c8a479f2",
+      "size": [
+        16,
+        16
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arrow_hit",
+      "frame_index": 1,
+      "frame": [
+        16,
+        16
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/arrow_hit_02.png",
+      "bytes": 93,
+      "sha256": "82e91c6993764a42e5360518ce39d07c77edcea4e18872705fb8149db43357d1",
+      "size": [
+        16,
+        16
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "arrow_hit",
+      "frame_index": 2,
+      "frame": [
+        16,
+        16
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/monk_impact_00.png",
+      "bytes": 146,
+      "sha256": "aacee186719faafb7cbbaf2008281b975c3a1157aefaaf9477c2c2f5920976e0",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "monk_impact",
+      "frame_index": 0,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/monk_impact_01.png",
+      "bytes": 191,
+      "sha256": "3c2a564e13c12c546c2fd9547be10cb346a543cb6ccc77239b907a48cbe2fe04",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "monk_impact",
+      "frame_index": 1,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/monk_impact_02.png",
+      "bytes": 106,
+      "sha256": "ab946868629e5df82e2109193cf0bec5014049bfb3f43d8fe9cc02c1410d48b9",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "monk_impact",
+      "frame_index": 2,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/monk_impact_crit_00.png",
+      "bytes": 181,
+      "sha256": "534e671eaa908442902b5b61b14e52091197e466eb537dd4c2f4e3fb885faa7a",
+      "size": [
+        28,
+        28
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "monk_impact_crit",
+      "frame_index": 0,
+      "frame": [
+        28,
+        28
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/monk_impact_crit_01.png",
+      "bytes": 255,
+      "sha256": "1bec7e121a891459e5f80ffc4189a3fcad0414038dd5e53c69d5495e34015f59",
+      "size": [
+        28,
+        28
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "monk_impact_crit",
+      "frame_index": 1,
+      "frame": [
+        28,
+        28
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/monk_impact_crit_02.png",
+      "bytes": 114,
+      "sha256": "9b302ecd1574899328bc310391666e84444924e3e3c44cc8d094d0e10fb2c2c3",
+      "size": [
+        28,
+        28
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "monk_impact_crit",
+      "frame_index": 2,
+      "frame": [
+        28,
+        28
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/venom_glob_00.png",
+      "bytes": 192,
+      "sha256": "253fd2c00bbc4bcb510b57faf09e9d330660209764d3c60168fea590b933b5d0",
+      "size": [
+        14,
+        11
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "venom_glob",
+      "frame_index": 0,
+      "frame": [
+        14,
+        11
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/venom_glob_01.png",
+      "bytes": 191,
+      "sha256": "d49f8c5fe035afbe1ab96bbc99100901e1a284ba9947b706068fd7f59fba33ee",
+      "size": [
+        14,
+        11
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "venom_glob",
+      "frame_index": 1,
+      "frame": [
+        14,
+        11
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/venom_splash_00.png",
+      "bytes": 116,
+      "sha256": "1f3f13df878fd084f1551bd16a29bc5511da34792fabe8e61d833e0455a51558",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "venom_splash",
+      "frame_index": 0,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/venom_splash_01.png",
+      "bytes": 127,
+      "sha256": "66510456ebb614cbfa598eec760ac2c39c6bf7e14f04be187006a31ffb71c84f",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "venom_splash",
+      "frame_index": 1,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/venom_splash_02.png",
+      "bytes": 96,
+      "sha256": "fee7706f8e3472172b5495a1285650b3ad1783067fe96029e50fe44905bbf285",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "venom_splash",
+      "frame_index": 2,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/warrior_impact_00.png",
+      "bytes": 131,
+      "sha256": "8acbc96100f5fc07b7058b37275fd241202ab4f6c4cdf2b55f1ed9f12d1ad1bd",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "warrior_impact",
+      "frame_index": 0,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/warrior_impact_01.png",
+      "bytes": 141,
+      "sha256": "6f48776db18fb72418725dfb425d7e2b0bf6904ce1327d805341c3e65f26d61b",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "warrior_impact",
+      "frame_index": 1,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/warrior_impact_02.png",
+      "bytes": 105,
+      "sha256": "5f5d104bf8331cc4531d78eed8bbf7d239a72f3e419e97550ac4981be6ab3317",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "warrior_impact",
+      "frame_index": 2,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/warrior_impact_crit_00.png",
+      "bytes": 166,
+      "sha256": "44d37f284fef024408ae081e4c48953705ecb5c00bba71149d5b1854ef503652",
+      "size": [
+        28,
+        28
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "warrior_impact_crit",
+      "frame_index": 0,
+      "frame": [
+        28,
+        28
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/warrior_impact_crit_01.png",
+      "bytes": 196,
+      "sha256": "6c67c982c673159563855ea6f23e91fd0a301aab5594a797f3191b0fd42afcda",
+      "size": [
+        28,
+        28
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "warrior_impact_crit",
+      "frame_index": 1,
+      "frame": [
+        28,
+        28
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/warrior_impact_crit_02.png",
+      "bytes": 114,
+      "sha256": "85ca5b90a728d47d26df71bfedc50f53505f5330cf0be9f637d292f52dea019a",
+      "size": [
+        28,
+        28
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "warrior_impact_crit",
+      "frame_index": 2,
+      "frame": [
+        28,
+        28
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/warrior_slash_00.png",
+      "bytes": 294,
+      "sha256": "f6fbe29fd54b635f5c135ff8cfbb77de8da3914e7d880aa404de34781b6e9cc2",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "warrior_slash",
+      "frame_index": 0,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/warrior_slash_01.png",
+      "bytes": 162,
+      "sha256": "e13218e7f80a53154d21c1bd5056c2d941f3a09aeaeac3a0ea33eae0b9aa2415",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "warrior_slash",
+      "frame_index": 1,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ]
+    },
+    {
+      "path": "vfx/wolf_bite_00.png",
+      "bytes": 110,
+      "sha256": "191c2289871f3d862a91f30ab5a393d7ae98e33edbd72d5507d57d6fab5b804c",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "wolf_bite",
+      "frame_index": 0,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/wolf_bite_01.png",
+      "bytes": 132,
+      "sha256": "0484c851283094eaca4ef41067c5f122154b6f067527dbd48d0d358dee34b28b",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "wolf_bite",
+      "frame_index": 1,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "vfx/wolf_bite_02.png",
+      "bytes": 98,
+      "sha256": "8cf37eed01fedc5692b9a9011dcf70889e5a40e89c27484d0e438904701eaab2",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "vfx",
+      "effect": "wolf_bite",
+      "frame_index": 2,
+      "frame": [
+        20,
+        20
+      ],
+      "anchor": null
+    },
+    {
+      "path": "sprite_strips/dire_wolf_attack_strip.png",
+      "bytes": 2415,
+      "sha256": "c44dcfd625fa943d29571fa33fc9272498ffe51c4a25dcbc60114980bd2211de",
+      "size": [
+        288,
+        56
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/dire_wolf_death_strip.png",
+      "bytes": 2401,
+      "sha256": "048a31cf934b9178bac6f60d1ccc98ef4b944e2927f272c5d2575016497e5d19",
+      "size": [
+        256,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/dire_wolf_hit_strip.png",
+      "bytes": 1505,
+      "sha256": "6a1062b9e589685492c85c0e63bd1f8e4cc7cc76a30ffe8a6a7c8eec18b8b04d",
+      "size": [
+        128,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/dire_wolf_idle_strip.png",
+      "bytes": 1812,
+      "sha256": "3bfbfc46feffc4df1d9b9da8d373bf4a455f668ec1a1b1f82878addc2aa101e5",
+      "size": [
+        256,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/gloom_spider_attack_strip.png",
+      "bytes": 2334,
+      "sha256": "974e364fe86cd788b50c316badbe164b9819f8c15a1c0a5acc8d12148c39d42d",
+      "size": [
+        224,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/gloom_spider_death_strip.png",
+      "bytes": 2313,
+      "sha256": "321bdfbd8d99b6cd57113b2adf8102c3bb8070f08f11d873339ac319e3f64a0f",
+      "size": [
+        224,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/gloom_spider_hit_strip.png",
+      "bytes": 1567,
+      "sha256": "31324906a5565fd552692886f31227c1be36c4ad7c10908acee848f49a80dc9a",
+      "size": [
+        112,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/gloom_spider_idle_strip.png",
+      "bytes": 1847,
+      "sha256": "78249a9db346836efade0507c4484f76cd7b2c2db0082674643c36117406ce31",
+      "size": [
+        224,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/mage_attack_strip.png",
+      "bytes": 2345,
+      "sha256": "971922a215c97c9054ba84fa8f68fdee6e4c833d850d1d14552d619eb8191de1",
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/mage_death_strip.png",
+      "bytes": 2548,
+      "sha256": "54d610edc12f83a56c0ec0f353855d7f07b2378b6f06ade2c89a90b45fa7b13e",
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/mage_hit_strip.png",
+      "bytes": 1564,
+      "sha256": "f5858b486b654bc72888ff14665246bd6854f702abb1945123c1d4d1e757b22a",
+      "size": [
+        128,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/mage_idle_strip.png",
+      "bytes": 1769,
+      "sha256": "d6dc4008007490cd84d85e11a0ac9f635331ed19c75f719b34c63cbe2644bd27",
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/monk_attack_strip.png",
+      "bytes": 2468,
+      "sha256": "a62b6b7b58a2bb785de7b1565cbf47266bf6495b3a7c6c452db4f811fe41b325",
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/monk_death_strip.png",
+      "bytes": 2675,
+      "sha256": "de3d2b537a2c620c64b72af225a2e4d44a641fc10ff24806bdc4338014f2824c",
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/monk_hit_strip.png",
+      "bytes": 1693,
+      "sha256": "d4f3ac54546c02371849a24683b0a393cd21ebe9dbd4a7c5234ae37cbec831fb",
+      "size": [
+        128,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/monk_idle_strip.png",
+      "bytes": 2121,
+      "sha256": "0d8ec613bbe0f237b69cd1cb66b336f75ee28e55c99ae072412b6989785bb1e3",
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/ranger_attack_strip.png",
+      "bytes": 2600,
+      "sha256": "14dcaa78f19df1daa064da6457952d9482fe44a919ccd7965635019578f35129",
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/ranger_death_strip.png",
+      "bytes": 2729,
+      "sha256": "904552731712b48c12942656a281b956d73abe2bd0ffefabdb4b5f3714d397da",
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/ranger_hit_strip.png",
+      "bytes": 1872,
+      "sha256": "ee568568e5e60bdfc83b488623bc4e5d4ea6fed4954252fe0292349a0b83accb",
+      "size": [
+        128,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/ranger_idle_strip.png",
+      "bytes": 2156,
+      "sha256": "83618c6c18f2807476cf68505f9bc63d549195c565064bfc07eb368b9696d9ff",
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_arcane_bolt_hit_strip.png",
+      "bytes": 229,
+      "sha256": "ccc46408b1c911f2feb3cc857fca5d06c626ca379e060ceda63d6ac91c44094c",
+      "size": [
+        60,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_arcane_bolt_strip.png",
+      "bytes": 272,
+      "sha256": "790c49c7181c4ccd964ee34fa7f4393a078032174466b86810d9ede64a781539",
+      "size": [
+        36,
+        12
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_arcane_ward_back_strip.png",
+      "bytes": 556,
+      "sha256": "a9217fa0ada02b9af89582e5f66f82e34ecc8072f1178043e986ceccc7975b41",
+      "size": [
+        864,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_arcane_ward_front_strip.png",
+      "bytes": 1873,
+      "sha256": "e7ab0ccf08560f39a2f9cb22c1768f9fee61193c608e57ef1f00595059660c71",
+      "size": [
+        864,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_arrow_hit_strip.png",
+      "bytes": 185,
+      "sha256": "365d20a4fdabc6c410add2cbded7529cd613086986a357b89d50f8dfc5419752",
+      "size": [
+        48,
+        16
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_arrow_strip.png",
+      "bytes": 164,
+      "sha256": "8668f95e6fd08cef5b5278a3d12ead77426a14e817fd50d59afdb966c1a4359c",
+      "size": [
+        32,
+        7
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_monk_impact_crit_strip.png",
+      "bytes": 400,
+      "sha256": "a59eafdcc8b53c0ff8b2d4ca2df0c0f453d809a4d61eeea1900c6d19d58ee394",
+      "size": [
+        84,
+        28
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_monk_impact_strip.png",
+      "bytes": 321,
+      "sha256": "bb0c081b5031560fdae821f49ec7fd5e85a6c63e5b46ed2985b0cf351748dff1",
+      "size": [
+        60,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_venom_glob_strip.png",
+      "bytes": 254,
+      "sha256": "001938d9923cd04f0ba3533d95f71bf1f42b38865d5e7c077b4bcf31ff3c8576",
+      "size": [
+        28,
+        11
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_venom_splash_strip.png",
+      "bytes": 221,
+      "sha256": "3fc566d5132926a8ce2c53d531bb3b1ae0f069b27b18ea460ee393fc43ff03e0",
+      "size": [
+        60,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_warrior_impact_crit_strip.png",
+      "bytes": 318,
+      "sha256": "cfd73edd72f5be6395a1761156368e4315d823d3a515ca2876ef13f12c70e810",
+      "size": [
+        84,
+        28
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_warrior_impact_strip.png",
+      "bytes": 230,
+      "sha256": "bd3c93d9eec167ac82a9e1767afa162c226c7697cf117990e7d593d5e51ef762",
+      "size": [
+        60,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_warrior_slash_strip.png",
+      "bytes": 338,
+      "sha256": "0cbc38d54c2504c407d2240ad93ea9321ece94f7ecbfcbdaf8b7d4bdae491752",
+      "size": [
+        144,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/vfx_wolf_bite_strip.png",
+      "bytes": 208,
+      "sha256": "65403201d6cb3c45a12f4ddd843f34596d1258ed62c853051343945e3757d0c7",
+      "size": [
+        60,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/warrior_attack_strip.png",
+      "bytes": 3711,
+      "sha256": "acda714ac7c77c62547c176277fb67e1f2c42dd7b48b31446afdd7d59f5520b0",
+      "size": [
+        288,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/warrior_death_strip.png",
+      "bytes": 3137,
+      "sha256": "fa2a18fe5846324b778c3eaa8f4d9decb0d2e6d01189fe2c66e67ed900f90796",
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/warrior_hit_strip.png",
+      "bytes": 2248,
+      "sha256": "c9b33d06dbb92c83444e9c2bb98ebccdbccd2f266d19d0ae23ce859f5d6f6132",
+      "size": [
+        128,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "sprite_strips/warrior_idle_strip.png",
+      "bytes": 2530,
+      "sha256": "5041108331389827a3ac8588b44ea1e5459fb98c020691fe8afa5dab31adcdb0",
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "sprite_strip (derived: frames concatenated left->right, identical pixels)"
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_attack_00.png",
+      "bytes": 1024,
+      "sha256": "978376f4d596029181e0526bc7d9d8f2364e3f0c10aa67e21711555d8bd5d2a9",
+      "size": [
+        72,
+        56
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "attack",
+      "frame_index": 0,
+      "frame": [
+        72,
+        56
+      ],
+      "anchor": [
+        36,
+        48
+      ],
+      "ms": 150
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_attack_01.png",
+      "bytes": 1056,
+      "sha256": "24fb121e04665bd3ed8feef894f2a4727c70a613d5f7d97d440559c744574644",
+      "size": [
+        72,
+        56
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "attack",
+      "frame_index": 1,
+      "frame": [
+        72,
+        56
+      ],
+      "anchor": [
+        36,
+        48
+      ],
+      "ms": 60
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_attack_02.png",
+      "bytes": 1038,
+      "sha256": "787da963abffb77ceb3615aca74bd5ef22aab349adf0f104a43af70f2214d47c",
+      "size": [
+        72,
+        56
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "attack",
+      "frame_index": 2,
+      "frame": [
+        72,
+        56
+      ],
+      "anchor": [
+        36,
+        48
+      ],
+      "ms": 110
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_attack_03.png",
+      "bytes": 1040,
+      "sha256": "10f0e33bd37537da052b4015cc3e963638f3060d5e119fe9aaeb8152957bc9be",
+      "size": [
+        72,
+        56
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "attack",
+      "frame_index": 3,
+      "frame": [
+        72,
+        56
+      ],
+      "anchor": [
+        36,
+        48
+      ],
+      "ms": 150
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_death_00.png",
+      "bytes": 1000,
+      "sha256": "4485abe20ba2eff8e9308cfce7759351d4b714793c541bd8d7172233ff244394",
+      "size": [
+        64,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "death",
+      "frame_index": 0,
+      "frame": [
+        64,
+        48
+      ],
+      "anchor": [
+        32,
+        44
+      ],
+      "ms": 100
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_death_01.png",
+      "bytes": 999,
+      "sha256": "0d10dad6a0760fb70d20da110ac5b9ee233e51a78912b726bd1029f821c1cd65",
+      "size": [
+        64,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "death",
+      "frame_index": 1,
+      "frame": [
+        64,
+        48
+      ],
+      "anchor": [
+        32,
+        44
+      ],
+      "ms": 140
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_death_02.png",
+      "bytes": 875,
+      "sha256": "2c3b71a36c2630da3236de7ca01e7dd6b65d3679302ff5254d97da763a122d2b",
+      "size": [
+        64,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "death",
+      "frame_index": 2,
+      "frame": [
+        64,
+        48
+      ],
+      "anchor": [
+        32,
+        44
+      ],
+      "ms": 170
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_death_03.png",
+      "bytes": 868,
+      "sha256": "32576d4a67f3d5459f4894e86d0293874851f61df55769c6c7fef2b8980cb117",
+      "size": [
+        64,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "death",
+      "frame_index": 3,
+      "frame": [
+        64,
+        48
+      ],
+      "anchor": [
+        32,
+        44
+      ],
+      "ms": 0
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_hit_00.png",
+      "bytes": 1038,
+      "sha256": "8b9d87d22c75c9c0e68116ecbb0bbf159bfc519aaef55dfb277eeec7d0fbe9a1",
+      "size": [
+        64,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "hit",
+      "frame_index": 0,
+      "frame": [
+        64,
+        48
+      ],
+      "anchor": [
+        32,
+        44
+      ],
+      "ms": 80
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_hit_01.png",
+      "bytes": 1011,
+      "sha256": "c5b9d9655b96fb99b8bc5416c5c0b825d9723b156dcd58724ffe175b96850551",
+      "size": [
+        64,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "hit",
+      "frame_index": 1,
+      "frame": [
+        64,
+        48
+      ],
+      "anchor": [
+        32,
+        44
+      ],
+      "ms": 120
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_hit_flash.png",
+      "bytes": 415,
+      "sha256": "df103a6720119c114146702be3e51eb7c9d4d9ca5d80e59c6195b9bbd28a9998",
+      "size": [
+        64,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "hit_flash",
+      "frame": [
+        64,
+        48
+      ],
+      "anchor": [
+        32,
+        44
+      ]
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_idle_00.png",
+      "bytes": 1023,
+      "sha256": "24abeec3e92797a34cb4e9c339133c5ca48e4385390ccc63441c43901ad1fde4",
+      "size": [
+        64,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "idle",
+      "frame_index": 0,
+      "frame": [
+        64,
+        48
+      ],
+      "anchor": [
+        32,
+        44
+      ],
+      "ms": 200
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_idle_01.png",
+      "bytes": 1028,
+      "sha256": "2cf5801ca109bcf8fc83075a14c4664b1a0a65a02c826209fcdc0e983237c1fb",
+      "size": [
+        64,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "idle",
+      "frame_index": 1,
+      "frame": [
+        64,
+        48
+      ],
+      "anchor": [
+        32,
+        44
+      ],
+      "ms": 200
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_idle_02.png",
+      "bytes": 1037,
+      "sha256": "32318498457fd4f2346beab40dbcabc862f0dc8f8353225dc65bbd7d0e99b4f9",
+      "size": [
+        64,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "idle",
+      "frame_index": 2,
+      "frame": [
+        64,
+        48
+      ],
+      "anchor": [
+        32,
+        44
+      ],
+      "ms": 160
+    },
+    {
+      "path": "enemies/dire_wolf/dire_wolf_idle_03.png",
+      "bytes": 1024,
+      "sha256": "c17593d17e5ba23e64561c7d0bbef8b48af54b5e1163f40b0212e14cae8b6ccd",
+      "size": [
+        64,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "dire_wolf",
+      "animation": "idle",
+      "frame_index": 3,
+      "frame": [
+        64,
+        48
+      ],
+      "anchor": [
+        32,
+        44
+      ],
+      "ms": 200
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_attack_00.png",
+      "bytes": 1025,
+      "sha256": "9bef6cd731e4eb44ad7bfb8aca5338f3f8c499034f9ff7a62688a08d66354019",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "attack",
+      "frame_index": 0,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 170
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_attack_01.png",
+      "bytes": 1067,
+      "sha256": "dcca0d5de66161f7a3cfaf12fb81709daeb9da96d52cfb1e794f58e4819aee28",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "attack",
+      "frame_index": 1,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 60
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_attack_02.png",
+      "bytes": 1048,
+      "sha256": "728830ef7d10bc34d524c5e3fa81399b6c96984c809b3bd92c9c80605e92b178",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "attack",
+      "frame_index": 2,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 110
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_attack_03.png",
+      "bytes": 1043,
+      "sha256": "0598f5d48729da0ccb99beb5023d1c2bc13f397466f630c2f1d1a5a056cdc472",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "attack",
+      "frame_index": 3,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 150
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_death_00.png",
+      "bytes": 1056,
+      "sha256": "5b2427d12354fb1133880e214dc875b37b5546593910d6119b7b41aca11979a5",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "death",
+      "frame_index": 0,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 100
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_death_01.png",
+      "bytes": 819,
+      "sha256": "1520c432de0d640c2e74aaa644d7795a9c493f62b798ee3d724e2c5b6132dfc1",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "death",
+      "frame_index": 1,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 140
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_death_02.png",
+      "bytes": 813,
+      "sha256": "8047d6b87cd8d2abdbe2cda81041fa594149129983ad7fefd8c2e030cea5ef4a",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "death",
+      "frame_index": 2,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 170
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_death_03.png",
+      "bytes": 753,
+      "sha256": "b6f5128f33c6c58d4d7c0664c1b6c31eb8e0fcc1173d0f046b27baa02f3faaa5",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "death",
+      "frame_index": 3,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 0
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_hit_00.png",
+      "bytes": 1033,
+      "sha256": "ebda49367d75d8ad3d8af8e34346108fbcabccf5bdcdb9f3c0136146b2b786f2",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "hit",
+      "frame_index": 0,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 80
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_hit_01.png",
+      "bytes": 1044,
+      "sha256": "38664691a11b799482f986c45c771f3468ad4b52db371555a8acb15e6c54a792",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "hit",
+      "frame_index": 1,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 120
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_hit_flash.png",
+      "bytes": 375,
+      "sha256": "29c8a37e7d1278554a88596844f82e27d418a85b94f0ab1b0ab7561ecc95685a",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "hit_flash",
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ]
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_idle_00.png",
+      "bytes": 1031,
+      "sha256": "2d5d40f0999d9059333e00776a6175902e7a238cf503c2637a4bdcafccb7cd2d",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "idle",
+      "frame_index": 0,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 170
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_idle_01.png",
+      "bytes": 1041,
+      "sha256": "c969510d307848eca02ad7bdac0798f630832b288ecffe2bd58222d17d5d3496",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "idle",
+      "frame_index": 1,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 170
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_idle_02.png",
+      "bytes": 1042,
+      "sha256": "c77ebfd11fb44760ede39e862ce0ae713248249e8c540d310576317ac4b94db0",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "idle",
+      "frame_index": 2,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 170
+    },
+    {
+      "path": "enemies/gloom_spider/gloom_spider_idle_03.png",
+      "bytes": 1040,
+      "sha256": "369173951a2b88ed77390952d4978d9985e3b73a000c4aae196bed2e2896c159",
+      "size": [
+        56,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "enemie",
+      "actor": "gloom_spider",
+      "animation": "idle",
+      "frame_index": 3,
+      "frame": [
+        56,
+        48
+      ],
+      "anchor": [
+        28,
+        44
+      ],
+      "ms": 170
+    },
+    {
+      "path": "heroes/monk/monk_attack_00.png",
+      "bytes": 1064,
+      "sha256": "8de32009f86bd3a41632946ec736174742828aa577afa5bd8bfd23b067f352c6",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "attack",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 120
+    },
+    {
+      "path": "heroes/monk/monk_attack_01.png",
+      "bytes": 1165,
+      "sha256": "ba2d562c5b6c4bae64448b0aa4d51540f96154b350d19aae84931c52140adb60",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "attack",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 60
+    },
+    {
+      "path": "heroes/monk/monk_attack_02.png",
+      "bytes": 1164,
+      "sha256": "b734832265bbecf7d15c5b9c1b674f9510e9d5728c4dc2a4a74c5857ab92b066",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "attack",
+      "frame_index": 2,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 100
+    },
+    {
+      "path": "heroes/monk/monk_attack_03.png",
+      "bytes": 1139,
+      "sha256": "d1907a8bc91a6d318addde6855495aa551920aa894bfec5b6192ea7dd58cf6fe",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "attack",
+      "frame_index": 3,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 140
+    },
+    {
+      "path": "heroes/monk/monk_death_00.png",
+      "bytes": 1052,
+      "sha256": "14e6587090b0938667783c9b67c8d53e8e9198793e4c0a04d71749dcb03594ac",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "death",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 100
+    },
+    {
+      "path": "heroes/monk/monk_death_01.png",
+      "bytes": 1082,
+      "sha256": "9740914371a3a274b9397784639fc08d0a5f810429a9840461641bb9d0a366f6",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "death",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 140
+    },
+    {
+      "path": "heroes/monk/monk_death_02.png",
+      "bytes": 923,
+      "sha256": "c339167dfaad9138c9fcabecbb683d633f5424b93425f2705cdef2f1830c3838",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "death",
+      "frame_index": 2,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 160
+    },
+    {
+      "path": "heroes/monk/monk_death_03.png",
+      "bytes": 900,
+      "sha256": "235c2e16a90e091f68983e266262bdd5b5cd5d30ee45319bc2297b44403079ee",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "death",
+      "frame_index": 3,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 0
+    },
+    {
+      "path": "heroes/monk/monk_hit_00.png",
+      "bytes": 1088,
+      "sha256": "98bcfa7513877402e733b94ec9dfd91e7f6a87fa583910814a5931125c86d4c0",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "hit",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 80
+    },
+    {
+      "path": "heroes/monk/monk_hit_01.png",
+      "bytes": 1142,
+      "sha256": "84e76a9093d6e48dbc8f3f152e86b7cdb2af1ae1c0928b9b5f4e53d5543780c0",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "hit",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 120
+    },
+    {
+      "path": "heroes/monk/monk_hit_flash.png",
+      "bytes": 395,
+      "sha256": "acef24c60914909c99397c1ba64510b432c91ac978d4c3f63b39c40f11074b19",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "hit_flash",
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ]
+    },
+    {
+      "path": "heroes/monk/monk_idle_00.png",
+      "bytes": 6892,
+      "sha256": "660f35543929b8936dad48587a0da4d236150564bfaa2aebbf125ba3ef251bdb",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "idle",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 180
+    },
+    {
+      "path": "heroes/monk/monk_idle_01.png",
+      "bytes": 1132,
+      "sha256": "6a2dc50eb62c0d814f3f0a38b4fd3a0f6799635426d34f178fea4540816cce86",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "idle",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 180
+    },
+    {
+      "path": "heroes/monk/monk_idle_02.png",
+      "bytes": 1156,
+      "sha256": "3dec8d272ae83539ebda40cfb2c2e8c20e1b52c189fd8c3636792c7cb31c9b40",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "idle",
+      "frame_index": 2,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 180
+    },
+    {
+      "path": "heroes/monk/monk_idle_03.png",
+      "bytes": 1122,
+      "sha256": "4a77388726c715f60c4ba78d364603d86d11f4a36d438cdebee18d6ab5fbb529",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "monk",
+      "animation": "idle",
+      "frame_index": 3,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 180
+    },
+    {
+      "path": "heroes/ranger/ranger_attack_00.png",
+      "bytes": 1391,
+      "sha256": "24c04e5512596c8675206355b3d6ec16e8e2a5c5ccec6fd076e62de9b92cb4cd",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "attack",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 140
+    },
+    {
+      "path": "heroes/ranger/ranger_attack_01.png",
+      "bytes": 1287,
+      "sha256": "0805c0918052c642c05aa4c9bbbdf0e27de3f0a738a22aab4edd1904875aad77",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "attack",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 60
+    },
+    {
+      "path": "heroes/ranger/ranger_attack_02.png",
+      "bytes": 1266,
+      "sha256": "e1c54420c664e7d3d4438dae09b9d181282f44240eda358797c6a5ff00349583",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "attack",
+      "frame_index": 2,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 100
+    },
+    {
+      "path": "heroes/ranger/ranger_attack_03.png",
+      "bytes": 1235,
+      "sha256": "3655726f0743af2dbd2ecbd464d7ca099bd38e3de572f88e23ce1004f69ead84",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "attack",
+      "frame_index": 3,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 160
+    },
+    {
+      "path": "heroes/ranger/ranger_death_00.png",
+      "bytes": 1211,
+      "sha256": "fab8bb9d0a1dbcbb6d2e69bb363486ae661d23b64b21917da070a3068a8898d6",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "death",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 110
+    },
+    {
+      "path": "heroes/ranger/ranger_death_01.png",
+      "bytes": 1142,
+      "sha256": "f2b58197578835b29a0b6644acd6656b8fc3e80ffc7727063d5899f7ecd32e94",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "death",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 150
+    },
+    {
+      "path": "heroes/ranger/ranger_death_02.png",
+      "bytes": 979,
+      "sha256": "8b59a3bbb80b45c8636a44b670f2b011c8cec7460dfb7a155ecc3a1510d6ade1",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "death",
+      "frame_index": 2,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 170
+    },
+    {
+      "path": "heroes/ranger/ranger_death_03.png",
+      "bytes": 934,
+      "sha256": "8dfa54ef7cf0871889380c089e724f55f96045d4a8dc33251893014965e54625",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "death",
+      "frame_index": 3,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 0
+    },
+    {
+      "path": "heroes/ranger/ranger_hit_00.png",
+      "bytes": 1280,
+      "sha256": "84a8a43e7b4da88326396e0d915b5cb4fe4178201413be7af9bbd474492c5b3f",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "hit",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 80
+    },
+    {
+      "path": "heroes/ranger/ranger_hit_01.png",
+      "bytes": 1261,
+      "sha256": "dba811fd5f22570fb4a96de613f08e0d05a476e3f20a7a395029f9a961b0a0a8",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "hit",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 120
+    },
+    {
+      "path": "heroes/ranger/ranger_hit_flash.png",
+      "bytes": 403,
+      "sha256": "f7b38e20f10f89ca50d156b36f45acc60c859b9b99b6438f93b2fd4256b5a480",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "hit_flash",
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ]
+    },
+    {
+      "path": "heroes/ranger/ranger_idle_00.png",
+      "bytes": 1375,
+      "sha256": "777438c05c937a441bb243ddb52e13b1aef1048789418fec45ca956ed52183a4",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "idle",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 200
+    },
+    {
+      "path": "heroes/ranger/ranger_idle_01.png",
+      "bytes": 1350,
+      "sha256": "413b50f0ac3320d21f76583199b1c5f894e07112eaf736c721ff4e0a4dbbcc93",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "idle",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 200
+    },
+    {
+      "path": "heroes/ranger/ranger_idle_02.png",
+      "bytes": 1371,
+      "sha256": "7f9db0091928fa63194d9e9bca1e4e43465993b25a33723a39a3a69faf04d9f2",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "idle",
+      "frame_index": 2,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 200
+    },
+    {
+      "path": "heroes/ranger/ranger_idle_03.png",
+      "bytes": 1367,
+      "sha256": "a4012199a27c2e2bfd55c2a2d4b4e69d8d08d6fe6c9757357dcb40d4dfc7b6d7",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "ranger",
+      "animation": "idle",
+      "frame_index": 3,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 200
+    },
+    {
+      "path": "heroes/mage/mage_attack_00.png",
+      "bytes": 1125,
+      "sha256": "afabd03e6d5004e065cfcb6dd006033a807b93e97603448b4e6e916c294af689",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "attack",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 160
+    },
+    {
+      "path": "heroes/mage/mage_attack_01.png",
+      "bytes": 1159,
+      "sha256": "93a169c9d2cf6bfe5d723a7634ce6cc4eaf0782032fe00c1bedfd528315bf098",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "attack",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 60
+    },
+    {
+      "path": "heroes/mage/mage_attack_02.png",
+      "bytes": 1153,
+      "sha256": "0bbe420072b78b2d9b26b25605a6fdebbda0e71def15ee17e34f04020b00b02a",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "attack",
+      "frame_index": 2,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 120
+    },
+    {
+      "path": "heroes/mage/mage_attack_03.png",
+      "bytes": 1104,
+      "sha256": "a21b293b9541f8554ae19cfb0ebbd8495336744f3276f31f2ba2fecd5ad038f8",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "attack",
+      "frame_index": 3,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 160
+    },
+    {
+      "path": "heroes/mage/mage_death_00.png",
+      "bytes": 1095,
+      "sha256": "772a16ba4ba5494bf272790fa2775ff1aaf71cb9d3105079a2b6a782c1b9257f",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "death",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 120
+    },
+    {
+      "path": "heroes/mage/mage_death_01.png",
+      "bytes": 1115,
+      "sha256": "c1e9e948ea2af78bdb127459b7b25781de016e8b977d3cec63124ebc563bcdee",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "death",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 160
+    },
+    {
+      "path": "heroes/mage/mage_death_02.png",
+      "bytes": 950,
+      "sha256": "cfde18b8f174ab7a3dafe07aa57956bd9dd50cbe4fbfaeea05be197cf78db704",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "death",
+      "frame_index": 2,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 180
+    },
+    {
+      "path": "heroes/mage/mage_death_03.png",
+      "bytes": 876,
+      "sha256": "1ac78cacd74a582dc644c0f12cf53435cdcbf6b893bcfeb199293b3a8d2d2ae7",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "death",
+      "frame_index": 3,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 0
+    },
+    {
+      "path": "heroes/mage/mage_hit_00.png",
+      "bytes": 1122,
+      "sha256": "491cc42ae85928b67c1e85dd8f73678cabad8f1814cefedf9673420ea8429197",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "hit",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 90
+    },
+    {
+      "path": "heroes/mage/mage_hit_01.png",
+      "bytes": 1107,
+      "sha256": "ff863b097fbb85d4831ca4d4e6fc94dcb46f8fcd8d3ac2b1cc2e51d95e6c5eaf",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "hit",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 130
+    },
+    {
+      "path": "heroes/mage/mage_hit_flash.png",
+      "bytes": 393,
+      "sha256": "b7f68d1a727fd24f7cb262480a089f339cb6f938215409e87ae4a9a8cb0d2dc5",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "hit_flash",
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ]
+    },
+    {
+      "path": "heroes/mage/mage_idle_00.png",
+      "bytes": 6883,
+      "sha256": "9950c6e28a62562f056650de54c0140bf410eae4c64ff53aceeb66f9db45a64d",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "idle",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 220
+    },
+    {
+      "path": "heroes/mage/mage_idle_01.png",
+      "bytes": 1132,
+      "sha256": "fca1b4ff2d62d3ebad4f2aba2ef7482ee51581c7ba69cfe9d9b6c7285bef08bf",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "idle",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 220
+    },
+    {
+      "path": "heroes/mage/mage_idle_02.png",
+      "bytes": 1121,
+      "sha256": "6a078af1a5630243b869c23c2210ecfb4b0d95e07bdeec2f9639f84902cf7940",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "idle",
+      "frame_index": 2,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 220
+    },
+    {
+      "path": "heroes/mage/mage_idle_03.png",
+      "bytes": 1117,
+      "sha256": "03834755ab67ca6d27b2920e80323936d9e70292053518392f22e2ae45a77a96",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "mage",
+      "animation": "idle",
+      "frame_index": 3,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 220
+    },
+    {
+      "path": "heroes/warrior/warrior_attack_00.png",
+      "bytes": 1600,
+      "sha256": "cef6196b5f43f7ebccccbe7dcb1fece9901ed2b20d09a186a90eb8096b2d440c",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "attack",
+      "frame_index": 0,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ],
+      "ms": 160
+    },
+    {
+      "path": "heroes/warrior/warrior_attack_01.png",
+      "bytes": 1791,
+      "sha256": "3430bac984d2cbeaee050a313d4b546ab8953d85cb539e937bcfcd54f9086754",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "attack",
+      "frame_index": 1,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ],
+      "ms": 70
+    },
+    {
+      "path": "heroes/warrior/warrior_attack_02.png",
+      "bytes": 1771,
+      "sha256": "3423459fd148ac08c5bbf4438bc0358a3f872c14b41a789536b1c5e728e807da",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "attack",
+      "frame_index": 2,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ],
+      "ms": 110
+    },
+    {
+      "path": "heroes/warrior/warrior_attack_03.png",
+      "bytes": 1716,
+      "sha256": "177ad5733abb6eac7225856333159d464cba92763ee42972917b71e7f708f20e",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "attack",
+      "frame_index": 3,
+      "frame": [
+        72,
+        72
+      ],
+      "anchor": [
+        36,
+        64
+      ],
+      "ms": 170
+    },
+    {
+      "path": "heroes/warrior/warrior_death_00.png",
+      "bytes": 1597,
+      "sha256": "135813a906d897213e5871bf1b75ed4d36f2d6c7b44c7ebb6b72435979b3562a",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "death",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 120
+    },
+    {
+      "path": "heroes/warrior/warrior_death_01.png",
+      "bytes": 1472,
+      "sha256": "cc7a5d0dc18619e52bb59312f70273fc7e43e80bd8f93c50f3b4da2c86a4033f",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "death",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 170
+    },
+    {
+      "path": "heroes/warrior/warrior_death_02.png",
+      "bytes": 1317,
+      "sha256": "ee7c27514fd411ded2289db1fb7a34b847680217dfb44627db8c7548b7db3566",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "death",
+      "frame_index": 2,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 190
+    },
+    {
+      "path": "heroes/warrior/warrior_death_03.png",
+      "bytes": 1303,
+      "sha256": "df86d39f17a41311e37ec131d80b6b49e0a6252e50cc04245182e87c1dce0a53",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "death",
+      "frame_index": 3,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 0
+    },
+    {
+      "path": "heroes/warrior/warrior_hit_00.png",
+      "bytes": 1503,
+      "sha256": "66ce0a643e3ac10533943c2a4939009e5a99adcbde6a78c7190821e4ea74aaba",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "hit",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 90
+    },
+    {
+      "path": "heroes/warrior/warrior_hit_01.png",
+      "bytes": 1594,
+      "sha256": "e1ebacef4c845103a212167228b6902daa8e0fceda89390f5bf8cff557b05183",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "hit",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 130
+    },
+    {
+      "path": "heroes/warrior/warrior_hit_flash.png",
+      "bytes": 488,
+      "sha256": "57b6843fb9725fa49f9406805ac0eaf2d402626913c6196dc89a56a46322ff60",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "hit_flash",
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ]
+    },
+    {
+      "path": "heroes/warrior/warrior_idle_00.png",
+      "bytes": 7389,
+      "sha256": "fae4059417b1030800c4e5b6d9b82c62a9c82537dd72105470fca5363cacf67e",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "idle",
+      "frame_index": 0,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 240
+    },
+    {
+      "path": "heroes/warrior/warrior_idle_01.png",
+      "bytes": 1633,
+      "sha256": "5f130f8ed1bb816d6edd2171ecb0370618ff527603ef83f8096d8346f4004010",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "idle",
+      "frame_index": 1,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 240
+    },
+    {
+      "path": "heroes/warrior/warrior_idle_02.png",
+      "bytes": 1615,
+      "sha256": "a1b787e17ce20c4f4bed6d1b23829b7f19a931a4cff6d7443c6f7ca3c064cc0f",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "idle",
+      "frame_index": 2,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 240
+    },
+    {
+      "path": "heroes/warrior/warrior_idle_03.png",
+      "bytes": 1629,
+      "sha256": "4fa3068dc9c0d8606a248d4c49225f73882ab6b3db24e308bbda7b77b5202a9c",
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_values": [
+        0,
+        255
+      ],
+      "off_palette_px": 0,
+      "kind": "heroe",
+      "actor": "warrior",
+      "animation": "idle",
+      "frame_index": 3,
+      "frame": [
+        64,
+        64
+      ],
+      "anchor": [
+        32,
+        60
+      ],
+      "ms": 240
+    }
+  ],
+  "style_documents": [
+    {
+      "path": "STYLE_DOCUMENTS/01_hero_style_lock_character_proportions.md",
+      "bytes": 3517
+    },
+    {
+      "path": "STYLE_DOCUMENTS/02_silhouette_safe_bounds.md",
+      "bytes": 5400
+    },
+    {
+      "path": "STYLE_DOCUMENTS/03_animation_style_bible_v1.2.md",
+      "bytes": 9343
+    },
+    {
+      "path": "STYLE_DOCUMENTS/04_palette_rules.md",
+      "bytes": 1817
+    },
+    {
+      "path": "STYLE_DOCUMENTS/04_palette_sheet_v03.png",
+      "bytes": 65196
+    },
+    {
+      "path": "STYLE_DOCUMENTS/05_pixel_art_style_bible_v0.2_background.md",
+      "bytes": 20394
+    }
+  ],
+  "non_production_material_NOT_FOR_RUNTIME": [
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/monk_mage/build.py",
+      "bytes": 14756
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/monk_mage/frames.py",
+      "bytes": 4463
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/monk_mage/lib.py",
+      "bytes": 10134
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/monk_mage/rig.py",
+      "bytes": 7642
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/monk_mage/vfx.py",
+      "bytes": 3276
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/locked_heroes/heroes3.py",
+      "bytes": 8808
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/locked_heroes/lib.py",
+      "bytes": 9272
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/locked_heroes/verify_and_rebuild.py",
+      "bytes": 2151
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/environment/bg.py",
+      "bytes": 7478
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/environment/lib.py",
+      "bytes": 9272
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/enemies/build3.py",
+      "bytes": 14921
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/enemies/frames3.py",
+      "bytes": 4072
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/enemies/lib.py",
+      "bytes": 10377
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/enemies/rig3.py",
+      "bytes": 6772
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/ranger_warrior/build2.py",
+      "bytes": 11996
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/ranger_warrior/frames2.py",
+      "bytes": 4232
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/ranger_warrior/lib.py",
+      "bytes": 10377
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/ranger_warrior/rig2.py",
+      "bytes": 10018
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/ranger_warrior/vfx.py",
+      "bytes": 3276
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/source_code/ranger_warrior/vfx2.py",
+      "bytes": 2940
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/build_reports/enemies__README.md",
+      "bytes": 4936
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/build_reports/enemies__VERIFICATION.json",
+      "bytes": 11630
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/build_reports/monk_mage__README.md",
+      "bytes": 3737
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/build_reports/monk_mage__VERIFICATION.json",
+      "bytes": 16198
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/build_reports/ranger_warrior__README.md",
+      "bytes": 5169
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/build_reports/ranger_warrior__VERIFICATION.json",
+      "bytes": 12169
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/contact_sheets/enemies__contact_sheet_2x_actual_size.png",
+      "bytes": 56592
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/contact_sheets/enemies__contact_sheet_4x_inspection.png",
+      "bytes": 72454
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/contact_sheets/monk_mage__contact_sheet_2x_actual_size.png",
+      "bytes": 52373
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/contact_sheets/monk_mage__contact_sheet_4x_inspection.png",
+      "bytes": 68302
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/contact_sheets/ranger_warrior__contact_sheet_2x_actual_size.png",
+      "bytes": 59672
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/contact_sheets/ranger_warrior__contact_sheet_4x_inspection.png",
+      "bytes": 79442
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/reference_images/locked_heroes__combat_2x.png",
+      "bytes": 70543
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/reference_images/locked_heroes__gear_3x.png",
+      "bytes": 49786
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/reference_images/locked_heroes__native_bounds_64x64.png",
+      "bytes": 32692
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/reference_images/locked_heroes__silhouette_greyscale.png",
+      "bytes": 18772
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/enemies__demo_dire_wolf_bite_vs_monk_2x.gif",
+      "bytes": 19390
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/enemies__demo_dire_wolf_hit_to_death_2x.gif",
+      "bytes": 14052
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/enemies__demo_gloom_spider_hit_to_death_2x.gif",
+      "bytes": 14576
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/enemies__demo_gloom_spider_spit_vs_warrior_2x.gif",
+      "bytes": 23958
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/enemies__dire_wolf_attack_2x.gif",
+      "bytes": 9477
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/enemies__dire_wolf_death_2x.gif",
+      "bytes": 6142
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/enemies__dire_wolf_hit_2x.gif",
+      "bytes": 5944
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/enemies__dire_wolf_idle_2x.gif",
+      "bytes": 4963
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/enemies__gloom_spider_attack_2x.gif",
+      "bytes": 8878
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/enemies__gloom_spider_death_2x.gif",
+      "bytes": 6388
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/enemies__gloom_spider_hit_2x.gif",
+      "bytes": 6780
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/enemies__gloom_spider_idle_2x.gif",
+      "bytes": 4576
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/monk_mage__demo_mage_cast_bolt_ward_absorb_break_2x.gif",
+      "bytes": 28725
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/monk_mage__demo_mage_hit_to_death_2x.gif",
+      "bytes": 13647
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/monk_mage__demo_monk_attack_then_crit_vs_wolf_2x.gif",
+      "bytes": 24017
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/monk_mage__demo_monk_hit_to_death_2x.gif",
+      "bytes": 13201
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/monk_mage__mage_attack_2x.gif",
+      "bytes": 8649
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/monk_mage__mage_death_2x.gif",
+      "bytes": 6549
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/monk_mage__mage_hit_2x.gif",
+      "bytes": 6347
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/monk_mage__mage_idle_2x.gif",
+      "bytes": 3924
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/monk_mage__monk_attack_2x.gif",
+      "bytes": 9485
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/monk_mage__monk_death_2x.gif",
+      "bytes": 6184
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/monk_mage__monk_hit_2x.gif",
+      "bytes": 6430
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/monk_mage__monk_idle_2x.gif",
+      "bytes": 5246
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/ranger_warrior__demo_ranger_hit_to_death_2x.gif",
+      "bytes": 14063
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/ranger_warrior__demo_ranger_shot_vs_spider_2x.gif",
+      "bytes": 17644
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/ranger_warrior__demo_warrior_cleave_then_crit_vs_wolf_2x.gif",
+      "bytes": 30859
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/ranger_warrior__demo_warrior_hit_to_death_2x.gif",
+      "bytes": 15870
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/ranger_warrior__ranger_attack_2x.gif",
+      "bytes": 9442
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/ranger_warrior__ranger_death_2x.gif",
+      "bytes": 6681
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/ranger_warrior__ranger_hit_2x.gif",
+      "bytes": 7638
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/ranger_warrior__ranger_idle_2x.gif",
+      "bytes": 5421
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/ranger_warrior__warrior_attack_2x.gif",
+      "bytes": 13176
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/ranger_warrior__warrior_death_2x.gif",
+      "bytes": 8126
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/ranger_warrior__warrior_hit_2x.gif",
+      "bytes": 8315
+    },
+    {
+      "path": "NON_PRODUCTION_previews_sheets_source/previews_2x/ranger_warrior__warrior_idle_2x.gif",
+      "bytes": 6254
+    }
+  ],
+  "packaging_notes": [
+    "warrior_slash_00/01: canvas extended 64x64 -> 72x72 (transparent right/bottom) so it matches the 72x72 Warrior attack frame it overlays, as the approved README described. Pixel positions/colours unchanged."
+  ],
+  "verification": {
+    "problems": [],
+    "all_pass": true
+  }
+}

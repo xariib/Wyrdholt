@@ -1,0 +1,530 @@
+/* Immersive B production presentation. No simulation or fixture dependencies. */
+:root{
+  --bg:var(--w-bg);
+  --bg-raised:#10232d;
+  --panel:#10232d;
+  --panel-2:#172d36;
+  --panel-3:#203a45;
+  --line:#294956;
+  --line-strong:#527484;
+  --text:var(--w-text);
+  --text-dim:#abc0c7;
+  --text-faint:#8fa6af;
+  --gold:var(--w-amber);
+  --green-bright:var(--w-moss);
+  --radius-l:8px;
+  --radius-m:5px;
+  --radius-s:3px}
+
+.immersive{
+  background:var(--bg)}
+.immersive .header{
+  padding:8px 12px;
+  gap:8px;
+  border-bottom:1px solid var(--line);
+  background:#0e2029}
+.header-brand{
+  font:10px var(--font-body);
+  letter-spacing:1.2px;
+  color:var(--gold)}
+.immersive .header-name{
+  font-size:15px;
+  line-height:1.2}
+.immersive .header-sub{
+  font-size:12px}
+.immersive .header-main>.row{
+  display:none}
+.immersive .gold-chip{
+  font-size:14px;
+  gap:5px}
+.immersive .coin{
+  width:12px;
+  height:12px}
+.immersive .portrait{
+  width:40px;
+  height:48px;
+  min-width:40px;
+  border:0;
+  background:none}
+.immersive .portrait img{
+  height:40px;
+  width:auto}
+.immersive .header .icon-btn{
+  width:48px;
+  height:48px;
+  font-size:11px}
+.immersive .screen{
+  padding-top:12px}
+.immersive .panel{
+  background:none;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  padding:12px 2px}
+.immersive .list-item{
+  background:none;
+  border:0;
+  border-bottom:1px solid var(--line);
+  border-radius:0}
+.immersive .tag{
+  border:0;
+  background:none;
+  padding-left:0;
+  padding-right:0}
+.immersive .tag.new{
+  color:var(--gold)}
+.immersive .nav{
+  background:#0b1922;
+  border-color:var(--line)}
+.immersive .nav-btn{
+  font-family:var(--font-body);
+  font-size:12px}
+.immersive .nav-btn.active{
+  color:var(--gold)}
+.immersive .small{
+  font-size:13px}
+.immersive .btn.small{
+  min-height:48px}
+.immersive button{
+  touch-action:pan-y}
+.immersive .btn.gold{
+  background:var(--gold);
+  color:#17232a;
+  border-color:var(--gold)}
+
+/* The arena is a full-width world surface;
+   the title and route sit over its sky. */
+.immersive .adventure-screen{
+  padding:0 12px calc(var(--nav-height) + var(--sab) + 14px);
+  gap:8px}
+.adventure-world{
+  margin:0 -12px}
+.immersive .combat-frame{
+  position:relative;
+  height:clamp(280px,53vh,570px);
+  aspect-ratio:auto;
+  min-height:280px;
+  border:0;
+  border-radius:0;
+  background:#0c1b26;
+  overflow:hidden}
+.immersive .combat-host{
+  height:100%;
+  width:100%}
+.world-zone{
+  display:block;
+  position:absolute;
+  z-index:2;
+  top:0;
+  left:0;
+  right:0;
+  padding:14px 16px 26px;
+  background:linear-gradient(#091720ee,#091720a8,transparent);
+  pointer-events:none}
+.world-zone .zone-name{
+  font-size:28px;
+  line-height:1.15}
+.zone-context{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  font-size:12px;
+  color:var(--text-dim)}
+.zone-context .tag{
+  color:var(--gold);
+  font-size:12px}
+.world-zone .stage-dots{
+  margin-top:12px;
+  gap:10px}
+.world-zone .stage-dot{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  color:#7897a4;
+  font-size:12px}
+.world-zone .stage-dot.current{
+  border-color:var(--gold);
+  color:var(--gold);
+  background:#b98b2f66}
+.world-zone .stage-dot.elite{
+  transform:none}
+.world-zone .stage-dot.boss,.world-zone .stage-dot.elite{
+  width:18px;
+  height:18px;
+  border:0;
+  background:none}
+.world-zone .stage-dot.done{
+  color:var(--green-bright);
+  background:var(--green-bright)}
+.world-zone .stage-dot.elite.done{
+  background:none}
+.immersive .combat-banner{
+  top:105px;
+  left:16px;
+  right:auto;
+  font-size:12px}
+.immersive .combat-names{
+  padding:5px 16px;
+  font-size:12px;
+  color:var(--text-dim)}
+.combat-vitals{
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:8px 14px;
+  background:#0a1824e8;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font:12px var(--font-body);
+  z-index:2}
+.vitals-track{
+  height:7px;
+  flex:1;
+  background:#284350}
+.vitals-fill{
+  display:block;
+  height:100%;
+  background:#d77965;
+  width:100%}
+.vitals-ward{
+  color:#86c5ef;
+  font-size:11px}
+.vitals-ward[hidden]{
+  display:none}
+.run-readout{
+  padding:0 2px 4px}
+.run-readout .row.small{
+  font-size:12px;
+  gap:6px}
+.run-readout .faint{
+  font-size:11px}
+.immersive .activity{
+  display:flex;
+  gap:8px}
+.immersive .activity-btn{
+  min-height:48px;
+  padding:8px 10px;
+  border-radius:3px;
+  background:none;
+  border:1px solid var(--line);
+  gap:6px}
+.immersive .activity-btn svg{
+  display:none}
+.immersive .activity-btn .title{
+  font:13px var(--font-body);
+  font-weight:600}
+.immersive .activity-btn .sub{
+  font-size:11px}
+.immersive .activity-btn.active{
+  border-color:#547567;
+  background:#192e2c}
+.zone-directory{
+  padding-top:14px;
+  border-top:1px solid var(--line)}
+.zone-directory .panel-title{
+  font-size:18px}
+.immersive .toast.loot{
+  border-color:var(--rarity-rare);
+  background:#112936}
+
+/* Equipment belongs around a hero, not in a long slot list. */
+.hero-loadout{
+  padding:0!important}
+.loadout-stage{
+  position:relative;
+  min-height:396px}
+.loadout-links{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:300px;
+  color:#60818b;
+  opacity:.4;
+  pointer-events:none}
+.loadout-hero{
+  position:absolute;
+  left:29%;
+  width:42%;
+  top:48px;
+  text-align:center;
+  pointer-events:none}
+.loadout-hero img{
+  display:block;
+  width:100%;
+  height:218px;
+  object-fit:contain;
+  image-rendering:pixelated}
+.loadout-hero>span{
+  display:block;
+  font-size:11px;
+  color:var(--text-dim);
+  margin-top:5px}
+.immersive .loadout{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  column-gap:40%;
+  grid-template-rows:repeat(3,132px);
+  position:relative}
+.immersive .slot-card{
+  min-height:80px;
+  align-self:start;
+  padding:8px 0;
+  background:none;
+  border:0;
+  border-radius:0;
+  display:block;
+  position:relative;
+  overflow-wrap:anywhere}
+.slot-card>svg,.slot-card>img{
+  display:none}
+.immersive .slot-card .item-name{
+  font-size:13px;
+  line-height:1.2;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden}
+.immersive .slot-card .rarity{
+  font-size:11px}
+.immersive .slot-card .slot-label{
+  font-size:11px}
+.slot-card[data-slot=head]{
+  grid-column:1;
+  grid-row:1}
+.slot-card[data-slot=chest]{
+  grid-column:2;
+  grid-row:1}
+.slot-card[data-slot=weapon]{
+  grid-column:1;
+  grid-row:2}
+.slot-card[data-slot=gloves]{
+  grid-column:2;
+  grid-row:2}
+.slot-card[data-slot=boots]{
+  grid-column:1;
+  grid-row:3}
+.slot-card[data-slot=ring]{
+  grid-column:2;
+  grid-row:3}
+.immersive .badge-dot{
+  position:static;
+  display:inline-block;
+  font-size:10px;
+  min-width:18px;
+  height:auto;
+  margin-top:4px;
+  border-radius:2px;
+  background:none;
+  color:var(--gold)}
+.build-summary{
+  padding-top:12px;
+  border-top:1px solid var(--line)}
+.build-summary .stat{
+  background:none;
+  border:0;
+  padding:4px 0}
+.build-summary .stat-grid{
+  grid-template-columns:repeat(3,1fr);
+  gap:8px}
+.build-summary .chips .tag{
+  font-size:12px}
+.build-summary .panel-title{
+  font-size:20px}
+
+/* One native-scrolling sheet, with a reserved swipe handle. */
+.immersive .sheet{
+  background:#10232d;
+  border:1px solid #456271;
+  border-radius:14px 14px 0 0;
+  padding:0 18px calc(16px + var(--sab));
+  max-height:90%;
+  overscroll-behavior:contain}
+.sheet-drag{
+  position:sticky;
+  top:0;
+  z-index:3;
+  background:#10232d;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  touch-action:none;
+  flex-shrink:0}
+.sheet-drag .sheet-grip{
+  margin:0;
+  background:#8199a4}
+.sheet-close{
+  width:48px;
+  min-height:48px;
+  font-size:26px!important;
+  padding:0!important}
+.immersive .sheet > .sheet-drag + .row.spread{
+  position:sticky;
+  top:32px;
+  z-index:2;
+  background:#10232d}
+.slot-inventory[hidden]{
+  display:none}
+.immersive .compare{
+  gap:20px}
+.immersive .compare-col{
+  padding:0;
+  background:none;
+  border:0}
+.item-compare-head .item-name{
+  font:18px var(--font-display);
+  line-height:1.3;
+  margin:6px 0}
+.comparison-stats{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  margin:10px 0}
+.comparison-values{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  font-size:18px;
+  margin-top:5px}
+.comparison-effects{
+  font-size:13px;
+  margin:12px 0;
+  align-items:start}
+.comparison-effects strong{
+  display:block;
+  margin-top:7px;
+  color:var(--text)}
+.comparison-effects p{
+  color:var(--text-dim);
+  line-height:1.45}
+.equip-cta{
+  min-height:52px;
+  position:sticky;
+  bottom:0;
+  z-index:2}
+.immersive .sheet .list-item{
+  min-height:70px}
+.immersive .sheet .list-item .item-name{
+  font-size:16px}
+.immersive .sheet .list-item .tag{
+  font-size:11px}
+.immersive .sheet .list-item.equipped{
+  opacity:.8}
+
+/* Character retains techniques/codex, separated by space and rules rather than cards. */
+.character-screen .class-card{
+  border-bottom:1px solid var(--line)!important;
+  padding-bottom:20px!important}
+.character-screen .class-art{
+  width:90px;
+  height:120px;
+  background:none;
+  border:0}
+.character-screen .class-art img{
+  width:80px;
+  height:115px;
+  object-fit:contain}
+.character-screen .technique{
+  background:none;
+  border:0;
+  border-top:1px solid var(--line)}
+.immersive .modal{
+  background:#10232d;
+  border:1px solid #456271;
+  border-radius:8px}
+.immersive .modal .stat{
+  background:none;
+  border:0}
+.immersive .modal [data-testid=attempt-trail]{
+  padding:10px 0;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line)}
+
+@media(max-width:375px){
+  .world-zone .zone-name{
+  font-size:24px}
+.immersive .header-brand{
+  font-size:9px}
+.immersive .gold-chip{
+  font-size:12px}
+.immersive .slot-card .item-name{
+  font-size:12px}
+.immersive .run-readout .row.small{
+  font-size:11px}
+.immersive .activity-btn .sub{
+  display:none}
+}
+
+
+.queued-slot{
+  font-size:10px;
+  color:var(--blue)}
+
+
+/* Approved production art: native pixels always map to 2 CSS px in combat. */
+.immersive .combat-frame{height:544px;min-height:544px}
+
+/* Logical body rows 12–59 never crop the visual frame, plume, staff or bow. */
+.production-portrait{display:block;position:relative;box-sizing:content-box;width:192px;height:192px;padding:8px;overflow:visible;flex:none}
+.production-portrait img{display:block;max-width:none!important;max-height:none!important;object-fit:initial!important;image-rendering:pixelated}
+.loadout-hero{left:50%;width:208px;transform:translateX(-50%);top:48px}
+.class-card .class-head{flex-wrap:wrap}
+.class-card .production-class-art{width:100%;height:208px;background:none;border:0;overflow:visible}
+
+/* Approved A3 wordmark: integer native scale, no recoloring or cropping. */
+.brand-title { margin: 0 0 12px; line-height: 0; }
+.brand-wordmark { display: block; margin: auto; image-rendering: pixelated; }
+.header-brand img { display: block; width: 103px; height: 42px; max-width: none; image-rendering: pixelated; }
+
+/* Forge uses the existing shallow sheet; grouped copies keep large bags compact. */
+.forge-controls { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.forge-controls label, .forge-dev label { display:flex; flex-direction:column; gap:6px; font-size:14px; }
+.forge-controls select, .forge-dev select { min-height:48px; width:100%; color:var(--text); background:#15222a; border:1px solid #597e82; padding:8px; border-radius:4px; font:inherit; }
+.forge-promise { display:flex; flex-direction:column; gap:8px; padding:14px 0; border-block:1px solid #3c6068; }
+.forge-item { padding:14px 0; border-bottom:1px solid #2a4750; display:flex; flex-direction:column; gap:12px; }
+.forge-item-name { min-width:0; overflow-wrap:anywhere; }
+.forge-item .btn { min-height:48px; min-width:48px; }
+.forge-item summary, .forge-dev summary { min-height:44px; padding-block:12px; cursor:pointer; }
+.forge-materials { margin:0; padding-left:22px; overflow-wrap:anywhere; }
+.forge-materials li { padding-block:5px; }
+.forge-stats { display:flex; flex-wrap:wrap; gap:8px 16px; }
+.forge-result { padding-block:12px; }
+.forge-result h3 { font-size:24px; overflow-wrap:anywhere; }
+
+.forge-result[data-critical="true"] > .slot-label { color:#f0b650; font-size:16px; font-weight:700; }
+
+/* Slot inventory filters only change the view; comparison keeps its exact item. */
+.gear-filters { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px 12px; margin-block:16px 10px; }
+.gear-filters label { display:flex; flex-direction:column; gap:6px; font-size:14px; min-width:0; }
+.gear-filters .gear-search { grid-column:1 / -1; }
+.gear-filters input[type="search"], .gear-filters select { box-sizing:border-box; width:100%; min-width:0; min-height:44px; padding:10px; border:1px solid #597e82; border-radius:4px; background:#15222a; color:var(--text); font:inherit; }
+.gear-filters .gear-new-filter { flex-direction:row; align-items:center; min-height:44px; cursor:pointer; }
+.gear-new-filter input { width:20px; height:20px; margin:0; accent-color:var(--gold); }
+.gear-filters .gear-clear { grid-column:1 / -1; min-height:44px; }
+.gear-result-count { margin-bottom:10px; }
+.gear-empty { padding-block:16px; }
+.gear-filters input:focus-visible, .gear-filters select:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+
+.tag.locked { color:#f5d28c; border-color:#a88b55; background:#382e1c; }
+.gear-copies { margin-block:12px; border-block:1px solid #3c6068; }
+.gear-copies summary { min-height:44px; padding:12px 4px; cursor:pointer; overflow-wrap:anywhere; }
+.gear-copies > section { padding-block:8px 16px; }
+.gear-copy { padding:12px; border:1px solid #3c6068; border-radius:4px; min-width:0; }
+.gear-copy.selected { border-color:var(--gold); }
+.gear-copy-status { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:10px; }
+.gear-copy-actions { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px; margin-bottom:8px; }
+.gear-copy-actions .btn, .gear-copy-pages .btn { min-height:44px; min-width:44px; white-space:normal; overflow-wrap:anywhere; }
+.gear-copy-pages { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; }
+.gear-copies button:focus-visible, .gear-copies summary:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+
+.bulk-salvage-choice { display:flex; align-items:center; gap:10px; min-height:44px; cursor:pointer; }
+.bulk-salvage-choice input { width:20px; height:20px; margin:0; accent-color:var(--gold); }
+.salvage-confirmation li { overflow-wrap:anywhere; }
+
+.inventory-entry { min-height:44px; white-space:normal; }
+.inventory-item, .inventory-managed { padding:12px; border:1px solid #3c6068; border-radius:4px; min-width:0; overflow-wrap:anywhere; }
+.inventory-item .btn, .inventory-managed > .btn { min-height:44px; white-space:normal; }
+.inventory-selection { padding-block:12px; border-block:1px solid #3c6068; }
+.inventory-item p { margin-block:6px 0; }
