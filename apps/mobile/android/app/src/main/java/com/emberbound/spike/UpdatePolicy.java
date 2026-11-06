@@ -1,0 +1,60 @@
+// Adapted from the Lumenfall Android updater. See assets/licenses/lumenfall-updater.txt.
+package com.emberbound.spike;
+
+import java.net.URI;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/** Shared, platform-independent trust and bounds checks. */
+final class UpdatePolicy {
+    static final String PACKAGE = "com.emberbound.spike.c2dev";
+    static final String CERT = "c354201bb4b84ad432a11c5a85771d1b0c6bdaff31e8947238f6f4c9a56f3d18";
+    static final String RELEASES = "https://api.github.com/repos/xariib/Wyrdholt/releases/latest";
+    static final long MAX_APK = 256L * 1024 * 1024;
+
+    private static final Pattern RELEASE_TAG = Pattern.compile(
+        "android-v([0-9]+\\.[0-9]+\\.[0-9]+(?:[.-][0-9A-Za-z.-]+)?)-([0-9]{1,10})");
+
+    static Matcher releaseTag(String tag) {
+        Matcher match = RELEASE_TAG.matcher(tag);
+        if (!match.matches()) throw new IllegalArgumentException("Unsupported Android release version.");
+        long code = Long.parseLong(match.group(2));
+        if (code < 1 || code > 2100000000L) throw new IllegalArgumentException("Invalid release version.");
+        return match;
+    }
+
+    static void trustedUrl(String value, boolean api) {
+        URI u = URI.create(value);
+        String host = u.getHost();
+        if (!"https".equals(u.getScheme()) || u.getUserInfo() != null ||
+            (u.getPort() != -1 && u.getPort() != 443) || u.getFragment() != null ||
+            host == null || !(api ? "api.github.com".equals(host) :
+            "github.com".equals(host) || "release-assets.githubusercontent.com".equals(host) ||
+            "objects.githubusercontent.com".equals(host)))
+            throw new IllegalArgumentException("Untrusted update address.");
+    }
+
+    static void assetUrl(String value, String tag, String name) {
+        trustedUrl(value, false);
+        if (!value.equals("https://github.com/xariib/Wyrdholt/releases/download/" + tag + "/" + name))
+            throw new IllegalArgumentException("Update asset is not from the official release.");
+    }
+
+    static void validateSize(long size) {
+        if (size <= 0 || size > MAX_APK) throw new IllegalArgumentException("Invalid update size.");
+    }
+
+    static String checksum(String text) {
+        String[] fields = text.trim().split("\\s+");
+        if (fields.length != 2 || !fields[0].matches("[a-fA-F0-9]{64}") ||
+            !("Wyrdholt-Idle.apk".equals(fields[1]) || "*Wyrdholt-Idle.apk".equals(fields[1])))
+            throw new IllegalArgumentException("Invalid release checksum.");
+        return fields[0].toLowerCase(Locale.ROOT);
+    }
+
+    static void archive(String name, long code, String version, long installed, long expected, String expectedVersion, int sdk, int deviceSdk, String cert) {
+        if (!PACKAGE.equals(name) || code != expected || code <= installed || !expectedVersion.equals(version) || sdk > deviceSdk || !CERT.equals(cert))
+            throw new IllegalArgumentException("APK identity, version, compatibility or signing verification failed.");
+    }
+}

@@ -14,6 +14,7 @@ import { ChallengesScreen } from "./ui/screens/Challenges";
 import { CharacterScreen } from "./ui/screens/Character";
 import { CreateCharacterScreen } from "./ui/screens/CreateCharacter";
 import { GearScreen, type GearFocus } from "./ui/screens/Gear";
+import { AppUpdates } from "./ui/screens/AppUpdates";
 import { SaveRecoveryScreen } from "./ui/screens/SaveRecovery";
 
 type Tab = "adventure" | "character" | "gear" | "challenges";
@@ -125,6 +126,7 @@ export function App() {
       </main>
       {tab === "character" && (
         <main className="screen character-screen">
+          <AppUpdates />
           <CharacterScreen profile={profile} />
         </main>
       )}

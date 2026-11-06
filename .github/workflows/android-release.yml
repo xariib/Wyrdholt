@@ -1,0 +1,120 @@
+name: Build signed Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "Displayed version (for example, 0.2.0)"
+        required: true
+        type: string
+      version_code:
+        description: "Integer higher than the last distributed Wyrdholt APK"
+        required: true
+        type: string
+      publish_release:
+        description: "Publish to GitHub Releases for the in-game updater"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wyrdholt-android-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      WYRDHOLT_VERSION_NAME: ${{ inputs.version_name }}
+      WYRDHOLT_VERSION_CODE: ${{ inputs.version_code }}
+      WYRDHOLT_RELEASE: "1"
+      EMBERBOUND_DEV_TOOLS: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+
+      - name: Validate release version
+        run: |
+          set -euo pipefail
+          [[ "$WYRDHOLT_VERSION_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
+          [[ "$WYRDHOLT_VERSION_CODE" =~ ^[1-9][0-9]{0,9}$ ]]
+          (( WYRDHOLT_VERSION_CODE <= 2100000000 ))
+          previous="$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" \
+            --jq '.[] | select(.draft == false and .prerelease == false) | .tag_name' | \
+            awk -F- '/^android-v[0-9].*-[0-9]+$/ { if ($NF+0 > max) max=$NF+0 } END { printf "%.0f", max }')"
+          if (( WYRDHOLT_VERSION_CODE <= previous )); then
+            echo "Android version code must exceed $previous."
+            exit 1
+          fi
+          echo "EMBERBOUND_BUILD_ID=android-$WYRDHOLT_VERSION_NAME-$WYRDHOLT_VERSION_CODE" >> "$GITHUB_ENV"
+
+      - name: Test and build web assets
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build:web
+          npm exec -w @emberbound/mobile -- cap sync android
+
+      - name: Build with the existing release signer
+        env:
+          KEYSTORE_BASE64: ${{ secrets.WYRDHOLT_KEYSTORE_BASE64 }}
+          WYRDHOLT_KEY_ALIAS: ${{ secrets.WYRDHOLT_KEY_ALIAS }}
+          WYRDHOLT_KEYSTORE_PASSWORD: ${{ secrets.WYRDHOLT_KEYSTORE_PASSWORD }}
+          WYRDHOLT_KEY_PASSWORD: ${{ secrets.WYRDHOLT_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64"
+          test -n "$WYRDHOLT_KEY_ALIAS"
+          test -n "$WYRDHOLT_KEYSTORE_PASSWORD"
+          test -n "$WYRDHOLT_KEY_PASSWORD"
+          sdkmanager "platforms;android-36" "build-tools;35.0.0" "build-tools;36.0.0"
+          umask 077
+          export WYRDHOLT_KEYSTORE_FILE="$RUNNER_TEMP/wyrdholt-release.jks"
+          trap 'rm -f -- "$WYRDHOLT_KEYSTORE_FILE"' EXIT
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$WYRDHOLT_KEYSTORE_FILE"
+          cd apps/mobile/android
+          ./gradlew testReleaseUnitTest assembleRelease
+
+      - name: Verify the signed APK
+        run: |
+          set -euo pipefail
+          apk="apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
+          tools="$ANDROID_HOME/build-tools/36.0.0"
+          signer="$("$tools/apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #[0-9]* certificate SHA-256 digest: //p')"
+          [[ "$signer" == "c354201bb4b84ad432a11c5a85771d1b0c6bdaff31e8947238f6f4c9a56f3d18" ]]
+          badging="$("$tools/aapt2" dump badging "$apk")"
+          [[ "$badging" == *"package: name='com.emberbound.spike.c2dev' versionCode='$WYRDHOLT_VERSION_CODE' versionName='$WYRDHOLT_VERSION_NAME'"* ]]
+          (( $(stat -c '%s' "$apk") <= 256 * 1024 * 1024 ))
+          cp "$apk" Wyrdholt-Idle.apk
+          sha256sum Wyrdholt-Idle.apk > Wyrdholt-Idle.apk.sha256
+
+      - name: Upload signed APK for installation
+        uses: actions/upload-artifact@v4
+        with:
+          name: Wyrdholt-Idle-${{ inputs.version_name }}-${{ inputs.version_code }}
+          path: |
+            Wyrdholt-Idle.apk
+            Wyrdholt-Idle.apk.sha256
+          if-no-files-found: error
+
+      - name: Publish for the in-game updater
+        if: inputs.publish_release
+        run: |
+          set -euo pipefail
+          tag="android-v$WYRDHOLT_VERSION_NAME-$WYRDHOLT_VERSION_CODE"
+          gh release create "$tag" Wyrdholt-Idle.apk Wyrdholt-Idle.apk.sha256 \
+            --target "$GITHUB_SHA" --latest --title "Wyrdholt: Idle Android $WYRDHOLT_VERSION_NAME" \
+            --notes "Android version code $WYRDHOLT_VERSION_CODE."

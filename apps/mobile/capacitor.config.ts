@@ -7,8 +7,7 @@ const config: CapacitorConfig = {
   backgroundColor: "#0b0f18",
   android: {
     backgroundColor: "#0b0f18",
-    // Debug test builds only; production builds should disable this.
-    webContentsDebuggingEnabled: true,
+    webContentsDebuggingEnabled: process.env.WYRDHOLT_RELEASE !== "1",
   },
   ios: {
     backgroundColor: "#0b0f18",

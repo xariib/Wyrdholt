@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
         // and then creates the window content. EdgeToEdge.enable() touches the window decor, so it must
         // run AFTER that switch. Calling it earlier builds the decor from the launch theme, which on
         // Android 12+ has a title bar and the splash drawable as background (device finding F1).
+        registerPlugin(AppUpdaterPlugin.class);
         super.onCreate(savedInstanceState);
         // Draw edge to edge; Capacitor SystemBars (insetsHandling "css") provides --safe-area-inset-* to the web layer.
         EdgeToEdge.enable(this);
