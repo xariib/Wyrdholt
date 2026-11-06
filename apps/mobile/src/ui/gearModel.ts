@@ -1,6 +1,8 @@
 import { SLOT_ORDER, type ItemDef, type ItemInstance, type SlotId } from "@emberbound/shared-types";
 import { canonicalJson, findInstance, heroStatsFor, type ContentIndex, type Profile } from "@emberbound/game-core";
 
+import { pct, rate } from "./format";
+
 export interface SlotView {
   slot: SlotId;
   equipped: { instance: ItemInstance; item: ItemDef } | null;
@@ -132,6 +134,25 @@ export function statRows(current: ItemDef | null, candidate: ItemDef, format: {
     { key: "crit", label: "Crit chance", current: c.critBp ?? 0, candidate: n.critBp ?? 0, format: (v) => `+${format.pct(v)}` },
   ];
   return rows.filter((r) => r.current !== 0 || r.candidate !== 0);
+}
+
+export function gearDifferences(current: ItemDef | null, candidate: ItemDef) {
+  const stats = statRows(current, candidate, { pct, rate })
+    .filter(row => row.candidate !== row.current)
+    .map(row => {
+      const delta = row.candidate - row.current;
+      const amount = Math.abs(delta);
+      const value = row.key === "crit" ? `${amount / 100} pp` : row.key === "rate" ? `${amount / 1000}/s` : String(amount);
+      return { key: row.key, label: row.label, delta, value: `${delta > 0 ? "+" : "−"}${value}` };
+    });
+  const wornEffect = current?.effect ?? null;
+  const newEffect = candidate.effect ?? null;
+  const effectChanged = canonicalJson(wornEffect) !== canonicalJson(newEffect);
+  return {
+    stats,
+    gainedEffect: effectChanged ? newEffect : null,
+    lostEffect: effectChanged ? wornEffect : null,
+  };
 }
 
 export function buildSummary(profile: Profile, content: ContentIndex) {

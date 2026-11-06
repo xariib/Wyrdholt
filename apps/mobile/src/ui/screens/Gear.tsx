@@ -121,9 +121,9 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
       </section>
 
       {inventory && <InventorySheet key={inventory.key} profile={profile} initiallyNewOnly={inventory.newOnly} retryAction={retryAction}
-        onClose={() => setInventory(null)} renderComparison={(focus, selection, back) =>
+        onClose={() => setInventory(null)} renderComparison={(focus, selection, back, equipped) =>
         <SlotSheet key={focus.instanceId} profile={profile} slot={focus.slot} initialBaseId={focus.baseId}
-          initialInstanceId={focus.instanceId} selection={selection} onClose={back} />
+          initialInstanceId={focus.instanceId} selection={selection} onClose={back} onEquipped={equipped} />
       } />}
       {forgeOpen && <ForgeSheet profile={profile} onClose={() => setForgeOpen(false)} onCompare={(slot, base, instanceId) => { setForgeOpen(false); setInitialBase(base); setInitialInstance(instanceId); setOpenSlot(slot); }} />}
       {openSlot && (
@@ -149,7 +149,10 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SlotSheet({ profile, slot, initialBaseId, initialInstanceId, selection, onClose }: { profile: Profile; slot: SlotId; initialBaseId: string | undefined; initialInstanceId: number | undefined; selection?: InventorySelection; onClose: () => void }) {
+function SlotSheet({ profile, slot, initialBaseId, initialInstanceId, selection, onClose, onEquipped = onClose }: {
+  profile: Profile; slot: SlotId; initialBaseId: string | undefined; initialInstanceId: number | undefined;
+  selection?: InventorySelection; onClose: () => void; onEquipped?: () => void;
+}) {
   const content = session.content;
   const groups = groupsForSlot(profile, content, slot);
   const [filters, setFilters] = useState<GearFilters>({ search: "", rarityId: "", newOnly: false });
@@ -202,7 +205,7 @@ function SlotSheet({ profile, slot, initialBaseId, initialInstanceId, selection,
         setSalvage(null); setSelected(null); setSelectedInstance(undefined);
       }} /> : <>
       {candidate && !candidate.equippedHere ? (
-        <Compare profile={profile} slot={slot} current={equipped?.item ?? null} candidate={candidate} onDone={onClose} />
+        <Compare profile={profile} slot={slot} current={equipped?.item ?? null} candidate={candidate} onDone={onEquipped} />
       ) : (
         <div className="stack">
           <div className="small muted">Equipped: {equipped?.item.name ?? "Nothing"}. Tap an alternative to compare.</div>

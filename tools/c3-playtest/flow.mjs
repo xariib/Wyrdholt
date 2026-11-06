@@ -55,7 +55,13 @@ try{
   await expect(sheet.locator(`[data-base-id="${effect.baseId}"]`)).toContainText(content.item(effect.baseId).effect.name);
   await sheet.getByRole('button',{name:'Clear filters',exact:true}).click();await manage(sheet,effect.baseId);
   assert.deepEqual(state(await profile()),state(initial));assert.deepEqual(await storage(),bytes);
-  await sheet.getByRole('button',{name:`Select copy #${effect.id}`,exact:true}).click();
+  await sheet.getByRole('button',{name:'Back to inventory list',exact:true}).click();
+  await sheet.getByLabel('Only NEW',{exact:true}).check();
+  await sheet.getByLabel('Search inventory',{exact:true}).fill(content.item(effect.baseId).effect.name);
+  const effectCard=sheet.locator(`[data-base-id="${effect.baseId}"]`);
+  await expect(effectCard.getByRole('region',{name:'Differences from equipped gear'})).toContainText(`Gains ${content.item(effect.baseId).effect.name}`);
+  await expect(effectCard.getByRole('button',{name:`Manage copies of ${content.item(effect.baseId).name}`,exact:true})).toBeVisible();
+  await effectCard.getByRole('button',{name:`Compare ${content.item(effect.baseId).name}`,exact:true}).click();
   const compare=page.getByRole('dialog',{name:'Equipment',exact:true});await expect(compare.locator('.comparison-effects')).toContainText(content.item(effect.baseId).effect.name);
   const reviewed=await profile();assert(!reviewed.inventory.instances.find(i=>i.id===effect.id).isNew);assert(reviewed.inventory.instances.find(i=>i.id===effectPeer.id).isNew);
   await compare.getByRole('button',{name:`Equip ${content.item(effect.baseId).name}`,exact:true}).click();
@@ -64,8 +70,12 @@ try{
   const boundary=structuredClone(queued);for(let n=0;n<2000&&boundary.equipment.head!==effect.id;n++)advanceAdventure(boundary,content,100,{offline:false,contentTimeMs:0});
   assert.equal(boundary.equipment.head,effect.id);assert(resolveHeroStats(content,currentBuild(boundary),new Map(boundary.inventory.instances.map(i=>[i.id,i]))).activeEffects.some(e=>e.name===content.item(effect.baseId).effect.name));
   report.cases.push({step:'loot/filter/exact-comparison/queue',id:effect.id,peerId:effectPeer.id,peerStillNEW:true,queueKeepsCurrentBuild:true,detachedCoreSafeBoundaryAndEffect:true});
-  // Equip closes comparison, while the inventory sheet stays open.
-  sheet=page.getByRole('dialog',{name:'Gear inventory',exact:true});await manage(sheet,'wayfarer_blade');
+  // Equip returns to the filtered list; the other exact copy is still new.
+  await expect(sheet.getByLabel('Only NEW',{exact:true})).toBeChecked();
+  await expect(sheet.getByLabel('Search inventory',{exact:true})).toHaveValue(content.item(effect.baseId).effect.name);
+  await expect(effectCard).toContainText('1 NEW matching');
+  await expect(sheet.getByRole('region',{name:'Manage inventory copies'})).toHaveCount(0);
+  await sheet.getByRole('button',{name:'Clear filters',exact:true}).click();await manage(sheet,'wayfarer_blade');
   const locked=weapon[0].id;await lock(sheet,locked,true);const lockedState=await snapshot('locked');assert.equal(lockedState.schema,3);assert(lockedState.inventory.instances.find(i=>i.id===locked).isNew);
   for(const id of [initial.equipment.weapon,locked])await expect(sheet.getByRole('checkbox',{name:`Select for salvage copy #${id}`,exact:true})).toBeDisabled();
   await manage(sheet,effect.baseId);await expect(sheet.getByRole('checkbox',{name:`Select for salvage copy #${effect.id}`,exact:true})).toBeDisabled();

@@ -4,6 +4,7 @@ import { previewBulkSalvage, previewSalvage, type BulkSalvageReceipt, type Profi
 import { session } from "../../game/session";
 import { Sheet } from "../components/Common";
 import { ItemIcon } from "../components/icons";
+import { gearDifferences } from "../gearModel";
 import { number, rarityColor, SLOT_LABELS } from "../format";
 import { EMPTY_INVENTORY_FILTERS, filterInventoryGroups, inventoryGroups, inventoryPage, inventorySelectionCounts, INVENTORY_PAGE_SIZE, type InventoryFilters, type InventoryGroup } from "../inventoryModel";
 import type { GearFocus } from "./Gear";
@@ -19,10 +20,11 @@ export interface InventorySelection {
 /** Selection belongs to the overview, independently of filters, pages and comparison. */
 export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction, renderComparison }: {
   profile: Profile; onClose: () => void; initiallyNewOnly: boolean; retryAction: ReactNode;
-  renderComparison: (focus: GearFocus, selection: InventorySelection, back: () => void) => ReactNode;
+  renderComparison: (focus: GearFocus, selection: InventorySelection, back: () => void, equipped: () => void) => ReactNode;
 }) {
   const content = session.content;
   const [filters, setFilters] = useState<InventoryFilters>({ ...EMPTY_INVENTORY_FILTERS, newOnly: initiallyNewOnly });
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [manageBase, setManageBase] = useState<string | null>(null);
   const [comparison, setComparison] = useState<GearFocus | null>(null);
@@ -47,7 +49,10 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
   };
   // Swap the sheet, retaining this component's exact selection/filter state. Existing
   // comparison alone marks the targeted copy reviewed; browsing/selection never does.
-  if (comparison) return renderComparison(comparison, { ids, setIds, hiddenCount: counts.hidden }, () => setComparison(null));
+  if (comparison) return renderComparison(comparison, { ids, setIds, hiddenCount: counts.hidden }, () => setComparison(null), () => {
+    setComparison(null);
+    if (initiallyNewOnly || filters.newOnly) setManageBase(null);
+  });
 
   const filterControls = (
       <div className="gear-filters">
@@ -88,7 +93,7 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
       <p className="small muted">{initiallyNewOnly
         ? "Compare new drops with what you’re wearing before your next Push."
         : "All six slots. Find gear, manage its copies, or compare a specific copy before equipping."}</p>
-      {initiallyNewOnly ? <details className="inventory-filters-disclosure">
+      {initiallyNewOnly ? <details className="inventory-filters-disclosure" open={filtersOpen} onToggle={e => setFiltersOpen(e.currentTarget.open)}>
         <summary>Inventory filters</summary>
         {filterControls}
       </details> : filterControls}
@@ -118,10 +123,18 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
       {manageBase && !managed && <p className="small muted">This item has no copies matching the current filters. Your selection is kept.</p>}
       {!managed && <>
         <div className="list inventory-list" aria-label="Inventory item types">
-          {pagination.rows.map(group => <section className="inventory-item stack" key={group.baseId} data-base-id={group.baseId}>
-            <InventoryItem group={group} />
-            <button className="btn" aria-label={`Manage copies of ${group.item.name}`} onClick={() => setManageBase(group.baseId)}>Manage copies</button>
-          </section>)}
+          {pagination.rows.map(group => {
+            const slot = group.item.slot;
+            const copy = group.copies.find(({ id, isNew }) => isNew && id !== profile.equipment[slot] && id !== profile.pending?.equipment?.[slot]);
+            return <section className="inventory-item stack" key={group.baseId} data-base-id={group.baseId}>
+              <InventoryItem group={group} />
+              <div className={copy ? "gear-copy-actions" : "stack"}>
+                {copy && <button className="btn gold" aria-label={`Compare ${group.item.name}`}
+                  onClick={() => setComparison({ slot, baseId: group.baseId, instanceId: copy.id })}>Compare</button>}
+                <button className="btn" aria-label={`Manage copies of ${group.item.name}`} onClick={() => setManageBase(group.baseId)}>Manage copies</button>
+              </div>
+            </section>;
+          })}
         </div>
         {groups.length === 0 && <p className="small muted gear-empty">No gear owned yet. Gear you earn will appear here across all six slots.</p>}
         {groups.length > 0 && visible.length === 0 && <p className="small muted gear-empty">No gear matches these filters. Change or clear filters to see your owned copies. Your selection is kept.</p>}
@@ -154,6 +167,24 @@ function InventoryItem({ group }: { group: InventoryGroup }) {
       {duplicates > 0 && <span className="tag" title="Same stats and effects as your equipped item">{number(duplicates)} {duplicates === 1 ? "duplicate" : "duplicates"} of equipped</span>}
       {group.queuedHere && <span className="tag queued">Queued</span>}
     </div>
-    <div className="small"><strong>{item.effect?.name ?? "No special effect"}</strong>{item.effect && <p className="muted">{item.effect.description}</p>}</div>
+    {group.newCount > 0 ? <NewGearDifferences group={group} /> : (
+      <div className="small"><strong>{item.effect?.name ?? "No special effect"}</strong>{item.effect && <p className="muted">{item.effect.description}</p>}</div>
+    )}
   </>;
+}
+
+function NewGearDifferences({ group }: { group: InventoryGroup }) {
+  const { equippedItem, item } = group;
+  const { stats, gainedEffect, lostEffect } = gearDifferences(equippedItem, item);
+  return <section className="stack small" aria-label="Differences from equipped gear">
+    <span className="muted">Compared with {equippedItem?.name ?? "empty slot"}</span>
+    {stats.length > 0 && <div className="chips">
+      {stats.map(stat => <span key={stat.key} className={`tag ${stat.delta > 0 ? "delta-up" : "delta-down"}`}>{stat.label} {stat.value}</span>)}
+    </div>}
+    {gainedEffect && <div><strong>Gains {gainedEffect.name}</strong> · {gainedEffect.description}</div>}
+    {lostEffect && <div><strong>Loses {lostEffect.name}</strong></div>}
+    {!gainedEffect && !lostEffect && (stats.length === 0
+      ? <span className="muted">Same stats and effects</span>
+      : item.effect && <span className="muted">Same effect: {item.effect.name}</span>)}
+  </section>;
 }

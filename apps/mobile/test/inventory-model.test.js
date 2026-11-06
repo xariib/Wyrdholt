@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SLOT_ORDER } from "@emberbound/shared-types";
 import { CONTENT } from "@emberbound/game-content";
 import { ContentIndex, createInstance, createProfile, previewSalvage, setItemLock } from "@emberbound/game-core";
+import { gearDifferences } from "../src/ui/gearModel";
 import { EMPTY_INVENTORY_FILTERS, filterInventoryGroups, inventoryGroups, inventoryPage, inventorySelectionCounts } from "../src/ui/inventoryModel";
 
 const content = new ContentIndex(CONTENT);
@@ -22,6 +23,24 @@ function fixture() {
   }
   return { p, ids };
 }
+
+describe("new gear differences", () => {
+  it("shows the gains and trade-offs against equipped gear in the right units", () => {
+    const ring = gearDifferences(content.item("copper_band"), content.item("amber_ring"));
+    expect(ring.stats.map(({ label, value }) => [label, value])).toEqual([
+      ["Attack", "+2"], ["Health", "+10"], ["Crit chance", "−1 pp"],
+    ]);
+    const gloves = gearDifferences(content.item("worn_grips"), content.item("duelist_gloves"));
+    expect(gloves.stats.find(row => row.key === "rate")?.value).toBe("+0.03/s");
+  });
+
+  it("distinguishes gaining, losing and keeping an effect", () => {
+    const crown = content.item("crown_of_thorns"), hood = content.item("linen_hood");
+    expect(gearDifferences(null, crown).gainedEffect).toEqual(crown.effect);
+    expect(gearDifferences(crown, hood).lostEffect).toEqual(crown.effect);
+    expect(gearDifferences(crown, crown)).toEqual({ stats: [], gainedEffect: null, lostEffect: null });
+  });
+});
 
 describe("combined inventory view", () => {
   it("groups every owned copy once in all six slots with correct protections", () => {

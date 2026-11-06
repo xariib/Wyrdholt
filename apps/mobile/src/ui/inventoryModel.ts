@@ -1,4 +1,4 @@
-import { SLOT_ORDER, type SlotId } from "@emberbound/shared-types";
+import { SLOT_ORDER, type ItemDef, type SlotId } from "@emberbound/shared-types";
 import { findInstance, isItemLocked, previewSalvage, type ContentIndex, type Profile } from "@emberbound/game-core";
 import { filterGearGroups, isEquippedDuplicate, type GearFilters, type ItemGroup } from "./gearModel";
 
@@ -10,6 +10,7 @@ export const EMPTY_INVENTORY_FILTERS: InventoryFilters = { search: "", slot: "",
 export const INVENTORY_PAGE_SIZE = 20;
 
 export interface InventoryGroup extends ItemGroup {
+  equippedItem: ItemDef | null;
   copies: { id: number; isNew: boolean; salvageEligible: boolean; equippedDuplicate: boolean }[];
   totalCount: number;
   lockedCount: number;
@@ -24,7 +25,9 @@ export function inventoryGroups(profile: Profile, content: ContentIndex): Invent
     const item = content.item(instance.baseId);
     let group = groups.get(item.id);
     if (!group) {
-      group = { baseId: item.id, item, ids: [], copies: [], totalCount: 0, newCount: 0,
+      const worn = equipped.get(item.slot);
+      group = { baseId: item.id, item, equippedItem: worn ? content.item(worn.baseId) : null,
+        ids: [], copies: [], totalCount: 0, newCount: 0,
         lockedCount: 0, eligibleCount: 0, equippedHere: false, queuedHere: false };
       groups.set(item.id, group);
     }

@@ -102,10 +102,23 @@ await inventory.getByText(/duplicates? of equipped/).first().waitFor();
 await shot("06-review-new");
 await inventory.getByText("Inventory filters", { exact: true }).tap();
 assert(await inventory.getByRole("checkbox", { name: "Only NEW" }).isChecked());
+await inventory.getByLabel("Rarity", { exact: true }).selectOption("uncommon");
+const gearCard = inventory.locator(".inventory-item").filter({ has: page.locator(".delta-up") }).first();
+await gearCard.getByRole("button", { name: /^Manage copies of / }).tap();
+const chosen = inventory.locator(".gear-copy").first();
+const chosenId = Number(await chosen.getAttribute("data-instance-id"));
+await chosen.getByRole("button", { name: /^Select copy #/ }).tap();
+await page.getByRole("dialog", { name: "Equipment", exact: true }).getByRole("button", { name: /^Equip / }).tap();
+await inventory.getByLabel("Inventory item types", { exact: true }).waitFor();
+assert.equal(await inventory.getByRole("region", { name: "Manage inventory copies" }).count(), 0);
+assert(await inventory.getByRole("checkbox", { name: "Only NEW" }).isChecked());
+assert.equal(await inventory.getByLabel("Rarity", { exact: true }).inputValue(), "uncommon");
 await inventory.getByRole("button", { name: "Retry Ashen Mountains", exact: true }).tap();
 await page.locator(".zone-name").filter({ hasText: /^Ashen Mountains$/ }).waitFor();
 const retried = await page.locator(".zone-context").getByText("Pushing", { exact: true }).isVisible();
 assert(retried, "Retry should start Ashen Mountains rather than the Greenfields farm");
+const equipped = await page.evaluate(() => JSON.parse(JSON.parse(window.__ember.exportSave()).payload).equipment);
+assert(Object.values(equipped).includes(chosenId), "Retry should use the exact equipped copy");
 
 await browser.close();
 
