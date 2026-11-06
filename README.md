@@ -2,6 +2,12 @@
 
 Wyrdholt is a portrait idle-fantasy RPG. Choose a class, push into Adventure, farm for gear, and adjust your build before trying again. The browser and Capacitor apps share the same deterministic game core.
 
+## Play on Android
+
+[**Download Wyrdholt for Android**](https://github.com/xariib/Wyrdholt/releases/latest/download/Wyrdholt-Idle.apk) · [Latest release notes](https://github.com/xariib/Wyrdholt/releases/latest)
+
+Open the downloaded APK on your Android device and follow the installation prompts. When a newer version is available, Wyrdholt shows **Update available** in the game. Tap **View update** to download it and follow Android's installation prompts.
+
 This repository starts from the game snapshot identified as `81153feef35d1bad949fe11329ecfe4223b7ac59` in the source ZIP. The active branch is `main`.
 
 ## Build and test

@@ -149,6 +149,13 @@ h3 {
   display: none;
 }
 
+.app-update-bar {
+  flex: none;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+
 .center-screen {
   flex: 1;
   display: grid;

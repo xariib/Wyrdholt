@@ -114,6 +114,7 @@ export function App() {
   return (
     <div className="app immersive">
       <Header profile={profile} {...(DEV_TOOLS ? { onDebug: () => setDebugOpen(true) } : {})} />
+      <AppUpdates showSettings={tab === "character"} />
       <main className="screen adventure-screen" hidden={tab !== "adventure"}>
         <AdventureScreen profile={profile} active={tab === "adventure" && !debugOpen} nextAttempt={retry && !ui.runResult && !ui.offline && (
           <section className="panel stack" aria-label="Next attempt">
@@ -126,7 +127,6 @@ export function App() {
       </main>
       {tab === "character" && (
         <main className="screen character-screen">
-          <AppUpdates />
           <CharacterScreen profile={profile} />
         </main>
       )}

@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { App } from "@capacitor/app";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { session } from "../../game/session";
 import { AppUpdater, hasAppUpdater, type UpdateProgress, type UpdateState } from "../../platform/appUpdater";
 import { Sheet } from "../components/Common";
 
 type Phase = "loading" | "checking" | "downloading" | "installing";
+const UPDATE_CHECK_INTERVAL = 30 * 60 * 1000;
 
-export function AppUpdates() {
-  return hasAppUpdater() ? <UpdateControl /> : null;
+export function AppUpdates({ showSettings }: { showSettings: boolean }) {
+  return hasAppUpdater() ? <UpdateControl showSettings={showSettings} /> : null;
 }
 
-function UpdateControl() {
+function UpdateControl({ showSettings }: { showSettings: boolean }) {
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<UpdateState | null>(null);
   const [phase, setPhase] = useState<Phase | null>(null);
@@ -17,22 +19,26 @@ function UpdateControl() {
   const [progress, setProgress] = useState<UpdateProgress | null>(null);
   const [notice, setNotice] = useState("");
   const working = useRef(false);
+  const lastCheck = useRef<number | null>(null);
 
   useEffect(() => {
     const listener = AppUpdater.addListener("progress", setProgress);
     return () => { void listener.then(handle => handle.remove()).catch(() => {}); };
   }, []);
 
-  const perform = async (next: Phase, action: () => Promise<UpdateState>) => {
+  const perform = useCallback(async (next: Phase, action: () => Promise<UpdateState>, quiet = false) => {
     if (working.current) return;
     working.current = true;
     setPhase(next);
-    setNotice("");
+    if (!quiet) setNotice("");
     try {
       setState(await action());
-      if (next === "checking") setChecked(true);
+      if (next === "checking") {
+        setChecked(true);
+        setNotice("");
+      }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "The update could not be completed. Try again.");
+      if (!quiet) setNotice(error instanceof Error ? error.message : "The update could not be completed. Try again.");
       if (next === "installing" || next === "downloading") {
         try { setState(await AppUpdater.getState()); } catch { /* keep the last known release */ }
       }
@@ -40,7 +46,33 @@ function UpdateControl() {
       working.current = false;
       setPhase(null);
     }
-  };
+  }, []);
+
+  const check = useCallback((automatic: boolean) => {
+    if (automatic && lastCheck.current !== null && Date.now() - lastCheck.current < UPDATE_CHECK_INTERVAL) return;
+    void perform("checking", async () => {
+      lastCheck.current = Date.now();
+      if (automatic) {
+        const current = await AppUpdater.getState();
+        setState(current);
+        if (!current.supported) return current;
+      }
+      return AppUpdater.check();
+    }, automatic);
+  }, [perform]);
+
+  useEffect(() => {
+    const refresh = () => check(true);
+    refresh();
+    const resume = App.addListener("resume", refresh).catch(() => null);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") refresh();
+    }, UPDATE_CHECK_INTERVAL);
+    return () => {
+      window.clearInterval(timer);
+      void resume.then(handle => handle?.remove()).catch(() => {});
+    };
+  }, [check]);
 
   const install = () => perform("installing", async () => {
     const saved = await session.saveNow();
@@ -64,13 +96,13 @@ function UpdateControl() {
     : "";
 
   return <>
-    <section className="panel row spread">
-      <div className="panel-title">Wyrdholt Android</div>
-      <button className="btn" onClick={() => {
+    {(showSettings || state?.available) && <section className="app-update-bar row spread" aria-label="Android app updates">
+      <div aria-live="polite">{state?.available ? `Update available · ${state.version}` : "Wyrdholt Android"}</div>
+      <button className={`btn small${state?.available ? " primary" : ""}`} onClick={() => {
         setOpen(true);
-        void perform("loading", () => AppUpdater.getState());
-      }}>App updates</button>
-    </section>
+        if (!state) void perform("loading", () => AppUpdater.getState());
+      }}>{state?.available ? "View update" : "App updates"}</button>
+    </section>}
     {open && <Sheet label="App updates" onClose={close}>
       <div className="row spread">
         <h2>App updates</h2>
@@ -90,7 +122,7 @@ function UpdateControl() {
             setProgress(null);
             void perform("downloading", () => AppUpdater.download());
           }}>Download update{state.bytes ? ` · ${(state.bytes / 1048576).toFixed(1)} MB` : ""}</button>}
-        <button className="btn block" onClick={() => void perform("checking", () => AppUpdater.check())}>Check for updates</button>
+        <button className="btn block" onClick={() => check(false)}>Check for updates</button>
       </>}
     </Sheet>}
   </>;
