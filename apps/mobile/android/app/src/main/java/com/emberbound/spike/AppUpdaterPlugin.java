@@ -210,6 +210,8 @@ public class AppUpdaterPlugin extends Plugin {
                 apk().delete();
                 return resolveState(call);
             }
+            JSONObject binary = null;
+            JSONObject checksum = null;
             JSONArray assets = release.getJSONArray("assets");
             for (int i = 0; i < assets.length(); i++) {
                 JSONObject asset = assets.getJSONObject(i);
