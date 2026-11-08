@@ -32,11 +32,12 @@ npx playwright install chromium
 npm run test:save:web
 ```
 
-The tests serve the built game locally and use disposable browser contexts. They cover save recovery, offline catch-up, reload, and the C3 inventory, Forge, and salvage flow. To use an installed Chromium-based browser, set `CHROMIUM_EXECUTABLE_PATH` to its executable. Reports go to `tools/smoke/out` by default.
+The tests serve the built game locally and use disposable browser contexts. They cover save recovery, offline catch-up, the C3 inventory, Forge, and salvage flow, and C4 boss entry and settlement across reloads. To use an installed Chromium-based browser, set `CHROMIUM_EXECUTABLE_PATH` to its executable. Reports go to `tools/smoke/out` by default.
 
 ## Project guide
 
 - [Game systems and rules](docs/design/GAMEPLAY_SYSTEMS.md)
+- [C4 Ashen King and Ashen Crown](docs/design/C4_SOLO_BOSSES.md)
 - [Architecture](docs/ARCHITECTURE.md) and [save and lifecycle behavior](docs/technical/CLIENT_RUNTIME.md)
 - [Build and Android update requirements](docs/technical/BUILD_AND_DEPLOY.md)
-- [Human playtest guide](docs/playtests/C3_HUMAN_GUIDE_DA.md)
+- [C1–C3 human playtest guide](docs/playtests/C3_HUMAN_GUIDE_DA.md)

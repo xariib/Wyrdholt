@@ -6,11 +6,11 @@ One persistent character has shared Character Level and two learned classes, Act
 
 ## IMPLEMENTED / HUMAN VALIDATION OPEN — four-class promise
 
-Warrior, Monk, Mage and Ranger must all be solo viable. No mandatory Tank/Healer/DPS trinity. C2 kits and Mage Arcane Ward are technically integrated; calibration is provisional until human class-feel testing.
+Warrior, Monk, Mage and Ranger must all be solo viable. No mandatory Tank/Healer/DPS trinity. Chromium verified class selection, Mastery display and switching on `51b82b7`. Calibration is provisional until human class-feel testing. [Current four-class balance checks](C3_ITEM_EFFECTS.md#validation-boundaries)
 
 ## IMPLEMENTED — Mastery
 
-Immediately viable, gradually specialized. M1/M5/M10/M15/M20 add or improve class mechanics; other ranks provide a secondary 2.5% class-base-attack foundation per rank above M1, calculated in hundredths. Class XP curves are explicit data. Current parameters and full milestone table: [ITEMS_CLASSES_CONTENT](../technical/ITEMS_CLASSES_CONTENT.md). Techniques remain the majority of measured M1→M20 gain; do not retune during A40 validation.
+Immediately viable, gradually specialized. M1/M5/M10/M15/M20 add or improve class mechanics; other ranks provide a secondary 2.5% class-base-attack foundation per rank above M1, calculated in hundredths. Class XP curves are explicit data. Current parameters and full milestone table: [ITEMS_CLASSES_CONTENT](../technical/ITEMS_CLASSES_CONTENT.md). Techniques remain the majority of measured M1→M20 gain. Keep the tuning fixed during the Android pacing playtest.
 
 ## IMPLEMENTED — Adventure
 
@@ -52,14 +52,17 @@ SALVAGE-008 adds explicit review/confirmation of one concrete owned copy in Gear
 Locked/equipped/queued copies are protected in UI and core; only the selected ID
 is removed with an approved fixed Gold reward, saved together before success.
 Retries cannot pay twice; schemas 1/2/3 remain unchanged. [Approved rule](C3_SALVAGE.md).
-No bulk/auto-salvage or automatic optimization. PR30 is integrated into master at
-`9c4967b` after explicit merge approval; identical tree/source/artifact proof covers
-the agreed web criteria. Human balance and native acceptance remain separate gates.
+Manual batch salvage uses the same rewards and commits the selected copies together.
+The controlled Chromium flow verified single and batch salvage, including recovery
+after an injected save fault. Human balance and native acceptance remain separate gates.
+[Batch salvage contract](C3_BULK_SALVAGE.md)
 
-## DECIDED / NOT IMPLEMENTED — Solo Boss / Artifacts (PLANNED)
+## IMPLEMENTED / HUMAN VALIDATION OPEN — Solo Bosses and Artifacts
 
-Separate permanent tier ladder; defeat does not erase cleared tiers. Auto-push may advance successful tiers until failure. Artifact milestones belong to this future system, not current Adventure checkpoints.
+The Ashen King unlocks after the first Ashen Mountains clear and has five permanent tiers. Each attempt runs automatically from full HP. Defeat and timeout retain completed tiers. Online auto-push is optional. Offline play finishes the active tier and then farms safe Adventure content.
+
+The Ashen Crown grants both classes a permanent Attack bonus that upgrades at tiers 1, 3, and 5. The first attempt creates a schema 4 save. [C4 rules and validation](C4_SOLO_BOSSES.md)
 
 ## OPEN — balance
 
-A40 validates new C1 pacing. Short-fight drop scaling awaits a decision. Do not translate an old Godot feature into an IMPLEMENTED claim for TypeScript.
+The next C1 pacing playtest is on the REDMAGIC 11 Pro. Short-fight drop scaling awaits a decision. Do not translate an old Godot feature into an IMPLEMENTED claim for TypeScript.

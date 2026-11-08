@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { chromium } from "playwright";
 import { CONTENT } from "@emberbound/game-content";
-import { ContentIndex, SELF_TEST_CASES, createProfile, applyCommand, serializeSave, parseSave, sha256Hex } from "@emberbound/game-core";
+import { ContentIndex, SELF_TEST_CASES, cloneProfile, createInstance, createProfile, applyCommand, executeRecord, prepareFight, serializeSave, parseSave, sha256Hex } from "@emberbound/game-core";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const dist = resolve(process.argv[2] ?? join(root, "apps/mobile/dist"));
@@ -149,7 +149,7 @@ try {
   report.browser = browser.version(); report.playwright = JSON.parse(readFileSync(join(root, "node_modules/playwright/package.json"))).version;
   const valid = fixture();
   const cases = [
-    { name: "unsupported-main", slots: { main: changed(valid, (p, e) => { p.schema = 4; e.schema = 4; }), backup: valid }, reason: "A saved adventure uses a version this build cannot open." },
+    { name: "unsupported-main", slots: { main: changed(valid, (p, e) => { p.schema = 5; e.schema = 5; }), backup: valid }, reason: "A saved adventure uses a version this build cannot open." },
     { name: "corrupt-sidefile", slots: { main: valid, temp: "not a save", backup: valid }, reason: "A saved adventure could not be read as a valid save." },
     { name: "malformed-profile", slots: { main: changed(valid, p => { delete p.clock; }), backup: valid }, reason: "A saved adventure could not be read as a valid save." },
     { name: "legacy-schema1-rules", slots: { main: legacySave, backup: valid }, reason: "A saved adventure belongs to a different game version." },
@@ -245,6 +245,10 @@ try {
   assert.equal(created.profile.character.name, "Adventurer");
   assert.equal((await audit(creation.page)).mutations.filter(m => m.method === "put" && m.key === paths.main).length, 2);
   assert.equal((await audit(creation.page)).mutations.filter(m => m.method === "put" && m.key === paths.temp).length, 1);
+  await creation.page.getByRole("button", { name: "Challenges", exact: true }).tap();
+  await creation.page.getByText("Clear Ashen Mountains to unlock this challenge.", { exact: true }).waitFor();
+  assert.equal(await creation.page.getByRole("button", { name: /Challenge Tier/ }).count(), 0);
+  await creation.page.getByRole("button", { name: "Adventure", exact: true }).tap();
   await creation.page.getByRole("button", { name: "Developer tools", exact: true }).tap();
   await creation.page.getByRole("button", { name: "Run determinism self-test", exact: true }).tap();
   await creation.page.getByText("ALL PASS", { exact: true }).waitFor();
@@ -271,6 +275,99 @@ try {
   assert.equal(await creation.page.getByText("Save loaded", { exact: true }).count(), 0);
   report.checks.push({ name: "confirmed-parse-valid-import-simulation-failure-preserves-slots", passed: true });
   await close(creation);
+
+  const bossWall = Date.now();
+  const bossProfile = createProfile(content, { name: "Ashen Test", activeClassId: "mage", alternateClassId: "monk", masterSeed: 4104, nowWallMs: bossWall });
+  bossProfile.character.xp = content.levelTotals[29];
+  bossProfile.character.level = 30;
+  bossProfile.character.masteryXp.mage = content.masteryTotals(content.classDef("mage").masteryTrackId)[19];
+  for (const item of CONTENT.items.filter(item => item.rarity === "legendary")) {
+    bossProfile.equipment[item.slot] = createInstance(bossProfile, item.id, { isNew: false }).id;
+  }
+  const clearingProfile = cloneProfile(bossProfile);
+  clearingProfile.adventure.zones.ashen_mountains.unlocked = true;
+  assert(applyCommand(clearingProfile, content, { type: "startPush", zoneId: "ashen_mountains" }, { contentTimeMs: bossWall }).ok);
+  const finalStage = clearingProfile.adventure.run;
+  finalStage.stageIndex = content.zone("ashen_mountains").stages.length - 1;
+  finalStage.phase = "fight";
+  const ashenFight = prepareFight(clearingProfile, content, finalStage, { contentTimeMs: bossWall, recordEvents: false });
+  assert.equal(ashenFight.summary.outcome, "victory");
+  clearingProfile.clock.lastSettledWallMs = bossWall - ashenFight.summary.durationMs - 2000;
+  const unlock = await setup({ main: serializeSave(clearingProfile, bossWall) });
+  await unlock.page.goto(base);
+  const unlockDialog = unlock.page.locator(".modal").filter({ has: unlock.page.getByRole("heading", { name: "While you were away…", exact: true }) });
+  await unlockDialog.getByText("Ashen Mountains cleared!", { exact: true }).waitFor();
+  await unlockDialog.getByRole("button", { name: "View Ashen King challenge", exact: true }).tap();
+  await unlockDialog.waitFor({ state: "hidden" });
+  await unlock.page.getByRole("button", { name: "Challenge Tier 1", exact: true }).waitFor();
+  const unlocked = parseSave((await storage(unlock.observer, {}, true)).main);
+  assert(unlocked.ok && unlocked.profile.adventure.zones.ashen_mountains.cleared);
+  assert.equal(unlocked.profile.ashenKing, undefined);
+  assert.equal(unlocked.profile.adventure.activity, "farm");
+  report.checks.push({ name: "offline-ashen-clear-links-to-unstarted-ladder", passed: true });
+  await close(unlock);
+
+  Object.assign(bossProfile.adventure.zones.ashen_mountains, { unlocked: true, cleared: true, completions: 1, bestStage: 10 });
+  const challenge = await setup({ main: serializeSave(bossProfile, bossWall) });
+  const bossPage = challenge.page;
+  const readBossSave = async () => {
+    const saved = parseSave((await storage(challenge.observer, {}, true)).main);
+    assert(saved.ok);
+    return saved.profile;
+  };
+  await bossPage.clock.install({ time: bossWall });
+  await bossPage.goto(base);
+  await bossPage.getByRole("region", { name: "Ashen King unlocked" })
+    .getByRole("button", { name: "View Ashen King challenge", exact: true }).tap();
+  await bossPage.getByRole("checkbox", { name: "Auto-push after wins while online" }).check();
+  await bossPage.getByRole("button", { name: "Challenge Tier 1", exact: true }).tap();
+  await bossPage.getByRole("region", { name: "Ashen King tier 1 combat" }).locator(".combat-canvas").waitFor();
+  const started = await readBossSave();
+  assert.equal(started.schema, 4);
+  assert.equal(started.ashenKing.attemptCount, 1);
+  const record = started.ashenKing.active.record;
+  const firstDuration = executeRecord(content, record, { recordEvents: false }).summary.durationMs;
+
+  async function reloadAfterBossAbsence(elapsedMs) {
+    const countMain = state => state.mutations.filter(m => m.method === "put" && m.key === paths.main).length;
+    const writes = countMain(await audit(bossPage));
+    await bossPage.evaluate(() => window.dispatchEvent(new Event("pagehide")));
+    await bossPage.waitForFunction(({ writes, main }) => window.__saveAudit.mutations.filter(m => m.method === "put" && m.key === main).length >= writes + 2,
+      { writes, main: paths.main });
+    const saved = await readBossSave();
+    await bossPage.clock.setSystemTime(saved.clock.lastSettledWallMs + elapsedMs);
+    await bossPage.reload();
+  }
+
+  await reloadAfterBossAbsence(2000);
+  await bossPage.getByRole("button", { name: "Watch Tier 1 in Challenges", exact: true }).waitFor();
+  const resumed = await readBossSave();
+  assert.deepEqual(resumed.ashenKing.active.record, record);
+  assert(resumed.ashenKing.active.elapsedMs > started.ashenKing.active.elapsedMs);
+  await reloadAfterBossAbsence(firstDuration + 2000);
+  await bossPage.getByRole("button", { name: "View Challenges", exact: true }).tap();
+  await bossPage.getByText("Tier 1 cleared", { exact: true }).waitFor();
+  await bossPage.getByText("Rank 1 · +3% Attack", { exact: true }).waitFor();
+  const cleared = await readBossSave();
+  assert.equal(cleared.ashenKing.highestClearedTier, 1);
+  assert.equal(cleared.ashenKing.attemptCount, 1);
+  assert.equal(cleared.ashenKing.active, null);
+  assert.equal(cleared.adventure.run.mode, "farm");
+
+  await bossPage.getByRole("checkbox", { name: "Auto-push after wins while online" }).check();
+  await bossPage.getByRole("button", { name: "Challenge Tier 2", exact: true }).tap();
+  await bossPage.getByRole("region", { name: "Ashen King tier 2 combat" }).waitFor();
+  const tierTwo = (await readBossSave()).ashenKing.active.record;
+  const tierTwoDuration = executeRecord(content, tierTwo, { recordEvents: false }).summary.durationMs;
+  await bossPage.getByRole("button", { name: "Character", exact: true }).tap();
+  await bossPage.clock.runFor(tierTwoDuration + 1000);
+  await bossPage.getByRole("button", { name: "Challenges", exact: true }).tap();
+  await bossPage.getByRole("region", { name: "Ashen King tier 3 combat" }).waitFor();
+  const chained = await readBossSave();
+  assert.equal(chained.ashenKing.highestClearedTier, 2);
+  assert.equal(chained.ashenKing.active.record.encounter.tier, 3);
+  report.checks.push({ name: "ashen-king-entry-resume-offline-milestone-and-online-auto-push", passed: true });
+  await close(challenge);
 
   const failed = await setup({}, "write"); await failed.page.goto(base);
   await failed.page.getByRole("button", { name: "Begin in Greenfields", exact: true }).tap();

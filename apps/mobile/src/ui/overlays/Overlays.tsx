@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import { heroStatsFor, type Profile, type RunResult } from "@emberbound/game-core";
+import { ASHEN_KING_ID, heroStatsFor, type Profile, type RunResult } from "@emberbound/game-core";
 import { session, type OfflineView } from "../../game/session";
 import { Bar, Modal } from "../components/Common";
 import { ItemIcon } from "../components/icons";
 import { DEV_TOOLS } from "../../platform/device";
-import { duration, hp, number, rarityColor } from "../format";
+import { bossResultLabel, duration, hp, number, rarityColor } from "../format";
 import type { GearFocus } from "../screens/Gear";
 import { safeFarmZone } from "../adventureModel";
 import { isEquippedDuplicate, slotViews } from "../gearModel";
@@ -46,15 +46,19 @@ function AttemptTrail({ profile, zoneId }: { profile: Profile; zoneId: string })
 export function OfflineOverlay({
   data,
   onReview,
+  onChallenges,
   retryAction,
 }: {
   data: OfflineView;
   onReview: (focus: GearFocus | "new") => void;
+  onChallenges: () => void;
   retryAction: ReactNode;
 }) {
   const content = session.content;
   const s = data.summary;
   const t = data.telemetry;
+  const ashenKing = content.soloBosses.get(ASHEN_KING_ID);
+  const bossUnlocked = data.kept && ashenKing && s.push.zoneId === ashenKing.unlockZoneId;
   const zoneName = (id: string | null) => (id ? content.zone(id).name : "");
   const modeName = (mode: string) => (mode === "push" ? "Pushed" : mode === "trail" ? "Farmed the trail of" : "Farmed");
   // Time spent farming after the failed Push (every segment after the first Push segment).
@@ -74,6 +78,12 @@ export function OfflineOverlay({
         <div className="panel small" style={{ borderColor: "rgba(124,200,98,0.5)" }}>
           <b>{zoneName(s.push.zoneId)} cleared!</b>
           {s.unlockedZoneIds.length > 0 && ` ${s.unlockedZoneIds.map((z) => content.zone(z).name).join(", ")} unlocked — begin it when you choose.`}
+          {bossUnlocked && (
+            <div className="stack">
+              <span>{ashenKing.name} unlocked.</span>
+              <button className="btn block" onClick={onChallenges}>View {ashenKing.name} challenge</button>
+            </div>
+          )}
         </div>
       )}
       {s.push.status === "failed" && s.push.zoneId && (
@@ -93,6 +103,16 @@ export function OfflineOverlay({
             </span>
           )}
           <AttemptTrail profile={data.profileAfter} zoneId={s.push.zoneId} />
+        </div>
+      )}
+      {s.boss && (
+        <div className="panel small stack">
+          <b>Ashen King · {s.boss.result ? bossResultLabel(s.boss.result) : `Tier ${s.boss.tier} still in progress`}</b>
+          {s.boss.result && s.boss.result.enemyHp100 > 0 && (
+            <span className="muted">Boss HP left {hp(s.boss.result.enemyHp100)} / {hp(s.boss.result.enemyMaxHp100)}</span>
+          )}
+          <span className="muted">{duration(s.boss.ms)} spent on the challenge while you were away.</span>
+          {data.kept && <button className="btn block" onClick={onChallenges}>View Challenges</button>}
         </div>
       )}
       <div className="stack small">

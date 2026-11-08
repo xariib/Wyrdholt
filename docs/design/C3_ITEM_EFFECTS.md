@@ -43,5 +43,19 @@ drops and no DEV grants/Forge; it is not the full historical calibration or huma
 acceptance. Initial overly strong defensive values were reduced using those
 measurements. Raw reports and limitations belong to the task evidence.
 
-Remaining C3 scope: salvage/player locks and human loot/Forge economy/UX acceptance.
-This feature does not close C3 or open Solo Boss/Artifacts.
+[Player locks](C3_ITEM_LOCKS.md), [single-copy salvage](C3_SALVAGE.md) and
+[batch salvage](C3_BULK_SALVAGE.md) have since been integrated. The built-app
+Chromium flow exercises Forge, locks, salvage, and save recovery. Human loot,
+Forge economy, and UX acceptance still need playtest evidence.
+
+On `51b82b7`, 60 Push seeds per class at level 18, Mastery 14 and the full
+Darkwood Epic set cleared Ashen Mountains 52–83% of the time, compared with 0–2%
+on the frozen C2 content. The C1/C2 CS3 check caps clears one level below the
+calibration build at 10%. The four classes still meet the primary wall-gap and
+normal fight length targets in all three zones. Assess the Ashen shift against
+human playtest results before setting final item balance. In a separate
+eight-day model with natural loot and two daily check-ins, all 48 runs
+(12 seeds per class) cleared Greenfields in the first session, Darkwood on day
+1–2 and Ashen Mountains on day 5–7. Ashen medians were day 7 for Monk and day 6
+for the other classes, within the C1 day 6–8 target. Each zone met the CS4
+first-clear day check across all four classes. The model used no Forge or salvage.

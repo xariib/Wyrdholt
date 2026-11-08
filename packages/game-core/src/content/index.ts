@@ -8,6 +8,8 @@ import type {
   ProgressionDef,
   RarityDef,
   RuleDef,
+  SoloBossDef,
+  SoloBossTierDef,
   ZoneDef,
 } from "@emberbound/shared-types";
 import { validateKits } from "./kits";
@@ -22,7 +24,10 @@ import { geometricCurveTotals, stepTotals } from "../math/fixed";
  */
 export class ContentIndex {
   readonly snapshot: ContentSnapshot;
+  /** Adventure hash, retained in existing records. */
   readonly hash: string;
+  /** Solo Boss replays pin both boss data and the shared combat content. */
+  readonly bossHash: string;
   readonly classes = new Map<string, ClassDef>();
   readonly tracks = new Map<string, MasteryTrackDef>();
   readonly items = new Map<string, ItemDef>();
@@ -31,6 +36,7 @@ export class ContentIndex {
   readonly lootTables = new Map<string, LootTableDef>();
   readonly rules = new Map<string, RuleDef>();
   readonly rarities = new Map<string, RarityDef>();
+  readonly soloBosses = new Map<string, SoloBossDef>();
   readonly raritiesByOrder: RarityDef[];
   /** levelTotals[L-1] = total XP needed to reach level L. */
   readonly levelTotals: number[];
@@ -39,11 +45,14 @@ export class ContentIndex {
   constructor(snapshot: ContentSnapshot) {
     this.snapshot = snapshot;
     // canonicalJson also enforces "integers only" across all content.
-    this.hash = sha256Hex(canonicalJson(snapshot));
+    const { soloBosses = [], ...adventure } = snapshot;
+    this.hash = sha256Hex(canonicalJson(adventure));
+    this.bossHash = sha256Hex(canonicalJson({ adventureHash: this.hash, soloBosses }));
     for (const c of snapshot.classes) addUnique(this.classes, c.id, c, "class");
     for (const t of snapshot.masteryTracks) addUnique(this.tracks, t.id, t, "mastery track");
     for (const i of snapshot.items) addUnique(this.items, i.id, i, "item");
     for (const e of snapshot.enemies) addUnique(this.enemies, e.id, e, "enemy");
+    for (const b of soloBosses) addUnique(this.soloBosses, b.id, b, "solo boss");
     for (const z of snapshot.zones) addUnique(this.zones, z.id, z, "zone");
     for (const l of snapshot.lootTables) addUnique(this.lootTables, l.id, l, "loot table");
     for (const r of snapshot.rules) addUnique(this.rules, r.id, r, "rule");
@@ -68,6 +77,11 @@ export class ContentIndex {
   zone(id: string): ZoneDef {
     return must(this.zones.get(id), `zone ${id}`);
   }
+  soloBossTier(id: string, tier: number): { boss: SoloBossDef; budget: SoloBossTierDef } {
+    const boss = must(this.soloBosses.get(id), `solo boss ${id}`);
+    const budget = Number.isSafeInteger(tier) && tier > 0 ? boss.tiers[tier - 1] : undefined;
+    return { boss, budget: must(budget, `tier ${tier} for solo boss ${id}`) };
+  }
   lootTable(id: string): LootTableDef {
     return must(this.lootTables.get(id), `loot table ${id}`);
   }
@@ -87,6 +101,12 @@ export class ContentIndex {
   }
 
   private validate(): void {
+    for (const boss of this.soloBosses.values()) {
+      if (!this.zone(boss.unlockZoneId).implemented || boss.tiers.length === 0 || boss.attackRateMilli <= 0 || boss.armor < 0
+        || boss.tiers.some(tier => tier.hpBudget <= 0 || tier.dpsBudget100 <= 0)) {
+        throw new Error(`Invalid solo boss ${boss.id}`);
+      }
+    }
     for (const c of this.snapshot.classes) {
       this.track(c.masteryTrackId);
       if (c.parentClassId !== null) this.classDef(c.parentClassId);

@@ -7,7 +7,7 @@
  * this package with `lib: ["ES2022"]` and no ambient types.
  */
 
-export { RULES_VERSION, SAVE_SCHEMA_VERSION } from "./rules/version";
+export { RULES_VERSION, SAVE_SCHEMA_VERSION, BOSS_SAVE_SCHEMA_VERSION } from "./rules/version";
 export { BP, HP_SCALE, mulDivRound, mulDivFloor, applyBp, geometricCurveTotals, stepTotals } from "./math/fixed";
 export { Prng, deriveSeed, fnv1a32, splitmix32 } from "./math/prng";
 export { sha256Hex, utf8Bytes } from "./hash/sha256";
@@ -37,7 +37,11 @@ export {
   type FightCounters,
   type ActorFinal,
 } from "./combat/engine";
-export { buildEncounter, type EnemyInit, type EncounterSetup } from "./encounter/budget";
+export { buildEncounter, type EnemyInit, type EncounterSetup, type BossEncounterSetup } from "./encounter/budget";
+export { ASHEN_KING_ID, createBossFightRecord } from "./boss/attempt";
+export { ASHEN_CROWN, ashenCrownAt } from "./boss/artifact";
+export { prepareBossFight, type BossFightCache, type PreparedBossFight } from "./boss/ladder";
+export { advanceGame, type AdvanceGameOptions } from "./game";
 export {
   findInstance,
   createInstance,

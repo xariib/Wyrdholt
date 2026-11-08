@@ -1,4 +1,4 @@
-import type { DamageType, StageDef, ZoneDef } from "@emberbound/shared-types";
+import type { BossFightRecord, DamageType, EnemyArchetypeDef, SoloBossDef, StageDef, ZoneDef } from "@emberbound/shared-types";
 import type { ContentIndex } from "../content";
 import { BP, HP_SCALE, mulDivRound } from "../math/fixed";
 import type { RuleEffects } from "../rules/modifiers";
@@ -21,6 +21,32 @@ export interface EncounterSetup {
   zone: ZoneDef;
   stage: StageDef;
   enemies: EnemyInit[];
+}
+
+export interface BossEncounterSetup {
+  boss: SoloBossDef;
+  tier: number;
+  enemies: [EnemyInit];
+}
+
+function enemyInit(
+  archetype: Omit<EnemyArchetypeDef, "hpWeight" | "damageWeight">,
+  index: number,
+  hp100: number,
+  dps100: number,
+): EnemyInit {
+  return {
+    id: `e${index}`,
+    index,
+    archetypeId: archetype.id,
+    name: archetype.name,
+    maxHp100: Math.max(HP_SCALE, hp100),
+    hitDamage100: Math.max(1, mulDivRound(dps100, 1000, archetype.attackRateMilli)),
+    attackRateMilli: archetype.attackRateMilli,
+    armor: archetype.armor,
+    damageType: archetype.damageType,
+    sprite: archetype.sprite,
+  };
 }
 
 /**
@@ -47,21 +73,21 @@ export function buildEncounter(
   }
   const hpBudget100 = mulDivRound(stage.hpBudget * HP_SCALE, effects.enemyHpBp, BP);
   const dpsBudget100 = mulDivRound(stage.dpsBudget100, effects.enemyDamageBp, BP);
-  const enemies = archetypes.map((a, index): EnemyInit => {
-    const maxHp100 = Math.max(HP_SCALE, mulDivRound(hpBudget100, a.hpWeight, hpWeights));
-    const memberDps100 = mulDivRound(dpsBudget100, a.damageWeight, damageWeights);
-    return {
-      id: `e${index}`,
-      index,
-      archetypeId: a.id,
-      name: a.name,
-      maxHp100,
-      hitDamage100: Math.max(1, mulDivRound(memberDps100, 1000, a.attackRateMilli)),
-      attackRateMilli: a.attackRateMilli,
-      armor: a.armor,
-      damageType: a.damageType,
-      sprite: a.sprite,
-    };
+  const enemies = archetypes.map((a, index) => {
+    const hp100 = mulDivRound(hpBudget100, a.hpWeight, hpWeights);
+    const dps100 = mulDivRound(dpsBudget100, a.damageWeight, damageWeights);
+    return enemyInit(a, index, hp100, dps100);
   });
   return { zone, stage, enemies };
+}
+
+export function buildBossEncounter(
+  content: ContentIndex,
+  { bossId, tier }: BossFightRecord["encounter"],
+  effects: RuleEffects,
+): BossEncounterSetup {
+  const { boss, budget } = content.soloBossTier(bossId, tier);
+  const hp100 = mulDivRound(budget.hpBudget * HP_SCALE, effects.enemyHpBp, BP);
+  const dps100 = mulDivRound(budget.dpsBudget100, effects.enemyDamageBp, BP);
+  return { boss, tier, enemies: [enemyInit(boss, 0, hp100, dps100)] };
 }

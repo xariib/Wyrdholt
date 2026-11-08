@@ -126,7 +126,7 @@ export function prepareFight(
   const instances = equippedInstances(profile, build);
   const hero = heroStatsFor(profile, content, options.cache, build);
   const record: FightRecord = {
-    format: "emberbound-fight-record/1",
+    format: build.artifactAttackBp === undefined ? "emberbound-fight-record/1" : "emberbound-fight-record/2",
     rulesVersion: RULES_VERSION,
     contentVersion: content.snapshot.contentVersion,
     contentHash: content.hash,
@@ -238,7 +238,7 @@ export function leaveCurrentRun(profile: Profile): void {
 
 export function isFightActive(profile: Profile): boolean {
   const adv = profile.adventure;
-  return adv.activity !== "idle" && adv.run !== null && adv.run.phase === "fight";
+  return Boolean(profile.ashenKing?.active) || (adv.activity !== "idle" && adv.run !== null && adv.run.phase === "fight");
 }
 
 /** Apply queued class/gear changes. Only called at safe fight boundaries. */

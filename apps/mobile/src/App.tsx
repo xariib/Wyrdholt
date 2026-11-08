@@ -94,7 +94,7 @@ export function App() {
 
   const { profile, runResult } = ui;
   const newCount = totalNew(profile);
-  const retry = retryTarget(profile, session.content);
+  const retry = profile.ashenKing?.active ? null : retryTarget(profile, session.content);
   const openGear = (focus: GearFocus | "new" | null) => {
     setGearFocus(focus);
     setTab("gear");
@@ -116,7 +116,7 @@ export function App() {
       <Header profile={profile} {...(DEV_TOOLS ? { onDebug: () => setDebugOpen(true) } : {})} />
       <AppUpdates showSettings={tab === "character"} />
       <main className="screen adventure-screen" hidden={tab !== "adventure"}>
-        <AdventureScreen profile={profile} active={tab === "adventure" && !debugOpen} nextAttempt={retry && !ui.runResult && !ui.offline && (
+        <AdventureScreen profile={profile} active={tab === "adventure" && !debugOpen} onChallenges={() => setTab("challenges")} nextAttempt={retry && !ui.runResult && !ui.offline && (
           <section className="panel stack" aria-label="Next attempt">
             <div className="panel-title">Next attempt</div>
             <p className="small muted">Last Push: {session.content.zone(retry.zoneId).name} · stage {retry.stage}</p>
@@ -137,7 +137,7 @@ export function App() {
       )}
       {tab === "challenges" && (
         <main className="screen">
-          <ChallengesScreen />
+          <ChallengesScreen profile={profile} active={!debugOpen} onReviewGear={() => openGear(null)} />
         </main>
       )}
 
@@ -157,6 +157,10 @@ export function App() {
           onReview={(focus) => {
             session.dismissOffline();
             openGear(focus);
+          }}
+          onChallenges={() => {
+            session.dismissOffline();
+            setTab("challenges");
           }}
           retryAction={retryAction}
         />

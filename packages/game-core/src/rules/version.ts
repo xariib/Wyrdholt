@@ -8,3 +8,4 @@ export const RULES_VERSION = "emberbound-rules/0.3.0";
 
 /** Save schema version for the fresh TypeScript save format (no Godot import). */
 export const SAVE_SCHEMA_VERSION = 1;
+export const BOSS_SAVE_SCHEMA_VERSION = 4;

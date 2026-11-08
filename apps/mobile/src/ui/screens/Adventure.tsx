@@ -1,5 +1,5 @@
-import { useMemo, type ReactNode } from "react";
-import { type Profile } from "@emberbound/game-core";
+import type { ReactNode } from "react";
+import { ASHEN_KING_ID, type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { safeFarmZone, zoneViews, type ZoneView } from "../adventureModel";
 import { CombatView } from "../components/CombatView";
@@ -7,8 +7,20 @@ import { CombatView } from "../components/CombatView";
 import { FarmIcon, PushIcon } from "../components/icons";
 import { number } from "../format";
 
-export function AdventureScreen({ profile, active, nextAttempt }: { profile: Profile; active: boolean; nextAttempt: ReactNode }) {
+export function AdventureScreen({ profile, active, nextAttempt, onChallenges }: { profile: Profile; active: boolean; nextAttempt: ReactNode; onChallenges: () => void }) {
+  const boss = profile.ashenKing?.active;
+  if (boss) {
+    return (
+      <section className="panel stack">
+        <h2>Ashen King attempt in progress</h2>
+        <p className="small muted">Adventure farming resumes after the challenge.</p>
+        <button className="btn primary block" onClick={onChallenges}>Watch Tier {boss.record.encounter.tier} in Challenges</button>
+      </section>
+    );
+  }
   const content = session.content;
+  const ashenKing = content.soloBosses.get(ASHEN_KING_ID);
+  const showAshenKing = !profile.ashenKing && ashenKing && profile.adventure.zones[ashenKing.unlockZoneId]?.cleared;
   const adv = profile.adventure;
   const zone = content.zone(adv.zoneId);
   const zp = adv.zones[zone.id];
@@ -17,10 +29,7 @@ export function AdventureScreen({ profile, active, nextAttempt }: { profile: Pro
   const stageIndex = run ? run.stageIndex : 0;
   const stage = zone.stages[stageIndex]!;
   const heroSprite = content.classDef(profile.character.activeClassId).sprite;
-  const enemyNames = useMemo(
-    () => stage.enemies.map((id) => content.enemy(id).name),
-    [stage, content],
-  );
+  const enemyNames = stage.enemies.map((id) => content.enemy(id).name);
   const modeLabel =
     adv.activity === "idle"
       ? "Resting"
@@ -111,6 +120,13 @@ export function AdventureScreen({ profile, active, nextAttempt }: { profile: Pro
         </button>
       </section>
 
+      {showAshenKing && (
+        <section className="panel stack" aria-label={`${ashenKing.name} unlocked`}>
+          <div className="panel-title">{ashenKing.name} unlocked</div>
+          <p className="small muted">Take on the solo boss ladder to earn the Ashen Crown.</p>
+          <button className="btn block" onClick={onChallenges}>View {ashenKing.name} challenge</button>
+        </section>
+      )}
       {nextAttempt}
       {nextZones.map((z) => (
         <section key={z.id} className="panel row spread">

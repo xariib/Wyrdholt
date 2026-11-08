@@ -2,7 +2,7 @@
 /**
  * C2 preparation: Warrior and Ranger in the built app (Chromium, 390x844 touch).
  * - both are selectable at character creation (Warrior Active, Ranger Alternate)
- * - combat renders with the Warrior; the in-app self-test passes (18 cases)
+ * - combat renders with the Warrior; the in-app self-test passes every current golden case
  * - Character screen: both class cards show identity, Mastery, next milestone and 5 techniques
  *   with lock states; the codex lists Monk and Mage as not learned with their paths
  * - switching to Ranger works
@@ -11,12 +11,14 @@
  *   node tools/smoke/classes-check.mjs [baseUrl]
  * Exits non-zero when a check fails. Screenshots: tools/smoke/out/classes-*.png
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://127.0.0.1:4173/";
-const out = fileURLToPath(new URL("./out/", import.meta.url));
+const out = process.env.CLASSES_REPORT_DIR ?? fileURLToPath(new URL("./out/", import.meta.url));
+const golden = JSON.parse(readFileSync(new URL("../../packages/game-core/src/selftest/golden.json", import.meta.url), "utf8"));
 mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true });
@@ -24,7 +26,7 @@ const page = await context.newPage();
 const errors = [];
 page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 page.on("pageerror", (e) => errors.push(String(e)));
-const shot = (label) => page.screenshot({ path: `${out}classes-${label}.png` });
+const shot = (label) => page.screenshot({ path: join(out, `classes-${label}.png`) });
 
 await page.goto(base);
 await page.getByText("Begin in Greenfields").waitFor({ timeout: 15_000 });
@@ -78,7 +80,7 @@ const checks = {
   fourClassesSelectable: enabled.length === 4 && enabled.every((e) => !e.disabled),
   warriorActiveRangerAlternate: roles.some((t) => /Warrior.*Active/.test(t)) && roles.some((t) => /Ranger.*Alternate/.test(t)),
   headerShowsWarrior: /Warrior/.test(header),
-  selftestAllPass: allPass && selftestRows === 18,
+  selftestAllPass: allPass && selftestRows === Object.keys(golden.cases).length,
   warriorCard: warrior.role === "Active" && /Mastery 1 \/ 20/.test(warrior.text) && /Next technique at M5: Retaliation/.test(warrior.text) && warrior.techniques.length === 5,
   warriorLockStates:
     warrior.techniques.join(",") ===
@@ -89,6 +91,6 @@ const checks = {
   noConsoleErrors: errors.length === 0,
 };
 const report = { base, enabled, roles, header, selftestRows, warrior, ranger, codex, queuedText, afterSwitch, checks, errors };
-writeFileSync(`${out}classes-report.json`, JSON.stringify(report, null, 2));
+writeFileSync(join(out, "classes-report.json"), JSON.stringify(report, null, 2));
 console.log(JSON.stringify({ checks, errors }, null, 2));
 process.exit(Object.values(checks).every(Boolean) ? 0 : 1);

@@ -16,7 +16,7 @@ Dark forest fantasy: blue-green near-black, ivory, warm amber and restrained mos
 
 ## OPEN — validation
 
-Test 360×640, 390×844, 412×915 and 480×854, then physical A40/iOS touch, safe areas and text legibility. Current production pinch-zoom suppression and overlay accessibility need separate review. Static mock captures prove layout only, not live simulation, native accessibility or gesture correctness.
+Test 360×640, 390×844, 412×915 and 480×854, then verify touch, safe areas and text legibility on the REDMAGIC 11 Pro and on a physical iOS device. Current production pinch-zoom suppression and overlay accessibility need separate review. Static mock captures prove layout only, not live simulation, native accessibility or gesture correctness.
 
 ## DECIDED / NOT IMPLEMENTED — game interface, not a dashboard
 

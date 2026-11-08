@@ -3,7 +3,6 @@
 import "pixi.js/unsafe-eval";
 import { Application, Container, Graphics, Sprite, Texture, TextureSource } from "pixi.js";
 import type { CombatEvent } from "@emberbound/shared-types";
-import type { PreparedFight } from "@emberbound/game-core";
 import type { CombatFrame } from "../game/session";
 import { actorPack, attackDurations, fxPack, productionActorId, sequenceIndex } from "../art/darkwood";
 import { ProductionMotion } from "./productionMotion";
@@ -312,7 +311,7 @@ export class CombatRenderer {
     this.prerolled.clear(); this.launched.clear(); this.lastPlayback = -1;
   }
 
-  private loadFight(fight: PreparedFight, frame: CombatFrame, now: number, live: boolean): void {
+  private loadFight(fight: NonNullable<CombatFrame["fight"]>, frame: CombatFrame, now: number, live: boolean): void {
     const previousHero = this.actors.get("hero");
     const heroHp = previousHero ? previousHero.shownHp100 : null;
     this.clearScene();

@@ -1,4 +1,4 @@
-import type { ItemInstance, SlotId } from "@emberbound/shared-types";
+import type { BossFightRecord, FightOutcome, ItemInstance, SlotId } from "@emberbound/shared-types";
 
 export type Activity = "push" | "farm" | "idle";
 export type RunMode = "push" | "farm" | "trail";
@@ -94,6 +94,27 @@ export interface ProfileStats {
   offlineSettlements: number;
 }
 
+export interface BossAttempt {
+  record: BossFightRecord;
+  elapsedMs: number;
+  autoPush: boolean;
+}
+
+export interface BossResult {
+  tier: number;
+  outcome: FightOutcome | "interrupted";
+  enemyHp100: number;
+  enemyMaxHp100: number;
+}
+
+export interface BossProgress {
+  version: 1;
+  highestClearedTier: number;
+  attemptCount: number;
+  active: BossAttempt | null;
+  lastResult: BossResult | null;
+}
+
 /**
  * The whole player state. Only integers, strings, booleans, null, arrays and
  * plain objects (canonicalJson enforces this when saving and hashing).
@@ -102,7 +123,9 @@ export interface ProfileStats {
  * the previous state must clone it first (cloneProfile or a save round-trip).
  */
 export interface Profile {
-  /** Per-copy player protection. Presence permanently upgrades this save to schema 3. */
+  /** Permanent Ashen King ladder. Present from the first attempt (schema 4). */
+  ashenKing?: BossProgress;
+  /** Per-copy player protection. Presence requires schema 3 or later. */
   itemLocks?: { version: 1; lockedInstanceIds: number[] };
   forge?: import("@emberbound/shared-types").ForgeState;
   schema: number;

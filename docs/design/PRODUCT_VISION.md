@@ -8,7 +8,7 @@ The desired loop is Push → fail → Farm → notice loot → understand and ch
 
 ## IMPLEMENTED — current slice
 
-C1 includes Monk/Mage, three Adventure zones, Mastery, gear comparison, deterministic offline catch-up and persistence. A/B are complete; C1 retune awaits A40 human validation. The current C2-based integration adds Warrior/Ranger and Mage Ward; four-class human validation remains open. Broader MMORPG ambitions are not shipped functionality. See [systems](GAMEPLAY_SYSTEMS.md).
+C1 includes Monk/Mage, three Adventure zones, Mastery, gear comparison, deterministic offline catch-up and persistence. A/B are complete. The C1 retune awaits an Android playtest on the REDMAGIC 11 Pro. The current C2-based integration adds Warrior/Ranger and Mage Ward; four-class human validation remains open. Broader MMORPG ambitions are not shipped functionality. See [systems](GAMEPLAY_SYSTEMS.md).
 
 ## DECIDED / NOT IMPLEMENTED — boundaries
 

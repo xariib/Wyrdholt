@@ -1,5 +1,7 @@
-import type { FightRecord, SlotId } from "@emberbound/shared-types";
-import { prepareFight, startRun } from "../adventure/run";
+import type { CombatRecord, FightRecord, SlotId } from "@emberbound/shared-types";
+import { prepareFight, startRun, zoneProgress } from "../adventure/run";
+import { createBossFightRecord } from "../boss/attempt";
+import { prepareBossFight } from "../boss/ladder";
 import { applyCommand } from "../commands/commands";
 import type { ContentIndex } from "../content";
 import { canonicalJson } from "../hash/canonical";
@@ -108,7 +110,7 @@ function fightRecordFor(
   return prepareFight(profile, content, run, { contentTimeMs: 0, recordEvents: false }).record;
 }
 
-function replayCase(content: ContentIndex, record: FightRecord): CaseOutput {
+function replayCase(content: ContentIndex, record: CombatRecord): CaseOutput {
   const r = replayFight(content, record);
   const s = r.summary;
   return {
@@ -126,6 +128,38 @@ function profileHash(profile: Profile, extra: unknown): string {
 // ---------------------------------------------------------------------------
 
 export const SELF_TEST_CASES: readonly SelfTestCase[] = [
+  {
+    id: "fight-c4-ashen-king-tier-1",
+    description: "Mage M14, level 19, Darkwood gear, Ashen King tier 1",
+    run(content) {
+      const p = baseProfile(content, 4_001, "mage", "monk");
+      setLevel(content, p, 19);
+      setMastery(content, p, "mage", 14);
+      equipNew(content, p, ["stormcaller", "crown_of_thorns", "cinderweave", "venom_grips", "pilgrims_pace", "moonlit_loop"]);
+      return replayCase(content, createBossFightRecord(p, content, { bossId: "ashen_king", tier: 1, attemptIndex: 1 }));
+    },
+  },
+  {
+    id: "c4-ashen-crown-offline",
+    description: "Finish Ashen King tier 1 offline, then replay a Farm fight with the Ashen Crown",
+    run(content) {
+      const p = baseProfile(content, 4_105, "warrior", "ranger");
+      setLevel(content, p, 30);
+      setMastery(content, p, "warrior", 20);
+      equipNew(content, p, content.snapshot.items.filter(item => item.rarity === "legendary").map(item => item.id));
+      Object.assign(zoneProgress(p, "ashen_mountains"), { unlocked: true, cleared: true, bestStage: 10, completions: 1 });
+      const start = applyCommand(p, content, { type: "startBoss", tier: 1, autoPush: true }, { contentTimeMs: 0 });
+      const active = p.ashenKing?.active;
+      if (!start.ok || !active) throw new Error("Ashen King attempt did not start");
+      const fight = prepareBossFight(content, active, false);
+      if (!fight) throw new Error("Ashen King attempt did not replay");
+      const summary = simulateOffline(p, content, fight.summary.durationMs + 500, 0);
+      const farm = p.adventure.run;
+      if (!farm || p.ashenKing?.highestClearedTier !== 1 || p.ashenKing.active) throw new Error("Tier 1 did not settle into Farm");
+      const replay = replayCase(content, prepareFight(p, content, farm, { contentTimeMs: 0, recordEvents: false }).record);
+      return { hash: profileHash(p, { summary, farmHash: replay.hash }), detail: replay.detail };
+    },
+  },
   ...["monk", "mage", "warrior", "ranger"].flatMap((classId) =>
     ["epic", "legendary"].map((rarity): SelfTestCase => ({
       id: `fight-c3-${classId}-${rarity}`,

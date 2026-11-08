@@ -294,7 +294,7 @@ for (const t of targets) out(`| ${t.id} | ${t.text} | ${t.value} | ${t.pass ? "P
 
 const text = lines.join("\n");
 console.log(text);
-const dir = new URL("./out/", import.meta.url).pathname;
+const dir = fileURLToPath(new URL("./out/", import.meta.url));
 mkdirSync(dir, { recursive: true });
 writeFileSync(`${dir}${outName}.md`, text + "\n");
 writeFileSync(`${dir}${outName}.json`, JSON.stringify({ days, seeds, classes, schedules, contentHash: content.hash, targets, reports }, null, 1));

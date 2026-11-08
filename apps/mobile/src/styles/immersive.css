@@ -528,3 +528,8 @@
 .inventory-item .btn, .inventory-managed > .btn { min-height:44px; white-space:normal; }
 .inventory-selection { padding-block:12px; border-block:1px solid #3c6068; }
 .inventory-item p { margin-block:6px 0; }
+
+.immersive .boss-combat { height:clamp(245px,46vh,420px); min-height:245px; }
+.immersive .boss-combat .combat-banner { top:16px; }
+.boss-auto-push { justify-content:flex-start; min-height:44px; cursor:pointer; }
+.boss-auto-push input { width:20px; height:20px; margin:0; accent-color:var(--gold); }

@@ -3,26 +3,29 @@ import {
   ContentIndex,
   FightCache,
   RULES_VERSION,
-  advanceAdventure,
+  advanceGame,
   applyCommand,
   canonicalJson,
   createProfile,
   heroStatsFor,
   parseSave,
+  prepareBossFight,
   prepareFight,
   serializeSave,
   cloneProfile,
   type AdventureEvent,
+  type BossFightCache,
   type Command,
   type CommandResult,
   type OfflineSummary,
+  type PreparedBossFight,
   type PreparedFight,
   type Profile,
   type RunResult,
   type RunState,
   type SaveFileAdapter,
 } from "@emberbound/game-core";
-import type { FightRecord, ForgeInput } from "@emberbound/shared-types";
+import type { CombatRecord, ForgeInput } from "@emberbound/shared-types";
 import { perfMonitor } from "../platform/perfMonitor";
 import { randomSeed, DEV_TOOLS } from "../platform/device";
 import { CapacitorSaveFs, storageDescription, withStorageOwnership, type SaveOwnership } from "../platform/storage";
@@ -89,7 +92,7 @@ export interface CombatFrame {
   activity: Profile["adventure"]["activity"];
   run: RunState | null;
   /** Fight currently resolving (phase = fight). */
-  fight: PreparedFight | null;
+  fight: PreparedFight | PreparedBossFight | null;
   /** Most recent fight that finished (shown during rests and after a defeat). */
   lastFight: PreparedFight | null;
   /** Playback position inside `fight`, in simulation ms. */
@@ -120,6 +123,7 @@ export class GameSession {
   // Startup completion belongs to the request, not that revoked save epoch.
   private initRequest = 0;
   private readonly cache = new FightCache(6);
+  private readonly bossCache: BossFightCache = new WeakMap();
   private ui: UiState = {
     version: 0,
     phase: "loading",
@@ -148,7 +152,7 @@ export class GameSession {
   private catchingUp = false;
   private foreground = true;
   private foregroundTask: Promise<void> | null = null;
-  private itemActionTask: Promise<CommandResult> | null = null;
+  private savedActionTask: Promise<CommandResult> | null = null;
   private catchUpTask: Promise<void> | null = null;
   private catchUpThroughWallMs = 0;
   /** What the most recent kept offline settlement changed (developer progress check). */
@@ -344,7 +348,7 @@ export class GameSession {
   /** App returned: settle the time spent away with offline rules, then resume. */
   async handleForeground(): Promise<void> {
     this.foreground = true;
-    if (this.itemActionTask) await this.itemActionTask;
+    if (this.savedActionTask) await this.savedActionTask;
     if (!this.profile || this.ui.phase === "create" || !this.canPlay()) return;
     // Capacitor and document visibility may report the same resume. Share the work;
     // a later background event still wins when the asynchronous worker resolves.
@@ -404,7 +408,7 @@ export class GameSession {
         ? `${failed.mode} ${this.content.zone(failed.zoneId).name} failed at stage ${failed.stage}; started ${resumed.mode} ${this.content.zone(resumed.zoneId).name}`
         : null;
     const resumedRetry = resumed && failed?.mode === "push" ? { zoneId: failed.zoneId, stage: failed.stage } : null;
-    if (elapsed < 1_000 || working.adventure.activity === "idle") {
+    if (elapsed === 0 || !working.ashenKing?.active && (elapsed < 1_000 || working.adventure.activity === "idle")) {
       if (resumedRetry) setRetryTarget(working, resumedRetry);
       working.clock.lastSettledWallMs = Math.max(profile.clock.lastSettledWallMs, nowWallMs);
       this.bump({ profile: working, phase: "playing" });
@@ -453,7 +457,7 @@ export class GameSession {
           buildState(profile, this.content),
         );
       }
-      const show = elapsed >= SHOW_OFFLINE_SUMMARY_MS || result.summary.push.status !== "none";
+      const show = elapsed >= SHOW_OFFLINE_SUMMARY_MS || result.summary.push.status !== "none" || Boolean(result.summary.boss?.result);
       this.bump({
         profile: result.profile,
         phase: "playing",
@@ -491,7 +495,7 @@ export class GameSession {
     const loop = (now: number): void => {
       if (!this.running) return;
       this.tick(now);
-      this.raf = requestAnimationFrame(loop);
+      if (this.running) this.raf = requestAnimationFrame(loop);
     };
     this.raf = requestAnimationFrame(loop);
   }
@@ -520,14 +524,15 @@ export class GameSession {
     const events: AdventureEvent[] = [];
     const wallNow = Date.now();
     if (step > 0) {
-      advanceAdventure(profile, this.content, step, {
-        offline: false,
-        contentTimeMs: wallNow,
-        recordEvents: true,
-        cache: this.cache,
-        onEvent: (e) => events.push(e),
-      });
-      profile.clock.lastSettledWallMs = wallNow;
+      const attempt = profile.ashenKing?.active;
+      if (attempt) {
+        const fight = prepareBossFight(this.content, attempt, true, this.bossCache);
+        if (!fight || attempt.elapsedMs + step >= fight.summary.durationMs) {
+          this.saveBossBoundary(step, wallNow);
+          return;
+        }
+      }
+      this.advanceLive(profile, step, wallNow, events);
     }
     if (events.length > 0) this.handleEvents(events);
     this.emitFrame(wallNow);
@@ -537,12 +542,48 @@ export class GameSession {
     }
   }
 
+  private advanceLive(profile: Profile, step: number, wallNow: number, events: AdventureEvent[]): void {
+    advanceGame(profile, this.content, step, {
+      offline: false,
+      contentTimeMs: wallNow,
+      recordEvents: true,
+      cache: this.cache,
+      bossCache: this.bossCache,
+      onEvent: (e) => events.push(e),
+    });
+    profile.clock.lastSettledWallMs = wallNow;
+  }
+
+  private saveBossBoundary(step: number, wallNow: number): void {
+    const events: AdventureEvent[] = [];
+    void this.saveProfileAction({
+      name: "Ashen King result",
+      busy: "Saving Ashen King result…",
+      preserveLiveTime: true,
+      apply: (candidate) => {
+        this.advanceLive(candidate, step, wallNow, events);
+        return { ok: true, queued: false };
+      },
+      onSaved: (candidate) => {
+        const result = candidate.ashenKing?.lastResult;
+        if (result) {
+          const text = result.outcome === "victory" ? `Ashen King tier ${result.tier} cleared!` : `Ashen King tier ${result.tier} attempt ended.`;
+          this.bump({ toast: this.makeToast(text, result.outcome === "victory" ? "success" : "info") });
+        }
+        if (events.length > 0) this.handleEvents(events);
+      },
+    });
+  }
+
   private emitFrame(wallNow: number): void {
     const profile = this.profile;
     if (!profile || this.frameListeners.size === 0) return;
     const run = profile.adventure.run;
-    let fight: PreparedFight | null = null;
-    if (run && run.phase === "fight" && profile.adventure.activity !== "idle") {
+    const attempt = profile.ashenKing?.active;
+    let fight: CombatFrame["fight"] = null;
+    if (attempt) {
+      fight = prepareBossFight(this.content, attempt, true, this.bossCache);
+    } else if (run && run.phase === "fight" && profile.adventure.activity !== "idle") {
       fight = prepareFight(profile, this.content, run, { contentTimeMs: wallNow, recordEvents: true, cache: this.cache });
       if (fight.key !== this.currentFightKey) this.currentFightKey = fight.key;
     }
@@ -551,7 +592,7 @@ export class GameSession {
       run,
       fight,
       lastFight: this.lastFight,
-      elapsedMs: run?.elapsedMs ?? 0,
+      elapsedMs: attempt?.elapsedMs ?? run?.elapsedMs ?? 0,
       heroMaxHp100: heroStatsFor(profile, this.content, this.cache).maxHp100,
       carriedHp100: run?.hp100 ?? null,
       frameId: (this.frameId += 1),
@@ -653,47 +694,81 @@ export class GameSession {
     return this.saveItemCommand({ type: "bulkSalvage", input: input && { ...input, copies: Array.isArray(input.copies) ? input.copies.map(c => c && { ...c }) : input.copies } });
   }
 
+  startBoss(tier: number, autoPush: boolean): Promise<CommandResult> {
+    return this.saveProfileAction({
+      name: "Ashen King attempt",
+      busy: "Preparing Ashen King attempt…",
+      preserveLiveTime: false,
+      apply: (candidate) => {
+        const now = Date.now();
+        const result = applyCommand(candidate, this.content, { type: "startBoss", tier, autoPush }, { contentTimeMs: now });
+        if (result.ok) candidate.clock.lastSettledWallMs = Math.max(candidate.clock.lastSettledWallMs, now);
+        return result;
+      },
+      onSaved: () => {
+        this.lastFight = null;
+        this.currentFightKey = "";
+        this.bump({ runResult: null });
+      },
+    });
+  }
+
   private saveItemCommand(command: Extract<Command, { type: "forge" | "setItemLock" | "salvage" | "bulkSalvage" }>): Promise<CommandResult> {
-    if (this.itemActionTask || !this.canPlay() || this.catchingUp || !this.foreground || !this.profile) {
-      return Promise.resolve({ ok: false, error: "Wait for the current activity or save recovery to finish." });
-    }
     const forging = command.type === "forge";
     const salvaging = command.type === "salvage" || command.type === "bulkSalvage";
-    const actionName = forging ? "Fusion" : salvaging ? "Salvage" : "Item lock";
+    return this.saveProfileAction({
+      name: forging ? "Fusion" : salvaging ? "Salvage" : "Item lock",
+      busy: forging ? "Forging…" : salvaging ? "Saving salvage…" : "Saving item lock…",
+      preserveLiveTime: !forging,
+      apply: (candidate) => applyCommand(candidate, this.content, command, {
+        contentTimeMs: Date.now(), forgeConfig: FORGE_V1, allowDevForge: DEV_TOOLS,
+      }),
+    });
+  }
+
+  private saveProfileAction(action: {
+    name: string;
+    busy: string;
+    preserveLiveTime: boolean;
+    apply: (candidate: Profile) => CommandResult;
+    onSaved?: (candidate: Profile) => void;
+  }): Promise<CommandResult> {
+    if (this.savedActionTask || !this.canPlay() || this.catchingUp || !this.foreground || !this.profile) {
+      return Promise.resolve({ ok: false, error: "Wait for the current activity or save recovery to finish." });
+    }
     const profile = this.profile;
     const epoch = this.beginAction();
     const work = async (): Promise<CommandResult> => {
       try {
         const candidate = cloneProfile(profile);
-        const result = applyCommand(candidate, this.content, command, {
-          contentTimeMs: Date.now(), forgeConfig: FORGE_V1, allowDevForge: DEV_TOOLS,
-        });
+        const result = action.apply(candidate);
         if (!result.ok) return result;
-        this.bump({ busy: forging ? "Forging…" : salvaging ? "Saving salvage…" : "Saving item lock…" });
+        this.bump({ busy: action.busy });
         const receipt = await this.track(this.guard.write(() => serializeSave(candidate, Date.now()), {
           isCurrent: () => epoch === this.ownerEpoch && this.profile === profile,
         }));
         if (receipt.status !== "saved" || epoch !== this.ownerEpoch || this.profile !== profile) {
-          return { ok: false, error: `${actionName} was not confirmed saved. Use save recovery, then review your items before retrying.` };
+          return { ok: false, error: `${action.name} was not confirmed saved. Use save recovery before retrying.` };
         }
         this.acknowledge(receipt);
         if (epoch !== this.ownerEpoch || this.profile !== profile) return { ok: false, error: "The save owner changed. Reload your saved adventure." };
         this.bump({ profile: candidate });
+        action.onSaved?.(candidate);
         return result;
       } catch {
         if (epoch === this.ownerEpoch) this.guard.block("profile");
-        return { ok: false, error: `${actionName} could not be saved. Use save recovery before retrying.` };
+        return { ok: false, error: `${action.name} could not be saved. Use save recovery before retrying.` };
       } finally {
         if (epoch === this.ownerEpoch) this.bump({ busy: null });
-        this.finishAction(epoch, !forging);
+        this.finishAction(epoch, action.preserveLiveTime);
       }
     };
     // Defer work until the ticket is installed: synchronous store subscribers
-    // cannot start another item action during the busy publication.
+    // cannot start another saved action during the busy publication.
     const task = Promise.resolve().then(work).finally(() => {
-      if (this.itemActionTask === task) this.itemActionTask = null;
+      if (this.savedActionTask === task) this.savedActionTask = null;
     });
-    this.itemActionTask = task;
+    this.savedActionTask = task;
     return task;
   }
 
@@ -701,9 +776,11 @@ export class GameSession {
     if (command.type === "forge") return { ok: false, error: "Use the saved Forge confirmation flow." };
     if (command.type === "salvage" || command.type === "bulkSalvage") return { ok: false, error: "Use the saved salvage confirmation flow." };
     if (command.type === "setItemLock") return { ok: false, error: "Use the saved item lock flow." };
+    if (command.type === "startBoss") return { ok: false, error: "Use the saved Ashen King entry flow." };
     if (!this.canPlay() || this.catchingUp) return { ok: false, error: "Save access or settlement is paused; no command was applied." };
     const profile = this.profile;
     if (!profile) return { ok: false, error: "No character." };
+    if (command.type === "advance" && profile.ashenKing?.active) return { ok: false, error: "The session clock advances Ashen King attempts." };
     const result = applyCommand(profile, this.content, command, { contentTimeMs: Date.now(), forgeConfig: FORGE_V1, allowDevForge: DEV_TOOLS });
     const patch: Partial<UiState> = {};
     if (!result.ok) {
@@ -829,8 +906,9 @@ export class GameSession {
     }
   }
 
-  currentFightRecord(): FightRecord | null {
+  currentFightRecord(): CombatRecord | null {
     const profile = this.profile;
+    if (profile?.ashenKing?.active) return profile.ashenKing.active.record;
     const run = profile?.adventure.run;
     if (!profile || !run) return this.lastFight?.record ?? null;
     return prepareFight(profile, this.content, run, { contentTimeMs: Date.now(), recordEvents: false, cache: this.cache }).record;

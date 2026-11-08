@@ -1,7 +1,8 @@
 import type { ContentIndex } from "../content";
-import { advanceAdventure, FightCache, type AdventureEvent } from "../adventure/run";
+import { FightCache, type AdventureEvent } from "../adventure/run";
+import { advanceGame } from "../game";
 import { findInstance } from "../items/inventory";
-import type { Activity, Profile, RunMode } from "../profile/types";
+import type { Activity, BossResult, Profile, RunMode } from "../profile/types";
 
 export interface OfflineSummary {
   requestedMs: number;
@@ -10,6 +11,7 @@ export interface OfflineSummary {
   activityAtStart: Activity;
   zoneAtStart: string;
   push: { status: "none" | "cleared" | "failed"; zoneId: string | null; stage: number; stagesTotal: number; enemyHp100: number; enemyMaxHp100: number };
+  boss?: { tier: number; ms: number; result: BossResult | null };
   unlockedZoneIds: string[];
   /** Time spent per activity target, in order of first use. */
   segments: { mode: RunMode; zoneId: string; ms: number }[];
@@ -29,7 +31,7 @@ export interface OfflineSummary {
 }
 
 /**
- * Simulate `elapsedMs` of absence (capped at 8 hours) with the same pipeline
+ * Simulate `elapsedMs` of absence, capped by content, with the same pipeline
  * as online play. Offline Push continues the current zone; on failure it stops
  * risky Push and farms safe content; on success it farms the completed zone and
  * never enters the newly unlocked zone.
@@ -120,15 +122,25 @@ export function simulateOffline(
   const xpBefore = profile.character.xp;
   const goldBefore = profile.gold;
   const masteryBefore = sumValues(profile.character.masteryXp);
-  if (simulatedMs > 0 && adv.activity !== "idle") {
-    advanceAdventure(profile, content, simulatedMs, {
+  const activeBoss = profile.ashenKing?.active;
+  if (simulatedMs > 0 && (activeBoss || adv.activity !== "idle")) {
+    const boss = activeBoss ? { tier: activeBoss.record.encounter.tier, ms: 0, result: null as BossResult | null } : null;
+    const bossMs = advanceGame(profile, content, simulatedMs, {
       offline: true,
       contentTimeMs,
       cache: new FightCache(2),
       reuseFights: false,
       onEvent,
       onTime,
+      onBossResult: (result) => {
+        if (boss) boss.result = result;
+        if (result.outcome === "interrupted") return;
+        summary.fights += 1;
+        if (result.outcome === "victory") summary.victories += 1;
+        else summary.defeats += 1;
+      },
     });
+    if (boss) summary.boss = { ...boss, ms: bossMs };
   } else if (adv.activity === "idle") {
     summary.stoppedReason = "idle";
   }

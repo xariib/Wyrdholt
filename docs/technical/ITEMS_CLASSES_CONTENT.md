@@ -120,6 +120,7 @@ The C1 branches keep the C1 Mage (130 + 13 HP, 2 + 2 armor, no ward).
   - `cache`: XP, gold, mastery, rolls, optional `repeatRollChanceBp`
   - optional `recoveryBp`, `ruleIds`, `availability`, `hidden`, `implemented`
 - **Stages** (`StageDef`): `role` (normal / elite / boss), `level`, `hpBudget` and `dpsBudget100` for the **whole group**, 1–3 enemy archetype ids, and `ruleIds`. Members share the budgets by archetype weights (`encounter/budget.ts`).
+- **Solo Bosses** (`SoloBossDef`) define an Adventure clear requirement, a single opponent, and an ordered list of tier budgets. C4 records the Ashen Crown in the build snapshot as `artifactId` and `artifactAttackBp` once earned.
 - **Rules** (`RuleDef`): `kind` (`enemy_hp_bp` | `enemy_damage_bp` | `dot_damage_bp`), `valueBp`, optional `availability { startMs, endMs }`, and `testOnly`.
   - `resolveActiveRuleIds(content, zone, stage, atMs, extra)` resolves them when a fight starts.
   - The result is stored in the `FightRecord` as part of the content snapshot, so replays never need the clock.
@@ -127,5 +128,5 @@ The C1 branches keep the C1 Mage (130 + 13 HP, 2 + 2 armor, no ward).
 - **Future season content** plugs into these same fields:
   - A **Season Boss ladder** is a zone-like definition with a finite stage list and an `availability` window.
   - A **Season Rule** is a `RuleDef` with a window.
-  - A **Season Relic** occupies the `artifactId` build slot, with seasonal instance state.
-- **Content versioning:** `contentVersion` is recorded in every save and record. A content change changes `ContentIndex.hash`, and golden hashes must be regenerated deliberately.
+  - A **Season Relic** will have seasonal instance state. Its placement alongside permanent Artifacts remains open.
+- **Content versioning:** `contentVersion` is recorded in every save and record. Solo Boss records use `ContentIndex.bossHash` to pin the ladder and shared combat content. The Adventure hash excludes the ladder. Regenerate affected golden hashes deliberately after a content change.

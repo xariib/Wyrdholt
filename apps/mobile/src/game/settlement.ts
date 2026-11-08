@@ -82,6 +82,7 @@ export function settlementTelemetry(
  * the result screen. Returns the zone and mode started, or null when nothing was needed.
  */
 export function resumeAfterDefeat(profile: Profile, content: ContentIndex, contentTimeMs: number): { zoneId: string; mode: RunMode } | null {
+  if (profile.ashenKing?.active) return null;
   const adv = profile.adventure;
   const failed = adv.lastResult;
   if (adv.activity !== "idle" || !failed || failed.kind === "cleared") return null;

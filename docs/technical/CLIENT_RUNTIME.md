@@ -58,11 +58,12 @@ Components read the (mutable) profile during those renders.
 
   At every crash point at least one valid file exists (tested at each step).
 - **Load** (`loadSaveSafely`): parse main, temp and backup, and pick the newest valid one. Problems are reported in Developer tools.
-- **Migration:** `migrate()` is the entry point; schema 1 is the first TypeScript format. **Old Godot saves are not imported.**
+- **Migration:** `migrate()` reads TypeScript schemas 1 through 4. Starting the first Ashen King attempt upgrades the profile to schema 4 and retains any Forge or item-lock state. Godot saves are outside this migration path.
 - **When the app saves:**
   - 1.5 s after settled events or commands (debounced)
   - every 10 s while playing
   - immediately on background
+  - before publishing Ashen King entry, a tier result, or an auto-push transition
   - after catch-up
 
   Saves are serialized through a promise chain, so writes never overlap.

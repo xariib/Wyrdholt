@@ -12,7 +12,7 @@ export function forgeCeiling(profile: Profile, config: ForgeConfig): number {
   return config.gates.reduce((cap, gate) => profile.adventure.zones[gate.zoneId]?.cleared ? Math.max(cap, config.rarities.indexOf(gate.maxRarity)) : cap, -1);
 }
 export function forgeState(profile: Profile): ForgeState {
-  profile.schema = profile.itemLocks ? ITEM_LOCK_SAVE_SCHEMA_VERSION : 2;
+  profile.schema = Math.max(profile.schema, profile.itemLocks ? ITEM_LOCK_SAVE_SCHEMA_VERSION : 2);
   return profile.forge ??= { version: 1, nextTransactionId: 1 };
 }
 export function eligibleForgeIds(profile: Profile, content: ContentIndex, slot: string, rarity: string): number[] {

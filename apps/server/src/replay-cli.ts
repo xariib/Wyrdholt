@@ -21,7 +21,7 @@ import {
   replayFight,
   type ReplayResult,
 } from "@emberbound/game-core";
-import type { FightRecord } from "@emberbound/shared-types";
+import type { CombatRecord, FightRecord } from "@emberbound/shared-types";
 
 const content = new ContentIndex(CONTENT);
 const args = process.argv.slice(2);
@@ -48,14 +48,17 @@ function hp(v: number | string | undefined): string {
   return typeof v === "number" ? (v / 100).toFixed(2) : String(v ?? "");
 }
 
-function print(result: ReplayResult, showEvents: boolean): void {
+function print(result: ReplayResult<CombatRecord>, showEvents: boolean): void {
   const s = result.summary;
   const r = result.record;
   console.log(`rules     ${r.rulesVersion} (core ${RULES_VERSION})`);
   console.log(`content   ${r.contentVersion} ${r.contentHash.slice(0, 16)}…`);
   console.log(`seed      ${r.seed}`);
   console.log(`build     ${r.build.classId} L${r.build.characterLevel} masteryXp ${r.build.masteryXp} items ${r.itemInstances.map((i) => `${i.id}:${i.baseId}`).join(", ")}`);
-  console.log(`encounter ${r.encounter.zoneId} stage ${r.encounter.stageIndex + 1}  startHp ${r.startHp100 === null ? "full" : hp(r.startHp100)}  rules [${r.activeRuleIds.join(", ")}]`);
+  const encounter = r.format === "emberbound-boss-fight-record/1"
+    ? `${r.encounter.bossId} tier ${r.encounter.tier}`
+    : `${r.encounter.zoneId} stage ${r.encounter.stageIndex + 1}`;
+  console.log(`encounter ${encounter}  startHp ${r.startHp100 === null ? "full" : hp(r.startHp100)}  rules [${r.activeRuleIds.join(", ")}]`);
   console.log(`outcome   ${s.outcome} at ${s.durationMs} ms   hero ${hp(s.hero.hp100)}/${hp(s.hero.maxHp100)}   events ${result.events.length}   rng draws ${s.rngDraws}`);
   console.log(`damage    dealt ${hp(s.counters.damageDealt100)} (basic ${hp(s.counters.damageBasic100)}, class ${hp(s.counters.damageClass100)}, item ${hp(s.counters.damageItem100)}; dot ${hp(s.counters.damageDot100)})  taken ${hp(s.counters.damageTaken100)}  healed ${hp(s.counters.healing100)}`);
   console.log(`procs     ${JSON.stringify(s.counters.procs)}`);
@@ -82,7 +85,7 @@ if (exportDir) {
 }
 
 const file = args.find((a) => !a.startsWith("--"));
-const records: FightRecord[] = file ? [JSON.parse(readFileSync(file, "utf8")) as FightRecord] : flag("demo") ? demoRecords() : [];
+const records: CombatRecord[] = file ? [JSON.parse(readFileSync(file, "utf8")) as CombatRecord] : flag("demo") ? demoRecords() : [];
 if (records.length === 0) {
   console.log("Usage: npm run replay -- --demo | <record.json> [--events] [--expect=<hash>] | --export=<dir>");
   process.exit(2);

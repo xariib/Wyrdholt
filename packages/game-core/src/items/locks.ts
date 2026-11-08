@@ -25,6 +25,6 @@ export function setItemLock(profile: Profile, instanceId: number, locked: boolea
     ? [...state.lockedInstanceIds, instanceId].sort((a, b) => a - b)
     : state.lockedInstanceIds.filter(id => id !== instanceId);
   // Keep this domain even after the last unlock: old readers must never downgrade it.
-  profile.schema = ITEM_LOCK_SAVE_SCHEMA_VERSION;
+  profile.schema = Math.max(profile.schema, ITEM_LOCK_SAVE_SCHEMA_VERSION);
   return null;
 }

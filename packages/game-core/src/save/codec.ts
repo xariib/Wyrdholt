@@ -1,8 +1,9 @@
 import { SLOT_ORDER, type ItemInstance } from "@emberbound/shared-types";
+import { ASHEN_KING_ID, bossFightSeed } from "../boss/attempt";
 import { canonicalJson } from "../hash/canonical";
 import { sha256Hex } from "../hash/sha256";
 import type { Profile } from "../profile/types";
-import { RULES_VERSION, SAVE_SCHEMA_VERSION } from "../rules/version";
+import { BOSS_SAVE_SCHEMA_VERSION, RULES_VERSION, SAVE_SCHEMA_VERSION } from "../rules/version";
 import { ITEM_LOCK_SAVE_SCHEMA_VERSION } from "../items/locks";
 
 /**
@@ -15,7 +16,7 @@ import { ITEM_LOCK_SAVE_SCHEMA_VERSION } from "../items/locks";
  */
 
 export const SAVE_FORMAT = "emberbound-save";
-/** Schema 1 is the default; schema 2 adds Forge; first player lock uses schema 3. */
+/** Schema 1 is the default, schema 2 adds Forge, and schema 3 adds item locks. */
 export const FORGE_SAVE_SCHEMA_VERSION = 2;
 
 export interface SaveEnvelope {
@@ -78,7 +79,9 @@ export function serializeSave(profile: Profile, savedAtWallMs: number): string {
   const payload = canonicalJson(encodeProfile(stripPlainProvenance(profile)));
   const envelope: SaveEnvelope = {
     format: SAVE_FORMAT,
-    schema: profile.itemLocks ? ITEM_LOCK_SAVE_SCHEMA_VERSION : profile.forge ? FORGE_SAVE_SCHEMA_VERSION : SAVE_SCHEMA_VERSION,
+    schema: profile.ashenKing ? BOSS_SAVE_SCHEMA_VERSION
+      : profile.itemLocks ? ITEM_LOCK_SAVE_SCHEMA_VERSION
+      : profile.forge ? FORGE_SAVE_SCHEMA_VERSION : SAVE_SCHEMA_VERSION,
     rulesVersion: RULES_VERSION,
     contentVersion: profile.contentVersion,
     savedAtWallMs,
@@ -253,7 +256,7 @@ export function parseSave(text: string): ParseResult {
   const envelope = rawEnvelope as unknown as SaveEnvelope;
   if (typeof envelope.payload !== "string") return { ok: false, reason: "missing-payload" };
   if (sha256Hex(envelope.payload) !== envelope.checksum) return { ok: false, reason: "checksum-mismatch" };
-  if (envelope.schema > ITEM_LOCK_SAVE_SCHEMA_VERSION) return { ok: false, reason: "newer-schema" };
+  if (envelope.schema > BOSS_SAVE_SCHEMA_VERSION) return { ok: false, reason: "newer-schema" };
   let encoded: unknown;
   try {
     encoded = JSON.parse(envelope.payload);
@@ -268,9 +271,13 @@ export function parseSave(text: string): ParseResult {
     || envelope.schema === SAVE_SCHEMA_VERSION && migrated.forge !== undefined) {
     return { ok: false, reason: "invalid:forge-schema" };
   }
-  if ((envelope.schema === ITEM_LOCK_SAVE_SCHEMA_VERSION) !== (migrated.itemLocks !== undefined)
-    || envelope.schema === ITEM_LOCK_SAVE_SCHEMA_VERSION && migrated.schema !== ITEM_LOCK_SAVE_SCHEMA_VERSION) {
+  if (envelope.schema < BOSS_SAVE_SCHEMA_VERSION && ((envelope.schema === ITEM_LOCK_SAVE_SCHEMA_VERSION) !== (migrated.itemLocks !== undefined)
+    || envelope.schema === ITEM_LOCK_SAVE_SCHEMA_VERSION && migrated.schema !== ITEM_LOCK_SAVE_SCHEMA_VERSION)) {
     return { ok: false, reason: "invalid:item-locks-schema" };
+  }
+  if ((envelope.schema === BOSS_SAVE_SCHEMA_VERSION) !== (migrated.ashenKing !== undefined)
+    || (envelope.schema === BOSS_SAVE_SCHEMA_VERSION) !== (migrated.schema === BOSS_SAVE_SCHEMA_VERSION)) {
+    return { ok: false, reason: "invalid:solo-boss-schema" };
   }
   const stateProblem = profileStateProblem(migrated);
   if (stateProblem) return { ok: false, reason: `invalid:profile-state:${stateProblem}` };
@@ -280,9 +287,10 @@ export function parseSave(text: string): ParseResult {
   return { ok: true, profile, envelope };
 }
 
-/** Old formats are read without rewriting them; only an explicit first lock upgrades. */
+/** Old formats are read without rewriting them. First use of a new domain upgrades the save. */
 function migrate(encoded: EncodedProfile, schema: number): EncodedProfile | null {
-  if (schema === SAVE_SCHEMA_VERSION || schema === FORGE_SAVE_SCHEMA_VERSION || schema === ITEM_LOCK_SAVE_SCHEMA_VERSION) return encoded;
+  if (schema === SAVE_SCHEMA_VERSION || schema === FORGE_SAVE_SCHEMA_VERSION || schema === ITEM_LOCK_SAVE_SCHEMA_VERSION
+    || schema === BOSS_SAVE_SCHEMA_VERSION) return encoded;
   return null;
 }
 
@@ -318,6 +326,64 @@ function forgeProblem(profile: Profile): string | null {
   return receipt.inputKey === inputKey ? null : "forge-receipt";
 }
 
+function bossRecordProblem(record: unknown, tier: number, attemptIndex: number, masterSeed: number): boolean {
+  if (!isRecord(record) || record.format !== "emberbound-boss-fight-record/1" || record.startHp100 !== null
+    || typeof record.rulesVersion !== "string" || typeof record.contentVersion !== "string"
+    || typeof record.contentHash !== "string" || !/^[0-9a-f]{64}$/.test(record.contentHash)
+    || record.seed !== bossFightSeed(masterSeed, ASHEN_KING_ID, tier, attemptIndex)
+    || !Array.isArray(record.activeRuleIds) || record.activeRuleIds.length !== 0
+    || !isRecord(record.encounter) || record.encounter.bossId !== ASHEN_KING_ID || record.encounter.tier !== tier
+    || !isRecord(record.build) || !isRecord(record.build.equipment)
+    || !Array.isArray(record.itemInstances) || record.itemInstances.length > SLOT_ORDER.length) return true;
+
+  const { build } = record;
+  if (stateFieldsProblem(build, "build", [["characterLevel", "positive"], ["classId", "string"], ["masteryXp", "counter"]])) return true;
+  if (build.artifactId === null) {
+    if (build.artifactAttackBp !== undefined) return true;
+  } else if (build.artifactId !== "ashen_crown" || !Number.isSafeInteger(build.artifactAttackBp)
+    || (build.artifactAttackBp as number) <= 0 || (build.artifactAttackBp as number) > 10_000) return true;
+
+  const ids = new Set<number>();
+  for (const item of record.itemInstances) {
+    if (!isRecord(item) || stateFieldsProblem(item, "item", [
+      ["id", "positive"], ["baseId", "string"], ["acquiredSeq", "positive"], ["isNew", "boolean"],
+    ]) || ids.has(item.id as number)) return true;
+    ids.add(item.id as number);
+  }
+  for (const [slot, id] of Object.entries(record.build.equipment)) {
+    if (!(SLOT_ORDER as readonly string[]).includes(slot) || !ids.delete(id as number)) return true;
+  }
+  return ids.size !== 0;
+}
+
+function bossProgressProblem(profile: Profile): string | null {
+  const value: unknown = profile.ashenKing;
+  if (value === undefined) return profile.schema === BOSS_SAVE_SCHEMA_VERSION ? "solo-boss-schema" : null;
+  if (profile.schema !== BOSS_SAVE_SCHEMA_VERSION) return "solo-boss-schema";
+  if (!isRecord(value) || value.version !== 1 || stateFieldsProblem(value, "solo-boss", [
+    ["highestClearedTier", "counter"], ["attemptCount", "positive"],
+  ])) return "solo-boss-progress";
+  const cleared = value.highestClearedTier as number;
+  const attempts = value.attemptCount as number;
+  const { active, lastResult } = value;
+  if (cleared > attempts - (active === null ? 0 : 1)) return "solo-boss-progress";
+  if (active !== null && (!isRecord(active) || stateFieldsProblem(active, "active", [["elapsedMs", "counter"], ["autoPush", "boolean"]])
+    || profile.adventure?.activity !== "idle" || profile.adventure.run !== null
+    || bossRecordProblem(active.record, cleared + 1, attempts, profile.masterSeed))) return "solo-boss-attempt";
+
+  if (lastResult === null) return active !== null && attempts === 1 ? null : "solo-boss-result";
+  if (!isRecord(lastResult) || stateFieldsProblem(lastResult, "result", [
+    ["tier", "positive"], ["outcome", ["victory", "defeat", "timeout", "interrupted"]],
+    ["enemyHp100", "counter"], ["enemyMaxHp100", "counter"],
+  ]) || active !== null && attempts < 2) return "solo-boss-result";
+  const hp = lastResult.enemyHp100 as number;
+  const max = lastResult.enemyMaxHp100 as number;
+  if (lastResult.outcome === "victory") return lastResult.tier === cleared && hp === 0 && max > 0 ? null : "solo-boss-result";
+  if (lastResult.tier !== cleared + 1) return "solo-boss-result";
+  if (lastResult.outcome === "interrupted") return hp === 0 && max === 0 ? null : "solo-boss-result";
+  return hp > 0 && hp <= max ? null : "solo-boss-result";
+}
+
 export function validateProfile(profile: Profile): string | null {
   if (!Number.isSafeInteger(profile.masterSeed)) return "seed";
   if (!isRecord(profile.character) || typeof profile.character.activeClassId !== "string") return "character";
@@ -331,7 +397,7 @@ export function validateProfile(profile: Profile): string | null {
   }
   if (profile.itemLocks !== undefined) {
     const locks: unknown = profile.itemLocks;
-    if (profile.schema !== ITEM_LOCK_SAVE_SCHEMA_VERSION) return "item-locks-schema";
+    if (profile.schema !== ITEM_LOCK_SAVE_SCHEMA_VERSION && profile.schema !== BOSS_SAVE_SCHEMA_VERSION) return "item-locks-schema";
     if (!isRecord(locks) || locks.version !== 1 || !Array.isArray(locks.lockedInstanceIds)) return "item-locks";
     let previous = 0;
     const owned = new Set(profile.inventory.instances.map(i => i.id));
@@ -340,6 +406,8 @@ export function validateProfile(profile: Profile): string | null {
       previous = id;
     }
   } else if (profile.schema === ITEM_LOCK_SAVE_SCHEMA_VERSION) return "item-locks-schema";
+  const boss = bossProgressProblem(profile);
+  if (boss) return boss;
   const forge = forgeProblem(profile);
   if (forge) return forge;
   const run = profile.adventure?.run;

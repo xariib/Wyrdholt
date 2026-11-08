@@ -1,14 +1,14 @@
 import type { ForgeConfig, ForgeInput, SlotId } from "@emberbound/shared-types";
 import {
-  advanceAdventure,
   applyPendingBuild,
   isFightActive,
   leaveCurrentRun,
   startRun,
   zoneProgress,
-  type AdvanceOptions,
 } from "../adventure/run";
+import { startBossAttempt } from "../boss/ladder";
 import type { ContentIndex } from "../content";
+import { advanceGame, type AdvanceGameOptions } from "../game";
 import { fuse, forgeState } from "../items/forge";
 import { createInstance, findInstance, reservedInstanceIds } from "../items/inventory";
 import { isItemLocked, setItemLock } from "../items/locks";
@@ -28,6 +28,7 @@ export type Command =
   | { type: "devForge"; action: "unlock" | "gold" | "emptyGold" | "grant" | "reset"; slot?: SlotId; rarity?: string; count?: number }
   | { type: "startPush"; zoneId: string }
   | { type: "startFarm"; zoneId: string }
+  | { type: "startBoss"; tier: number; autoPush: boolean }
   | { type: "equip"; slot: SlotId; instanceId: number }
   | { type: "setActiveClass"; classId: string }
   | { type: "cancelPending" }
@@ -47,7 +48,7 @@ export function applyCommand(
   profile: Profile,
   content: ContentIndex,
   command: Command,
-  options: Omit<AdvanceOptions, "offline"> & { offline?: boolean; forgeConfig?: ForgeConfig; allowDevForge?: boolean },
+  options: Omit<AdvanceGameOptions, "offline"> & { offline?: boolean; forgeConfig?: ForgeConfig; allowDevForge?: boolean },
 ): CommandResult {
   switch (command.type) {
     case "bulkSalvage":
@@ -84,8 +85,12 @@ export function applyCommand(
       return OK;
     }
     case "advance":
-      advanceAdventure(profile, content, command.ms, { ...options, offline: options.offline ?? false });
+      advanceGame(profile, content, command.ms, { ...options, offline: options.offline ?? false });
       return OK;
+    case "startBoss": {
+      const error = startBossAttempt(profile, content, command.tier, command.autoPush);
+      return error ? { ok: false, error } : OK;
+    }
     case "startPush":
       return startActivity(profile, content, command.zoneId, "push");
     case "startFarm":
@@ -118,6 +123,7 @@ export function applyCommand(
 }
 
 function startActivity(profile: Profile, content: ContentIndex, zoneId: string, kind: "push" | "farm"): CommandResult {
+  if (profile.ashenKing?.active) return { ok: false, error: "Adventure resumes when the Ashen King attempt ends." };
   const zone = content.zones.get(zoneId);
   if (!zone || zone.hidden) return { ok: false, error: "Unknown zone." };
   if (!zone.implemented) return { ok: false, error: `${zone.name} is not playable in this build.` };

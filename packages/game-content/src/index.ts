@@ -1,4 +1,5 @@
 import type { ContentConfig, ContentSnapshot, RarityDef, RuleDef } from "@emberbound/shared-types";
+import { SOLO_BOSSES } from "./bosses";
 import { CLASSES, mageTrack, monkTrack, rangerTrack, warriorTrack } from "./classes";
 import { ENEMIES } from "./enemies";
 import { ITEMS, STARTER_ITEMS } from "./items";
@@ -81,6 +82,7 @@ export const CONTENT: ContentSnapshot = {
   lootTables: LOOT_TABLES,
   rules,
   starterItems: STARTER_ITEMS,
+  soloBosses: SOLO_BOSSES,
 };
 
 export { FORGE_V1 } from "./forge";

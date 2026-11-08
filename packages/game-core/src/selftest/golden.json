@@ -2,8 +2,10 @@
   "rulesVersion": "emberbound-rules/0.3.0",
   "contentVersion": "emberbound-content/0.5.0-c3-items-test",
   "contentHash": "6eb3e679c56f8d5056b9543f5f20d990de9ee6bc4adfc40dd7eacda13c783609",
-  "generatedBy": "node v24.19.0",
+  "generatedBy": "node v24.20.0",
   "cases": {
+    "fight-c4-ashen-king-tier-1": "9760084e9cbc11f5b1cc5acec4ef988e74e268aad7180e264b70c8400d31afed",
+    "c4-ashen-crown-offline": "8d60a3604c901869e62d604a64e6097b0a2f35aebc2f2c56fc7494e6f979ffcc",
     "fight-c3-monk-epic": "a9bb69d4812835102704c86c4a08af4a26864dc239fa1abc60b5ee04465d8c5c",
     "fight-c3-monk-legendary": "37288b7a9e6ed91faa304e4df0a3d0a0a297756166462c6118129d1be6f6018c",
     "fight-c3-mage-epic": "2271bd5817fc4740fb304d1e1727cfaa93eb2b0f6bc11863a62974158309b5eb",

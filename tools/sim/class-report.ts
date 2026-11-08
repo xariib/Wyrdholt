@@ -26,6 +26,7 @@
  * Push runs are nearly deterministic, so parity is measured as the wall level.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import type { ContentSnapshot } from "@emberbound/shared-types";
 import { CONTENT } from "@emberbound/game-content";
 import { ContentIndex, heroStatsFor } from "@emberbound/game-core";
@@ -264,7 +265,7 @@ function main(): void {
   }
   out(`CS4 (first-clear day split between classes) is checked by tools/sim/pacing.ts.`);
 
-  const dir = new URL("./out/", import.meta.url).pathname;
+  const dir = fileURLToPath(new URL("./out/", import.meta.url));
   mkdirSync(dir, { recursive: true });
   writeFileSync(`${dir}${outName}.md`, lines.join("\n") + "\n");
   writeFileSync(`${dir}${outName}.json`, JSON.stringify({ mode, classes, reference, runs, seeds, results }, null, 1));

@@ -305,6 +305,19 @@ export interface EnemyArchetypeDef {
   sprite: string;
 }
 
+export interface SoloBossTierDef {
+  /** Total HP in whole HP. */
+  hpBudget: number;
+  /** Raw damage per second, x100. */
+  dpsBudget100: number;
+}
+
+export interface SoloBossDef extends Omit<EnemyArchetypeDef, "hpWeight" | "damageWeight"> {
+  unlockZoneId: Id;
+  /** Tier 1 is the first entry. */
+  tiers: SoloBossTierDef[];
+}
+
 export type StageRole = "normal" | "elite" | "boss";
 
 export interface StageDef {
@@ -438,6 +451,7 @@ export interface ContentSnapshot {
   lootTables: LootTableDef[];
   rules: RuleDef[];
   starterItems: Id[];
+  soloBosses?: SoloBossDef[];
 }
 
 // ---------------------------------------------------------------------------
@@ -477,6 +491,8 @@ export interface BuildSnapshot {
   /** Slot -> item instance id. */
   equipment: Partial<Record<SlotId, number>>;
   artifactId: Id | null;
+  /** Resolved permanent Artifact bonus at fight start, in basis points. */
+  artifactAttackBp?: Bp;
 }
 
 export interface EncounterRef {
@@ -486,7 +502,8 @@ export interface EncounterRef {
 
 /** Everything needed to reproduce one fight exactly. */
 export interface FightRecord {
-  format: "emberbound-fight-record/1";
+  /** Version 2 adds a snapshotted Artifact bonus. */
+  format: "emberbound-fight-record/1" | "emberbound-fight-record/2";
   rulesVersion: string;
   contentVersion: string;
   contentHash: string;
@@ -500,6 +517,15 @@ export interface FightRecord {
   /** Active rule ids, resolved when the fight started. Part of the content snapshot. */
   activeRuleIds: Id[];
 }
+
+/** A single Solo Boss attempt, pinned to the boss content and the equipped build. */
+export interface BossFightRecord extends Omit<FightRecord, "format" | "encounter"> {
+  format: "emberbound-boss-fight-record/1";
+  encounter: { bossId: Id; tier: number };
+  startHp100: null;
+}
+
+export type CombatRecord = FightRecord | BossFightRecord;
 
 export type FightOutcome = "victory" | "defeat" | "timeout";
 

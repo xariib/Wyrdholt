@@ -77,19 +77,21 @@ export function resolveHeroStats(
 
   claimStatusOwnership(mechanics);
 
+  let attack100 = attack * HP_SCALE + foundation100;
+  if (build.artifactAttackBp !== undefined) attack100 = mulDivRound(attack100, BP + build.artifactAttackBp, BP);
   return {
     classId: cls.id,
     level,
     masteryRank: rank,
     maxHp100: hp * HP_SCALE,
-    attack100: attack * HP_SCALE + foundation100,
+    attack100,
     armor,
     attackRateMilli,
     critBp,
     damageType: cls.damageType,
     mechanics,
     mechanicSources,
-    display: { hp, attack: attack + Math.round(foundation100 / HP_SCALE), armor, attackRateMilli, critBp },
+    display: { hp, attack: Math.round(attack100 / HP_SCALE), armor, attackRateMilli, critBp },
     activeEffects,
   };
 }

@@ -1,7 +1,31 @@
-# C3-spiltest — 20–30 minutter og et senere genbesøg
+# Spiltest af C1, C2 og C3
 
 Åbn testbuildet og notér build-ID. Brug din nuværende figur, hvis buildet allerede har adgang til dit save. Bevar browserdata og brug almindelig progression.
 [Observationsskema](C3_OBSERVATIONS_DA.md) har plads til både fejl og forståelighed.
+
+## C1 — Adventure og progression
+
+Spil de første 30 minutter med en ny figur, hvis telefonen endnu ikke har et save.
+Hvis du fortsætter med en eksisterende figur, så registrér de første clears, du
+oplever fra nu af. Brug eventuelt en separat browserprofil til en frisk start.
+Notér tid, level og Mastery ved første clear af Greenfields, Darkwood og Ashen
+Mountains. Fortsæt med dine normale daglige besøg.
+Ved første clear skal figuren farme den clearede zone, indtil du selv starter den
+næste. Ved et nederlag skal optjente rewards bevares. Notér stage og fjendens HP
+før og efter et nyt forsøg med en ændring i gear, level eller Mastery. Notér også
+offlinefravær og det udbytte, spillet viser ved næste besøg.
+
+## C2 — Klasseoplevelse
+
+Prøv Active og Alternate på samme figur. Skift under kamp, og kontrollér, at
+skiftet først træder i kraft efter kampen. Notér for hver klasse, hvad der føles
+anderledes i tempo, skade og overlevelse, og om dens Mastery-teknikker er synlige
+og forståelige. Dæk Monk, Mage, Warrior og Ranger på tværs af testere eller
+separate browserprofiler. Notér zone, level, Mastery og gear ved sammenligning.
+
+## C3 — Gear, Forge og salvage
+
+Sæt 20–30 minutter af til gennemgangen og vend tilbage efter et almindeligt fravær.
 
 1. **Push → nederlag → Farm.** Notér klasse, level/Mastery, Gold og zone/stage.
    Prøv dit næste Push, hvis det giver mening. Ved nederlag: læs resultatet og vælg
@@ -47,3 +71,11 @@ anbefalet optimal strategi eller balancegodkendelse er indbygget i guiden.
 
 Tidligere testpåvirkede saves bevares til correctness/UX; registrér påvirkningen
 i skemaet og brug ikke absolut progression som no-DEV pacing-/balanceaccept.
+
+## Fysisk enhed
+
+Android-testen foregår på REDMAGIC 11 Pro. Notér Android-version og appversion.
+Gå til en anden app under et Push, og vend tilbage efter et målbart fravær.
+Kontrollér den viste offlineafregning og den aktivitet, figuren fortsætter med.
+Kontrollér læsbarhed, scroll og tryk i Adventure, Character og Gear. Brug en
+testfigur til at afprøve lukning via OS og genstart.

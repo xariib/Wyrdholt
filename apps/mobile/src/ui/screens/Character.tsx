@@ -1,8 +1,8 @@
-import { masteryProgress, nextMilestone, techniqueStatuses, type Profile } from "@emberbound/game-core";
+import { ASHEN_CROWN, ashenCrownAt, masteryProgress, nextMilestone, techniqueStatuses, type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { Bar } from "../components/Common";
 import { SpriteImage } from "../components/icons";
-import { number } from "../format";
+import { number, pct } from "../format";
 
 const COMBAT_CUES: Record<string, string> = {
   warrior: "In combat: red marks and ticks show Bleed. Red pulses show Retaliation; Execute strengthens hits against weakened enemies.",
@@ -14,6 +14,7 @@ const COMBAT_CUES: Record<string, string> = {
 export function CharacterScreen({ profile }: { profile: Profile }) {
   const c = profile.character;
   const queuedClass = profile.pending?.activeClassId;
+  const crown = ashenCrownAt(profile.ashenKing?.highestClearedTier ?? 0);
   return (
     <>
       <section className="panel stack">
@@ -24,6 +25,12 @@ export function CharacterScreen({ profile }: { profile: Profile }) {
       </section>
       <ClassCard profile={profile} classId={c.activeClassId} role="Active" queued={false} />
       <ClassCard profile={profile} classId={c.alternateClassId} role="Alternate" queued={queuedClass === c.alternateClassId} />
+      {crown && (
+        <section className="panel stack" aria-label="Artifact">
+          <div className="row spread"><div className="panel-title">{ASHEN_CROWN.name}</div><span className="tag gold">Rank {crown.rank}</span></div>
+          <div className="small muted">+{pct(crown.attackBp)} Attack for both classes.</div>
+        </section>
+      )}
       <ClassCodex learned={[c.activeClassId, c.alternateClassId]} />
       <section className="panel stack">
         <div className="panel-title">Future paths</div>

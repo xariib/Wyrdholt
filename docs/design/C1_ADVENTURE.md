@@ -1,6 +1,6 @@
 # C1 — Adventure foundation: design brief
 
-**Status:** retuned after the A40 playtest (Kalvoz, 21 Sep 2026): 24-hour offline storage, Darkwood on day 1–2, smoother Mastery. All retune targets pass in simulation; waiting for the next A40 playtest.
+The 21 September 2026 A40 playtest led to 24-hour offline storage, Darkwood on day 1–2, and smoother Mastery. The retune targets passed in simulation. The next Android playtest is on the REDMAGIC 11 Pro.
 **Results:** docs/reports/C1_RETUNE.md (current). History: docs/reports/C1_PACING.md and C1_CLASS_BALANCE.md (first C1 fit), C1_PLAYTEST_INVESTIGATION.md (why it was retuned).
 **Scope:** Darkwood, Ashen Mountains, final zone pacing, Push/Farm across three zones, offline progression, run failures, manual zone transitions.
 **Out of scope** (later milestones):
@@ -129,8 +129,8 @@ The simulation is a measuring stick, not a game feature. Its gear heuristic is *
 - [x] Class targets CT1/CT2 (§8) met in every zone.
 - [x] Unit tests for tables, cache repeat chance, three-zone transitions, offline step-down, and the save round-trip. Golden hashes regenerated; parity gate passes.
 - [x] 8-hour catch-up on the build machine is faster than Phase B (fewer, longer fights). *(86 ms vs 111 ms.)*
-- [ ] Functional UI for the zone list, transitions and failures; smoke tests pass; APK and preview built.
-- [ ] **Stop for Kalvoz's playtest.** C1 changes pacing materially.
+- [x] Functional UI for the zone list, transitions and failures. On `51b82b7`, the Chromium zone and defeat/retry smoke checks passed. Chromium and WebKit both confirmed with controlled saves that offline clears resume farming and the next zone starts only on manual entry. The local web preview built successfully and Android `0.2.1` (version code 2) was published from that commit. [Android release](https://github.com/xariib/Wyrdholt/releases/tag/android-v0.2.1-2)
+- [ ] **REDMAGIC 11 Pro playtest.** Record the first clear of each zone and the Push → Farm → retry loop under normal play. [Playtest guide](../playtests/C3_HUMAN_GUIDE_DA.md)
 
 ## 8. Class-performance targets (Kalvoz decision, 16 Sep 2026)
 

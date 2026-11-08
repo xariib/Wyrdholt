@@ -1,4 +1,13 @@
-import type { ContentIndex } from "@emberbound/game-core";
+import type { BossResult, ContentIndex } from "@emberbound/game-core";
+
+export function bossResultLabel({ tier, outcome }: BossResult): string {
+  switch (outcome) {
+    case "victory": return `Tier ${tier} cleared`;
+    case "defeat": return `Defeated on Tier ${tier}`;
+    case "timeout": return `Time ran out on Tier ${tier}`;
+    case "interrupted": return `Tier ${tier} interrupted by a game update`;
+  }
+}
 
 export function hp(value100: number): string {
   return String(Math.ceil(value100 / 100));
