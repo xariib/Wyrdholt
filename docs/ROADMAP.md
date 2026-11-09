@@ -1,6 +1,6 @@
 # Wyrdholt development roadmap
 
-The milestone order comes from the original `docs/ROADMAP.md` in the Wyrdholt Mobile source archive. The integrated test candidate is on `feature/roadmap-c5-c9`, based on `main` in [xariib/Wyrdholt](https://github.com/xariib/Wyrdholt). Android 0.2.1 is the current [public release](https://github.com/xariib/Wyrdholt/releases/tag/android-v0.2.1-2).
+The milestone order comes from the original `docs/ROADMAP.md` in the Wyrdholt Mobile source archive. The integrated test build is on `feature/roadmap-c5-c9`, based on `main` in [xariib/Wyrdholt](https://github.com/xariib/Wyrdholt). Android `0.4.0-roadmap.1` is the current public playtest release and is available through **Character → App updates**. [Release notes](https://github.com/xariib/Wyrdholt/releases/tag/android-v0.4.0-roadmap.1-4)
 
 | Milestone | Scope | Status |
 | --- | --- | --- |
@@ -26,7 +26,7 @@ The [Android Ashen King playtest](design/C4_SOLO_BOSSES.md#android-playtest) and
 
 The `0.4.0-roadmap.1` Android APK was built from `666e0f3` with version code 4 and the existing Wyrdholt release certificate. On the Android 15 emulator it installed over the C4 candidate, retained the test character and active class, and opened the new Challenges screen. The browser build passed the save, gear, promotion, season rollover and online dungeon flows. Authority tests covered SQLite restart, dungeon retries, raid rewards and leaderboard validation. All 1,537 tests passed. Node, Chromium and WebKit matched all 31 golden cases, including all 29 prior hashes.
 
-Physical-device checks, human playtesting and public hosting remain pending.
+Physical-device checks, human playtesting and public hosting for the online authority remain pending.
 
 ## Design boundaries
 
