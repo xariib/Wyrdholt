@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { session, type FrameListener } from "../../game/session";
+import { session } from "../../game/session";
 import type { CombatRenderer } from "../../render/CombatRenderer";
 import { perfMonitor } from "../../platform/perfMonitor";
 
@@ -24,12 +24,7 @@ function loadRendererModule() {
  * subscribes to session frames directly. The renderer is disposable — it is
  * recreated after a WebGL context loss or a failed start.
  */
-export function CombatView({ active, heroSprite, background, subscribe }: {
-  active: boolean;
-  heroSprite: string;
-  background: string;
-  subscribe?: (listener: FrameListener) => () => void;
-}) {
+export function CombatView({ active, heroSprite, background }: { active: boolean; heroSprite: string; background: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const vitalsRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<CombatRenderer | null>(null);
@@ -61,12 +56,12 @@ export function CombatView({ active, heroSprite, background, subscribe }: {
         renderer.setHeroSprite(heroRef.current);
         renderer.setBackground(backgroundRef.current);
         perfMonitor.mark("combatDrawn");
-        if (!subscribe) (window as unknown as { __emberRenderer?: CombatRenderer }).__emberRenderer = renderer;
+        (window as unknown as { __emberRenderer?: CombatRenderer }).__emberRenderer = renderer;
         renderer.onContextLost = () => {
           // Rebuild the whole renderer; the simulation is unaffected.
           setTimeout(() => setGeneration((g) => g + 1), 250);
         };
-        const draw: FrameListener = (frame) => {
+        unsubscribe = session.onFrame((frame) => {
           renderer.onFrame(frame);
           const vitals = renderer.heroVitals();
           const hud = vitalsRef.current;
@@ -78,8 +73,7 @@ export function CombatView({ active, heroSprite, background, subscribe }: {
           if (fill) fill.style.width = `${Math.max(0, Math.min(100, vitals.hp100 / Math.max(1, vitals.max100) * 100))}%`;
           const ward = hud.querySelector<HTMLElement>(".vitals-ward");
           if (ward) { ward.hidden = vitals.wardCap100 === 0; ward.textContent = `Ward ${Math.ceil(vitals.ward100 / 100)} / ${Math.ceil(vitals.wardCap100 / 100)}`; ward.title = "Arcane Ward absorbs damage before health. Blue shield numbers show ward gained."; }
-        };
-        unsubscribe = subscribe ? subscribe(draw) : session.onFrame(draw);
+        });
         setFailed(null);
       })
       .catch((error: unknown) => {
@@ -91,7 +85,7 @@ export function CombatView({ active, heroSprite, background, subscribe }: {
       rendererRef.current?.destroy();
       rendererRef.current = null;
     };
-  }, [generation, subscribe]);
+  }, [generation]);
 
   useEffect(() => {
     rendererRef.current?.setVisible(active);

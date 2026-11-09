@@ -23,6 +23,7 @@ import {
   type Command,
   type CommandResult,
   type OfflineSummary,
+  type PreparedBossFight,
   type PreparedFight,
   type Profile,
   type RunResult,
@@ -92,16 +93,11 @@ function notableFrom(profile: Profile, summary: OfflineSummary): OfflineView["no
   return out;
 }
 
-type CombatPlaybackFight = Pick<PreparedFight, "key" | "hero" | "summary" | "events"> & {
-  setup: Pick<PreparedFight["setup"], "enemies">;
-  record: Pick<PreparedFight["record"], "startHp100">;
-};
-
 export interface CombatFrame {
   activity: Profile["adventure"]["activity"];
   run: RunState | null;
   /** Fight currently resolving (phase = fight). */
-  fight: CombatPlaybackFight | null;
+  fight: PreparedFight | PreparedBossFight | null;
   /** Most recent fight that finished (shown during rests and after a defeat). */
   lastFight: PreparedFight | null;
   /** Playback position inside `fight`, in simulation ms. */
@@ -113,7 +109,7 @@ export interface CombatFrame {
 }
 
 type Listener = () => void;
-export type FrameListener = (frame: CombatFrame) => void;
+type FrameListener = (frame: CombatFrame) => void;
 
 const AUTOSAVE_MS = 10_000;
 const SHOW_OFFLINE_SUMMARY_MS = 60_000;

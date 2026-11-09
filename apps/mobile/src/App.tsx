@@ -14,7 +14,6 @@ import { AdventureScreen } from "./ui/screens/Adventure";
 import { ChallengesScreen } from "./ui/screens/Challenges";
 import { CharacterScreen } from "./ui/screens/Character";
 import { CreateCharacterScreen } from "./ui/screens/CreateCharacter";
-import { FieldTrialsScreen } from "./ui/screens/FieldTrials";
 import { GearScreen, type GearFocus } from "./ui/screens/Gear";
 import { OnlineScreen } from "./ui/screens/Online";
 import { EncyclopediaScreen } from "./ui/screens/Encyclopedia";
@@ -23,7 +22,7 @@ import { AppUpdates } from "./ui/screens/AppUpdates";
 import { SaveRecoveryScreen } from "./ui/screens/SaveRecovery";
 
 type NavTab = "adventure" | "character" | "gear" | "challenges" | "menu";
-type Tab = NavTab | "encyclopedia" | "field-trials";
+type Tab = NavTab | "encyclopedia";
 
 const ONLINE_PLAY_ENABLED = import.meta.env.VITE_WYRDHOLT_ONLINE_PLAY === "true";
 const TABS: { id: NavTab; label: string }[] = [
@@ -107,11 +106,6 @@ export function App() {
   }
 
   const { profile, runResult } = ui;
-  const openFieldTrials = () => {
-    session.dismissOffline();
-    session.dismissRunResult();
-    setTab("field-trials");
-  };
   const newCount = totalNew(profile);
   const retry = activeBossAttempt(profile) ? null : retryTarget(profile, session.content);
   const openGear = (focus: GearFocus | "new" | null) => {
@@ -134,7 +128,7 @@ export function App() {
     <div className={`app immersive${tab === "adventure" ? " adventure-active" : ""}`}>
       <Header profile={profile} {...(DEV_TOOLS ? { onDebug: () => setDebugOpen(true) } : {})} />
       <main className="screen adventure-screen" hidden={tab !== "adventure"}>
-        <AdventureScreen profile={profile} active={tab === "adventure" && !debugOpen} onChallenges={() => setTab("challenges")} onFieldTrials={openFieldTrials} retryZoneId={retry?.zoneId} nextAttempt={retry && !ui.runResult && !ui.offline && (
+        <AdventureScreen profile={profile} active={tab === "adventure" && !debugOpen} onChallenges={() => setTab("challenges")} retryZoneId={retry?.zoneId} nextAttempt={retry && !ui.runResult && !ui.offline && (
           <section className="panel stack" aria-label="Next attempt">
             <div className="panel-title">Next attempt</div>
             <p className="small muted">Last Push: {session.content.zone(retry.zoneId).name} · stage {retry.stage}</p>
@@ -142,11 +136,6 @@ export function App() {
           </section>
         )} />
       </main>
-      {tab === "field-trials" && (
-        <main className="screen field-trials-screen">
-          <FieldTrialsScreen key={`${profile.masterSeed}:${profile.createdAtWallMs}`} profile={profile} onBack={() => setTab("adventure")} />
-        </main>
-      )}
       {tab === "character" && (
         <main className="screen character-screen">
           <CharacterScreen profile={profile} />
@@ -197,7 +186,6 @@ export function App() {
       {ui.offline && (
         <OfflineOverlay
           data={ui.offline}
-          onFieldTrials={openFieldTrials}
           onReview={(focus) => {
             session.dismissOffline();
             openGear(focus);
@@ -209,9 +197,9 @@ export function App() {
           retryAction={retryAction}
         />
       )}
-      {!ui.offline && runResult && tab !== "field-trials" && (
+      {!ui.offline && runResult && (
         <RunResultOverlay result={runResult} profile={profile} newCount={newCount}
-          onReview={openGear} onRetry={() => retryPush(runResult.zoneId)} onFieldTrials={openFieldTrials} />
+          onReview={openGear} onRetry={() => retryPush(runResult.zoneId)} />
       )}
       {ui.busy && <Busy text={ui.busy} />}
       {debugOpen && <DebugPanel onClose={() => setDebugOpen(false)} overlay={overlay} setOverlay={setOverlay} />}
