@@ -3,7 +3,7 @@ import { ASHEN_KING_ID, bossFightSeed } from "../boss/attempt";
 import { canonicalJson } from "../hash/canonical";
 import { sha256Hex } from "../hash/sha256";
 import type { Profile } from "../profile/types";
-import { BOSS_SAVE_SCHEMA_VERSION, RULES_VERSION, SAVE_SCHEMA_VERSION } from "../rules/version";
+import { BOSS_SAVE_SCHEMA_VERSION, LONG_TERM_SAVE_SCHEMA_VERSION, RULES_VERSION, SAVE_SCHEMA_VERSION } from "../rules/version";
 import { ITEM_LOCK_SAVE_SCHEMA_VERSION } from "../items/locks";
 
 /**
@@ -79,7 +79,8 @@ export function serializeSave(profile: Profile, savedAtWallMs: number): string {
   const payload = canonicalJson(encodeProfile(stripPlainProvenance(profile)));
   const envelope: SaveEnvelope = {
     format: SAVE_FORMAT,
-    schema: profile.ashenKing ? BOSS_SAVE_SCHEMA_VERSION
+    schema: profile.longTerm ? LONG_TERM_SAVE_SCHEMA_VERSION
+      : profile.ashenKing ? BOSS_SAVE_SCHEMA_VERSION
       : profile.itemLocks ? ITEM_LOCK_SAVE_SCHEMA_VERSION
       : profile.forge ? FORGE_SAVE_SCHEMA_VERSION : SAVE_SCHEMA_VERSION,
     rulesVersion: RULES_VERSION,
@@ -256,7 +257,7 @@ export function parseSave(text: string): ParseResult {
   const envelope = rawEnvelope as unknown as SaveEnvelope;
   if (typeof envelope.payload !== "string") return { ok: false, reason: "missing-payload" };
   if (sha256Hex(envelope.payload) !== envelope.checksum) return { ok: false, reason: "checksum-mismatch" };
-  if (envelope.schema > BOSS_SAVE_SCHEMA_VERSION) return { ok: false, reason: "newer-schema" };
+  if (envelope.schema > LONG_TERM_SAVE_SCHEMA_VERSION) return { ok: false, reason: "newer-schema" };
   let encoded: unknown;
   try {
     encoded = JSON.parse(envelope.payload);
@@ -275,8 +276,12 @@ export function parseSave(text: string): ParseResult {
     || envelope.schema === ITEM_LOCK_SAVE_SCHEMA_VERSION && migrated.schema !== ITEM_LOCK_SAVE_SCHEMA_VERSION)) {
     return { ok: false, reason: "invalid:item-locks-schema" };
   }
-  if ((envelope.schema === BOSS_SAVE_SCHEMA_VERSION) !== (migrated.ashenKing !== undefined)
-    || (envelope.schema === BOSS_SAVE_SCHEMA_VERSION) !== (migrated.schema === BOSS_SAVE_SCHEMA_VERSION)) {
+  if ((envelope.schema === LONG_TERM_SAVE_SCHEMA_VERSION) !== (migrated.longTerm !== undefined)
+    || (envelope.schema === LONG_TERM_SAVE_SCHEMA_VERSION) !== (migrated.schema === LONG_TERM_SAVE_SCHEMA_VERSION)) {
+    return { ok: false, reason: "invalid:long-term-schema" };
+  }
+  if (envelope.schema < LONG_TERM_SAVE_SCHEMA_VERSION && ((envelope.schema === BOSS_SAVE_SCHEMA_VERSION) !== (migrated.ashenKing !== undefined)
+    || (envelope.schema === BOSS_SAVE_SCHEMA_VERSION) !== (migrated.schema === BOSS_SAVE_SCHEMA_VERSION))) {
     return { ok: false, reason: "invalid:solo-boss-schema" };
   }
   const stateProblem = profileStateProblem(migrated);
@@ -290,7 +295,7 @@ export function parseSave(text: string): ParseResult {
 /** Old formats are read without rewriting them. First use of a new domain upgrades the save. */
 function migrate(encoded: EncodedProfile, schema: number): EncodedProfile | null {
   if (schema === SAVE_SCHEMA_VERSION || schema === FORGE_SAVE_SCHEMA_VERSION || schema === ITEM_LOCK_SAVE_SCHEMA_VERSION
-    || schema === BOSS_SAVE_SCHEMA_VERSION) return encoded;
+    || schema === BOSS_SAVE_SCHEMA_VERSION || schema === LONG_TERM_SAVE_SCHEMA_VERSION) return encoded;
   return null;
 }
 
@@ -326,18 +331,24 @@ function forgeProblem(profile: Profile): string | null {
   return receipt.inputKey === inputKey ? null : "forge-receipt";
 }
 
-function bossRecordProblem(record: unknown, tier: number, attemptIndex: number, masterSeed: number): boolean {
+function bossRecordProblem(record: unknown, bossId: string, tier: number, attemptIndex: number, profile: Profile): boolean {
+  const season = bossId.startsWith("season_");
   if (!isRecord(record) || record.format !== "emberbound-boss-fight-record/1" || record.startHp100 !== null
     || typeof record.rulesVersion !== "string" || typeof record.contentVersion !== "string"
     || typeof record.contentHash !== "string" || !/^[0-9a-f]{64}$/.test(record.contentHash)
-    || record.seed !== bossFightSeed(masterSeed, ASHEN_KING_ID, tier, attemptIndex)
-    || !Array.isArray(record.activeRuleIds) || record.activeRuleIds.length !== 0
-    || !isRecord(record.encounter) || record.encounter.bossId !== ASHEN_KING_ID || record.encounter.tier !== tier
+    || record.seed !== bossFightSeed(profile.masterSeed, bossId, tier, attemptIndex)
+    || !Array.isArray(record.activeRuleIds) || record.activeRuleIds.length !== (season ? 1 : 0)
+    || (season && typeof record.activeRuleIds[0] !== "string")
+    || !isRecord(record.encounter) || record.encounter.bossId !== bossId || record.encounter.tier !== tier
     || !isRecord(record.build) || !isRecord(record.build.equipment)
     || !Array.isArray(record.itemInstances) || record.itemInstances.length > SLOT_ORDER.length) return true;
 
   const { build } = record;
   if (stateFieldsProblem(build, "build", [["characterLevel", "positive"], ["classId", "string"], ["masteryXp", "counter"]])) return true;
+  if (build.promoted !== undefined && (build.promoted !== true || profile.schema !== LONG_TERM_SAVE_SCHEMA_VERSION)) return true;
+  if (bossId.startsWith("trial_") && (tier !== 1 || bossId !== `trial_${build.classId}` || build.promoted !== undefined)) return true;
+  if (build.seasonRelicAttackBp !== undefined && (!season || tier < 2 || !Number.isSafeInteger(build.seasonRelicAttackBp)
+    || (build.seasonRelicAttackBp as number) <= 0 || (build.seasonRelicAttackBp as number) > 10_000)) return true;
   if (build.artifactId === null) {
     if (build.artifactAttackBp !== undefined) return true;
   } else if (build.artifactId !== "ashen_crown" || !Number.isSafeInteger(build.artifactAttackBp)
@@ -356,20 +367,18 @@ function bossRecordProblem(record: unknown, tier: number, attemptIndex: number, 
   return ids.size !== 0;
 }
 
-function bossProgressProblem(profile: Profile): string | null {
-  const value: unknown = profile.ashenKing;
-  if (value === undefined) return profile.schema === BOSS_SAVE_SCHEMA_VERSION ? "solo-boss-schema" : null;
-  if (profile.schema !== BOSS_SAVE_SCHEMA_VERSION) return "solo-boss-schema";
+function ladderProblem(profile: Profile, value: unknown, bossId: string): string | null {
   if (!isRecord(value) || value.version !== 1 || stateFieldsProblem(value, "solo-boss", [
     ["highestClearedTier", "counter"], ["attemptCount", "positive"],
   ])) return "solo-boss-progress";
   const cleared = value.highestClearedTier as number;
   const attempts = value.attemptCount as number;
   const { active, lastResult } = value;
-  if (cleared > attempts - (active === null ? 0 : 1)) return "solo-boss-progress";
+  if (cleared > attempts - (active === null ? 0 : 1) || (bossId.startsWith("trial_") && cleared > 1)) return "solo-boss-progress";
   if (active !== null && (!isRecord(active) || stateFieldsProblem(active, "active", [["elapsedMs", "counter"], ["autoPush", "boolean"]])
     || profile.adventure?.activity !== "idle" || profile.adventure.run !== null
-    || bossRecordProblem(active.record, cleared + 1, attempts, profile.masterSeed))) return "solo-boss-attempt";
+    || (bossId !== ASHEN_KING_ID && active.autoPush !== false)
+    || bossRecordProblem(active.record, bossId, cleared + 1, attempts, profile))) return "solo-boss-attempt";
 
   if (lastResult === null) return active !== null && attempts === 1 ? null : "solo-boss-result";
   if (!isRecord(lastResult) || stateFieldsProblem(lastResult, "result", [
@@ -382,6 +391,27 @@ function bossProgressProblem(profile: Profile): string | null {
   if (lastResult.tier !== cleared + 1) return "solo-boss-result";
   if (lastResult.outcome === "interrupted") return hp === 0 && max === 0 ? null : "solo-boss-result";
   return hp > 0 && hp <= max ? null : "solo-boss-result";
+}
+
+function bossProgressProblem(profile: Profile): string | null {
+  const longTerm: unknown = profile.longTerm;
+  if (profile.ashenKing === undefined ? profile.schema === BOSS_SAVE_SCHEMA_VERSION : profile.schema < BOSS_SAVE_SCHEMA_VERSION) {
+    return "solo-boss-schema";
+  }
+  const permanentProblem = profile.ashenKing === undefined ? null : ladderProblem(profile, profile.ashenKing, ASHEN_KING_ID);
+  if (permanentProblem) return permanentProblem;
+  if (longTerm === undefined) return profile.schema === LONG_TERM_SAVE_SCHEMA_VERSION ? "long-term-schema" : null;
+  if (profile.schema !== LONG_TERM_SAVE_SCHEMA_VERSION || !isRecord(longTerm) || longTerm.version !== 1 || !isRecord(longTerm.ladders)) {
+    return "long-term-schema";
+  }
+  const ladders = Object.entries(longTerm.ladders);
+  if (!ladders.length) return "long-term-progress";
+  let active = profile.ashenKing?.active ? 1 : 0;
+  for (const [id, value] of ladders) {
+    if (!/^(?:trial|season)_[a-z0-9_]+$/.test(id) || ladderProblem(profile, value, id)) return "long-term-progress";
+    if (isRecord(value) && value.active !== null) active += 1;
+  }
+  return active <= 1 ? null : "multiple-active-challenges";
 }
 
 export function validateProfile(profile: Profile): string | null {
@@ -397,7 +427,7 @@ export function validateProfile(profile: Profile): string | null {
   }
   if (profile.itemLocks !== undefined) {
     const locks: unknown = profile.itemLocks;
-    if (profile.schema !== ITEM_LOCK_SAVE_SCHEMA_VERSION && profile.schema !== BOSS_SAVE_SCHEMA_VERSION) return "item-locks-schema";
+    if (profile.schema < ITEM_LOCK_SAVE_SCHEMA_VERSION || profile.schema > LONG_TERM_SAVE_SCHEMA_VERSION) return "item-locks-schema";
     if (!isRecord(locks) || locks.version !== 1 || !Array.isArray(locks.lockedInstanceIds)) return "item-locks";
     let previous = 0;
     const owned = new Set(profile.inventory.instances.map(i => i.id));

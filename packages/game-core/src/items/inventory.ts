@@ -1,5 +1,6 @@
 import { SLOT_ORDER, type BuildSnapshot, type ItemInstance, type SlotId } from "@emberbound/shared-types";
 import { ASHEN_CROWN, ashenCrownAt } from "../boss/artifact";
+import { promotionCleared } from "../boss/progress";
 import type { Profile } from "../profile/types";
 
 /**
@@ -68,6 +69,7 @@ export function currentBuild(profile: Profile): BuildSnapshot {
     equipment,
     artifactId: crown ? ASHEN_CROWN.id : null,
     ...(crown ? { artifactAttackBp: crown.attackBp } : {}),
+    ...(promotionCleared(profile, classId) ? { promoted: true } as const : {}),
   };
 }
 
@@ -91,5 +93,5 @@ export function equippedInstances(profile: Profile, build: BuildSnapshot): Map<n
  */
 export function buildKey(build: BuildSnapshot, masteryPart: number = build.masteryXp): string {
   const e = build.equipment;
-  return `${build.classId}|${build.characterLevel}|${masteryPart}|${build.artifactId ?? "-"}|${e.weapon ?? "-"}|${e.head ?? "-"}|${e.chest ?? "-"}|${e.gloves ?? "-"}|${e.boots ?? "-"}|${e.ring ?? "-"}${build.artifactAttackBp === undefined ? "" : `|${build.artifactAttackBp}`}`;
+  return `${build.classId}|${build.characterLevel}|${masteryPart}|${build.artifactId ?? "-"}|${e.weapon ?? "-"}|${e.head ?? "-"}|${e.chest ?? "-"}|${e.gloves ?? "-"}|${e.boots ?? "-"}|${e.ring ?? "-"}${build.artifactAttackBp === undefined ? "" : `|${build.artifactAttackBp}`}${build.promoted ? "|promoted" : ""}`;
 }

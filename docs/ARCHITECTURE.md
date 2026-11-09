@@ -8,8 +8,8 @@
 └───────────────▲──────────────────────────────────▲──────────────────┘
                 │ reads content (injected)         │ same code
 ┌───────────────┴──────────────┐      ┌────────────┴───────────────────┐
-│ packages/game-content (data) │      │ apps/server (spike)            │
-│ packages/shared-types        │      │ Node replay tool               │
+│ packages/game-content (data) │      │ apps/server                    │
+│ packages/shared-types        │      │ Node replay, authority, SQLite │
 └──────────────────────────────┘      └────────────────────────────────┘
                 │
 ┌───────────────┴──────────────────────────────────────────────────────┐
@@ -34,7 +34,7 @@
 | `packages/game-core` | Deterministic simulation. The public API is `src/index.ts`. |
 | `packages/game-content` | Spike content data (Monk/Mage kits, Greenfields, items, loot tables, test rules). |
 | `apps/mobile` | React + Vite + PixiJS + Capacitor app. The same build is the browser preview. |
-| `apps/server` | Spike-only Node replay tool. No production backend. |
+| `apps/server` | Local authority service, SQLite transactions, online gameplay and replay CLI. |
 | `tools/` | Parity gate, purity check, benchmarks, browser smoke tests. |
 | `docs/` | Product, design, architecture, migration and technical docs. |
 
@@ -80,10 +80,10 @@ rAF tick ──► advanceAdventure(profile, Δms, {offline:false, recordEvents:
 - `simulateOffline()` uses the same `advanceAdventure()` with `offline:true`:
   - A failed Push falls back to the strongest cleared zone, or the zone's trail.
   - A successful Push farms the zone it just cleared and never enters the unlocked zone.
-  - The simulated time is capped at 8 h.
+  - The simulated time is capped at 24 h.
 - `settleOffline()` is idempotent: settling the same moment twice grants nothing.
 - In the app, catch-up runs in `game/offline.worker.ts`, with a main-thread fallback when workers are blocked. The overlay shows which path ran.
-- Fights run without event recording and without the fight cache. 8 h is about 11,000 fights, taking about 100 ms in Node/V8 and about 145 ms in Bun/JSC on the build machine.
+- Offline fights run without event recording or the fight cache.
 
 ## Persistence
 
@@ -94,12 +94,15 @@ See [technical/CLIENT_RUNTIME.md](technical/CLIENT_RUNTIME.md). In short:
 - Loading picks the newest valid of main / temp / backup.
 - Files are stored with Capacitor Filesystem in the app's private data directory (IndexedDB in the browser build).
 
-## Future-ready structures (not built)
+## Online authority
+
+The server assigns account identities and owns the command clock, profile revisions and party snapshots. SQLite commits party and raid rewards with their receipts. The same game-core engine simulates each member of a party. The client renders server state and sends commands. [Online authority](technical/ONLINE_AUTHORITY.md)
+
+## Extension points
 
 - **Item instances:** stable ids, with optional `rolls`, `modifiers`, `provenance`, `upgrade` and `seasonal` fields. See [technical/ITEMS_CLASSES_CONTENT.md](technical/ITEMS_CLASSES_CONTENT.md).
 - **Class tree:** `parentClassId`, `tier`, `unlockRequirements`, `masteryTrackId`.
 - **Rules and time windows:** `RuleDef` with an optional `availability`, attached to zones or stages, and resolved into `activeRuleIds` when a fight starts.
-- **Server replay:** `FightRecord` plus `replayFight()`.
 
 ## Architecture decisions
 

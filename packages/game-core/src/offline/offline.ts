@@ -1,5 +1,6 @@
 import type { ContentIndex } from "../content";
 import { FightCache, type AdventureEvent } from "../adventure/run";
+import { ASHEN_KING_ID, activeBossAttempt } from "../boss/progress";
 import { advanceGame } from "../game";
 import { findInstance } from "../items/inventory";
 import type { Activity, BossResult, Profile, RunMode } from "../profile/types";
@@ -11,7 +12,7 @@ export interface OfflineSummary {
   activityAtStart: Activity;
   zoneAtStart: string;
   push: { status: "none" | "cleared" | "failed"; zoneId: string | null; stage: number; stagesTotal: number; enemyHp100: number; enemyMaxHp100: number };
-  boss?: { tier: number; ms: number; result: BossResult | null };
+  boss?: { bossId?: string; tier: number; ms: number; result: BossResult | null };
   unlockedZoneIds: string[];
   /** Time spent per activity target, in order of first use. */
   segments: { mode: RunMode; zoneId: string; ms: number }[];
@@ -122,9 +123,13 @@ export function simulateOffline(
   const xpBefore = profile.character.xp;
   const goldBefore = profile.gold;
   const masteryBefore = sumValues(profile.character.masteryXp);
-  const activeBoss = profile.ashenKing?.active;
+  const activeBoss = activeBossAttempt(profile);
   if (simulatedMs > 0 && (activeBoss || adv.activity !== "idle")) {
-    const boss = activeBoss ? { tier: activeBoss.record.encounter.tier, ms: 0, result: null as BossResult | null } : null;
+    const bossId = activeBoss?.record.encounter.bossId;
+    const boss = activeBoss ? {
+      ...(bossId && bossId !== ASHEN_KING_ID ? { bossId } : {}),
+      tier: activeBoss.record.encounter.tier, ms: 0, result: null as BossResult | null,
+    } : null;
     const bossMs = advanceGame(profile, content, simulatedMs, {
       offline: true,
       contentTimeMs,

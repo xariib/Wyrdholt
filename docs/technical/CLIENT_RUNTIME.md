@@ -132,4 +132,4 @@ Open with the **DEV** button in the header. It is compiled in unless `EMBERBOUND
 - If a loaded save has a different `rulesVersion` (for example a Phase B character on the C1 build), the app does **not** continue it. The old level would not match the new XP tables.
 - Instead, the create screen shows a notice, and the old save is replaced when the new character is first saved.
 - `tools/smoke/outdated-save-check.mjs` covers this path.
-- Real save migrations belong to the backend-ready milestone (C6).
+- Local saves from schemas 1–4 remain readable. Schema 5 adds promotion and season progress. Server-side characters use a separate authority store. [Authority boundary](ONLINE_AUTHORITY.md)

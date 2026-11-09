@@ -11,6 +11,7 @@ import { simulateOffline } from "../offline/offline";
 import { createProfile } from "../profile/create";
 import type { Profile, RunState } from "../profile/types";
 import { replayFight } from "../replay/replay";
+import { partySnapshot, runPartyDungeon } from "../replay/party";
 import { resolveActiveRuleIds } from "../rules/modifiers";
 import { encodeProfile } from "../save/codec";
 
@@ -128,6 +129,32 @@ function profileHash(profile: Profile, extra: unknown): string {
 // ---------------------------------------------------------------------------
 
 export const SELF_TEST_CASES: readonly SelfTestCase[] = [
+  {
+    id: "fight-c5-season-tier-1",
+    description: "Mage M20 against the Hollow Frost season rule",
+    run(content) {
+      const p = baseProfile(content, 5_001, "mage", "monk");
+      setLevel(content, p, 25);
+      setMastery(content, p, "mage", 20);
+      equipNew(content, p, ["stormcaller", "crown_of_thorns", "cinderweave", "venom_grips", "pilgrims_pace", "moonlit_loop"]);
+      return replayCase(content, createBossFightRecord(p, content, { bossId: "season_hollow_frost", tier: 1, attemptIndex: 1 }));
+    },
+  },
+  {
+    id: "fight-c7-briar-vault-party",
+    description: "Warrior, Mage and Ranger with separate party builds and status lines",
+    run(content) {
+      const member = (classId: string, seed: number) => {
+        const p = baseProfile(content, seed, classId, "monk");
+        setLevel(content, p, 12);
+        setMastery(content, p, classId, 15);
+        equipNew(content, p, ["venom_grips"]);
+        return partySnapshot(classId, 7, p);
+      };
+      const dungeon = runPartyDungeon(content, "briar_vault", [member("warrior", 1), member("mage", 2), member("ranger", 3)], 7_001);
+      return { hash: sha256Hex(canonicalJson(dungeon.fights.map(fight => fight.hash))), detail: `${dungeon.fights.length} waves, ${dungeon.won ? "victory" : "failed"}` };
+    },
+  },
   {
     id: "fight-c4-ashen-king-tier-1",
     description: "Mage M14, level 19, Darkwood gear, Ashen King tier 1",

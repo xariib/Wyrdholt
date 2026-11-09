@@ -1,3 +1,4 @@
+import { activeBossAttempt } from "@emberbound/game-core";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { registerBackAction } from "./platform/backNavigation";
 import { session } from "./game/session";
@@ -14,6 +15,7 @@ import { ChallengesScreen } from "./ui/screens/Challenges";
 import { CharacterScreen } from "./ui/screens/Character";
 import { CreateCharacterScreen } from "./ui/screens/CreateCharacter";
 import { GearScreen, type GearFocus } from "./ui/screens/Gear";
+import { OnlineScreen } from "./ui/screens/Online";
 import { AppUpdates } from "./ui/screens/AppUpdates";
 import { SaveRecoveryScreen } from "./ui/screens/SaveRecovery";
 
@@ -37,16 +39,21 @@ function readOverlayPref(): boolean {
 export function App() {
   const ui = useUi();
   const [tab, setTab] = useState<Tab>("adventure");
+  const [onlineOpen, setOnlineOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [overlay, setOverlayState] = useState(readOverlayPref);
   const [gearFocus, setGearFocus] = useState<GearFocus | "new" | null>(null);
   const clearFocus = useCallback(() => setGearFocus(null), []);
 
   useEffect(() => registerBackAction(() => {
+    if (onlineOpen) {
+      setOnlineOpen(false);
+      return true;
+    }
     if (tab === "adventure") return false;
     setTab("adventure");
     return true;
-  }), [tab]);
+  }), [tab, onlineOpen]);
 
   const setOverlay = (value: boolean) => {
     setOverlayState(value);
@@ -81,20 +88,21 @@ export function App() {
       </div>
     );
   }
+  if (onlineOpen) return <div className="app immersive"><OnlineScreen onBack={() => setOnlineOpen(false)} /></div>;
   if (ui.phase === "create" || !ui.profile) {
     if (ui.save.gate.mode !== "verified-empty" || !ui.save.gate.canCreate) {
       return <div className="app immersive"><SaveRecoveryScreen /></div>;
     }
     return (
       <div className="app immersive">
-        <CreateCharacterScreen />
+        <CreateCharacterScreen onOnline={() => setOnlineOpen(true)} />
       </div>
     );
   }
 
   const { profile, runResult } = ui;
   const newCount = totalNew(profile);
-  const retry = profile.ashenKing?.active ? null : retryTarget(profile, session.content);
+  const retry = activeBossAttempt(profile) ? null : retryTarget(profile, session.content);
   const openGear = (focus: GearFocus | "new" | null) => {
     setGearFocus(focus);
     setTab("gear");
@@ -127,7 +135,12 @@ export function App() {
       </main>
       {tab === "character" && (
         <main className="screen character-screen">
-          <CharacterScreen profile={profile} />
+          <CharacterScreen profile={profile} onChallenges={() => setTab("challenges")} />
+          <section className="panel stack" aria-label="Online play">
+            <div className="panel-title">Online play</div>
+            <p className="small muted">Join friends in dungeons, build a guild and contribute to raids.</p>
+            <button className="btn block" onClick={() => setOnlineOpen(true)}>Open online adventure</button>
+          </section>
         </main>
       )}
       {tab === "gear" && (

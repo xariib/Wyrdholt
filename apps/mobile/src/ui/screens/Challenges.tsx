@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ASHEN_CROWN, ASHEN_KING_ID, ashenCrownAt, type Profile } from "@emberbound/game-core";
+import { ASHEN_CROWN, ASHEN_KING_ID, activeBossAttempt, ashenCrownAt, type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { Bar } from "../components/Common";
 import { CombatView } from "../components/CombatView";
 import { bossResultLabel, hp, pct } from "../format";
+import { LongTermChallenges } from "./LongTermChallenges";
 
 export function ChallengesScreen({ profile, active, onReviewGear }: { profile: Profile; active: boolean; onReviewGear: () => void }) {
   const [autoPush, setAutoPush] = useState(false);
@@ -13,6 +14,7 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
   const zone = session.content.zone(boss.unlockZoneId);
   const unlocked = profile.adventure.zones[zone.id]?.cleared === true;
   const progress = profile.ashenKing;
+  const currentAttempt = activeBossAttempt(profile);
   const attempt = progress?.active;
   const result = progress?.lastResult;
   const cleared = progress?.highestClearedTier ?? 0;
@@ -33,6 +35,7 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
 
   return (
     <>
+      {currentAttempt && currentAttempt !== attempt && <LongTermCombat profile={profile} active={active} attempt={currentAttempt} />}
       <section className="panel stack" aria-label="Ashen King ladder">
         <div className="row spread">
           <h2>{boss.name}</h2>
@@ -74,7 +77,7 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
         </section>
       )}
 
-      {unlocked && !attempt && !complete && (
+      {unlocked && !currentAttempt && !complete && (
         <section className="panel stack" aria-label="Start Ashen King attempt">
           <p className="small muted">Start at full HP with your current build. Adventure farming resumes after your attempt.</p>
           {nextTier < boss.tiers.length && (
@@ -102,10 +105,24 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
         </div>
       </section>
 
-      <section className="panel stack">
-        <div className="row spread"><div className="panel-title">Seasons</div><span className="tag">Future</span></div>
-        <div className="small muted">Season Boss, Season Rule and Season Relic. Only the Season Relic resets.</div>
-      </section>
+      <LongTermChallenges profile={profile} active={active} />
     </>
+  );
+}
+
+function LongTermCombat({ profile, active, attempt }: { profile: Profile; active: boolean; attempt: NonNullable<ReturnType<typeof activeBossAttempt>> }) {
+  const { bossId, tier } = attempt.record.encounter;
+  const content = session.content;
+  const boss = content.soloBosses.get(bossId);
+  if (!boss) return null;
+  return (
+    <section className="adventure-world" aria-label={`${boss.name} combat`}>
+      <div className="combat-frame boss-combat">
+        <CombatView active={active} heroSprite={content.classDef(attempt.record.build.classId).sprite} background={content.zone(boss.unlockZoneId).background} />
+        <div className="combat-banner boss">{boss.name} · Tier {tier}</div>
+      </div>
+      <div className="combat-names"><span className="hero-name">{profile.character.name}</span><span>{boss.name}</span></div>
+      <p className="small muted">Combat runs automatically. Adventure farming resumes after the attempt.</p>
+    </section>
   );
 }

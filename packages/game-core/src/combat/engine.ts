@@ -44,6 +44,8 @@ import type { RuleEffects } from "../rules/modifiers";
 export interface FightInput {
   seed: number;
   hero: HeroStats;
+  /** Optional companions act after the lead, in snapshot order. */
+  companions?: readonly [HeroStats, HeroStats];
   /** HP at fight start (x100). null = full. Clamped to [1, max]. */
   startHp100: number | null;
   enemies: EnemyInit[];
@@ -102,6 +104,7 @@ export interface FightSummary {
   outcome: FightOutcome;
   durationMs: number;
   hero: ActorFinal;
+  party?: ActorFinal[];
   enemies: ActorFinal[];
   counters: FightCounters;
   eventCount: number;
@@ -122,6 +125,7 @@ interface StatusState {
   hasteBp: number;
   sourceKind: SourceKind;
   seq: number;
+  ownerId?: string;
 }
 
 interface ActorState {
@@ -137,6 +141,19 @@ interface ActorState {
   nextAttackAt: number;
   alive: boolean;
   statuses: StatusState[];
+}
+
+interface HeroRuntime extends ActorState {
+  mechanics: readonly MechanicDef[];
+  sources: readonly ("class" | "item")[];
+  executes: Extract<MechanicDef, { kind: "execute" }>[];
+  pierceBp: number;
+  hasWard: boolean;
+  ward100: number;
+  wardCap100: number;
+  readyAt: number[];
+  hitCount: number;
+  attackCount: number;
 }
 
 const NEVER = Number.MAX_SAFE_INTEGER;
@@ -172,20 +189,29 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
       ? heroStats.maxHp100
       : Math.min(heroStats.maxHp100, Math.max(1, input.startHp100));
 
-  const hero: ActorState = {
-    id: "hero",
-    isHero: true,
-    hp100: startHp,
-    maxHp100: heroStats.maxHp100,
-    attack100: heroStats.attack100,
-    armor: heroStats.armor,
-    attackRateMilli: heroStats.attackRateMilli,
-    critBp: heroStats.critBp,
-    damageType: heroStats.damageType,
-    nextAttackAt: cfg.heroFirstAttackMs,
-    alive: true,
-    statuses: [],
-  };
+  function initializeHero(stats: HeroStats, id: string, hp100: number): HeroRuntime {
+    const actor: HeroRuntime = {
+      id, isHero: true, hp100, maxHp100: stats.maxHp100, attack100: stats.attack100,
+      armor: stats.armor, attackRateMilli: stats.attackRateMilli, critBp: stats.critBp, damageType: stats.damageType,
+      nextAttackAt: cfg.heroFirstAttackMs, alive: true, statuses: [], mechanics: stats.mechanics, sources: stats.mechanicSources,
+      executes: [], pierceBp: 0, hasWard: false, ward100: 0, wardCap100: 0,
+      readyAt: stats.mechanics.map(() => 0), hitCount: 0, attackCount: 0,
+    };
+    for (const m of stats.mechanics) {
+      if (m.kind === "execute") actor.executes.push(m);
+      if (m.kind === "armor_pierce") actor.pierceBp = Math.min(BP, actor.pierceBp + m.pierceBp);
+      if (m.kind !== "ward") continue;
+      actor.hasWard = true;
+      actor.ward100 += mulDivFloor(stats.maxHp100, m.startBp, BP);
+      actor.wardCap100 = Math.max(actor.wardCap100, mulDivFloor(stats.maxHp100, m.capBp, BP));
+    }
+    actor.ward100 = Math.min(actor.ward100, actor.wardCap100);
+    if (actor.hasWard) counters.absorbed100 = 0;
+    return actor;
+  }
+
+  const hero = initializeHero(heroStats, "hero", startHp);
+  const heroes = [hero, ...(input.companions ?? []).map((stats, index) => initializeHero(stats, `hero${index + 1}`, stats.maxHp100))];
 
   const enemies: ActorState[] = input.enemies.map((e) => ({
     id: e.id,
@@ -201,32 +227,8 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
     alive: true,
     statuses: [],
   }));
-  const actors: ActorState[] = [hero, ...enemies];
-
-  const mechanics: readonly MechanicDef[] = heroStats.mechanics;
-  const mechanicSource: readonly ("class" | "item")[] = heroStats.mechanicSources;
-  // Always-on hit modifiers (C2), in mechanic order.
-  const executes: { m: Extract<MechanicDef, { kind: "execute" }> }[] = [];
-  let pierceBp = 0;
-  for (const m of mechanics) {
-    if (m.kind === "execute") executes.push({ m });
-    if (m.kind === "armor_pierce") pierceBp = Math.min(BP, pierceBp + m.pierceBp);
-  }
-  // Ward (C2): one pool; starts add up, the cap is the highest cap.
-  let hasWard = false;
-  let ward100 = 0;
-  let wardCap100 = 0;
-  for (const m of mechanics) {
-    if (m.kind !== "ward") continue;
-    hasWard = true;
-    ward100 += mulDivFloor(heroStats.maxHp100, m.startBp, BP);
-    wardCap100 = Math.max(wardCap100, mulDivFloor(heroStats.maxHp100, m.capBp, BP));
-  }
-  ward100 = Math.min(ward100, wardCap100);
-  if (hasWard) counters.absorbed100 = 0;
-  const readyAt: number[] = mechanics.map(() => 0);
-  let hitCount = 0;
-  let attackCount = 0;
+  const actors: ActorState[] = [...heroes, ...enemies];
+  const asHero = (actor: ActorState): HeroRuntime | undefined => actor.isHero ? actor as HeroRuntime : undefined;
   let statusSeq = 0;
   let t = 0;
 
@@ -251,8 +253,10 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
   }
 
   if (rec) {
-    emit({ t: 0, type: "spawn", actor: "hero", hp: hero.hp100, max: hero.maxHp100 });
-    if (hasWard) emit({ t: 0, type: "ward", tgt: hero.id, amt: ward100, via: "start", ward: ward100, cap: wardCap100 });
+    for (const ally of heroes) {
+      emit({ t: 0, type: "spawn", actor: ally.id, hp: ally.hp100, max: ally.maxHp100 });
+      if (ally.hasWard) emit({ t: 0, type: "ward", tgt: ally.id, amt: ally.ward100, via: "start", ward: ally.ward100, cap: ally.wardCap100 });
+    }
     for (const [i, e] of input.enemies.entries()) {
       emit({ t: 0, type: "spawn", actor: e.id, archetype: e.archetypeId, hp: e.maxHp100, max: e.maxHp100, slot: i });
     }
@@ -280,10 +284,10 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
   };
 
   /** Damage to the hero after the ward has taken its share (the ward is drained first). */
-  const absorb = (amount: number): number => {
-    if (ward100 <= 0) return amount;
-    const taken = Math.min(ward100, amount);
-    ward100 -= taken;
+  const absorb = (ally: HeroRuntime, amount: number): number => {
+    if (ally.ward100 <= 0) return amount;
+    const taken = Math.min(ally.ward100, amount);
+    ally.ward100 -= taken;
     counters.absorbed100 = (counters.absorbed100 ?? 0) + taken;
     return amount - taken;
   };
@@ -324,19 +328,20 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
       if (src.isHero) counters.crits += 1;
     }
     let armor = damageType === "magic" ? mulDivFloor(tgt.armor, 1, 2) : tgt.armor;
-    if (src.isHero) {
+    const attacker = asHero(src);
+    if (attacker) {
       // Execute checks the target of this hit, before the hit lands.
-      for (const { m } of executes) {
+      for (const m of attacker.executes) {
         if (tgt.hp100 * BP <= m.thresholdBp * tgt.maxHp100) {
           dmg = mulDivRound(dmg, BP + m.bonusBp, BP);
           bump(m.id);
         }
       }
-      if (pierceBp > 0) armor -= mulDivFloor(armor, pierceBp, BP);
+      if (attacker.pierceBp > 0) armor -= mulDivFloor(armor, attacker.pierceBp, BP);
     }
     dmg = Math.max(cfg.minDamage100, mulDivRound(dmg, 100, 100 + armor));
-    const warded = hasWard && tgt.isHero;
-    const toHp = warded ? absorb(dmg) : dmg;
+    const defender = asHero(tgt);
+    const toHp = defender?.hasWard ? absorb(defender, dmg) : dmg;
     const before = tgt.hp100;
     tgt.hp100 = Math.max(0, before - toHp);
     const effective = before - tgt.hp100;
@@ -347,8 +352,8 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
       counters.damageTaken100 += effective;
     }
     if (rec) {
-      if (warded) {
-        emit({ t, type: "hit", src: src.id, tgt: tgt.id, amt: dmg, eff: effective, crit, via, dmg: damageType, hp: tgt.hp100, abs: dmg - toHp, ward: ward100 });
+      if (defender?.hasWard) {
+        emit({ t, type: "hit", src: src.id, tgt: tgt.id, amt: dmg, eff: effective, crit, via, dmg: damageType, hp: tgt.hp100, abs: dmg - toHp, ward: defender.ward100 });
       } else {
         emit({ t, type: "hit", src: src.id, tgt: tgt.id, amt: dmg, eff: effective, crit, via, dmg: damageType, hp: tgt.hp100 });
       }
@@ -365,11 +370,11 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
     if (rec) emit({ t, type: "heal", tgt: actor.id, amt: amount, eff: effective, via, hp: actor.hp100 });
   };
 
-  const findStatus = (actor: ActorState, statusId: string): StatusState | undefined =>
-    actor.statuses.find((s) => s.statusId === statusId);
+  const findStatus = (actor: ActorState, statusId: string, ownerId?: string): StatusState | undefined =>
+    actor.statuses.find((s) => s.statusId === statusId && s.ownerId === ownerId);
 
   /** Direct damage without variance, crit or armor (like a DoT tick), from the hero. */
-  const dealPureDamage = (tgt: ActorState, amount100: number, via: string, kind: SourceKind): void => {
+  const dealPureDamage = (hero: HeroRuntime, tgt: ActorState, amount100: number, via: string, kind: SourceKind): void => {
     const before = tgt.hp100;
     tgt.hp100 = Math.max(0, before - amount100);
     const effective = before - tgt.hp100;
@@ -409,12 +414,14 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
   };
 
   const applyDot = (
+    hero: HeroRuntime,
     target: ActorState,
     m: Extract<MechanicDef, { kind: "on_hit_dot" }>,
     perStack100: number,
     kind: SourceKind,
   ): void => {
-    const existing = findStatus(target, m.statusId);
+    const ownerId = input.companions ? hero.id : undefined;
+    const existing = findStatus(target, m.statusId, ownerId);
     let stacks = 1;
     if (existing) {
       existing.stacks = Math.min(existing.maxStacks, existing.stacks + 1);
@@ -436,19 +443,20 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
         hasteBp: 0,
         sourceKind: kind,
         seq: statusSeq,
+        ...(ownerId ? { ownerId } : {}),
       });
     }
-    if (rec) emit({ t, type: "status", tgt: target.id, status: m.statusId, stacks, until: t + m.durationMs });
+    if (rec) emit({ t, type: "status", tgt: target.id, status: m.statusId, stacks, until: t + m.durationMs, ...(ownerId ? { src: ownerId } : {}) });
   };
 
   /** The class's own on-hit DoTs, applied by split shots and retaliation (never item DoTs). */
-  const applyClassDots = (target: ActorState): void => {
-    for (let j = 0; j < mechanics.length; j += 1) {
-      const d = mechanics[j];
-      if (!d || d.kind !== "on_hit_dot" || mechanicSource[j] !== "class") continue;
+  const applyClassDots = (hero: HeroRuntime, target: ActorState): void => {
+    for (let j = 0; j < hero.mechanics.length; j += 1) {
+      const d = hero.mechanics[j];
+      if (!d || d.kind !== "on_hit_dot" || hero.sources[j] !== "class") continue;
       if (!target.alive) return;
       if (!rng.rollBp(d.chanceBp)) continue;
-      applyDot(target, d, mulDivRound(hero.attack100, d.potencyBp, BP), "class");
+      applyDot(hero, target, d, mulDivRound(hero.attack100, d.potencyBp, BP), "class");
       bump(d.id);
     }
   };
@@ -464,24 +472,25 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
     return out;
   };
 
-  const heroAttack = (): void => {
+  const heroAttack = (hero: HeroRuntime): void => {
+    const { mechanics, sources, readyAt } = hero;
     const target = firstAliveEnemy();
     if (!target) return;
-    attackCount += 1;
+    hero.attackCount += 1;
     counters.heroAttacks += 1;
     if (rec) emit({ t, type: "attack", src: hero.id, tgt: target.id });
     dealDamage(hero, target, hero.attack100, hero.damageType, "basic", "basic");
-    hitCount += 1;
+    hero.hitCount += 1;
     counters.heroHits += 1;
 
     for (let i = 0; i < mechanics.length; i += 1) {
       const m = mechanics[i];
       if (!m) continue;
-      const kind: SourceKind = mechanicSource[i] ?? "class";
+      const kind: SourceKind = sources[i] ?? "class";
       if (!hero.alive) break;
       switch (m.kind) {
         case "nth_hit_heal": {
-          if (hitCount % m.every === 0 && t >= (readyAt[i] ?? 0)) {
+          if (hero.hitCount % m.every === 0 && t >= (readyAt[i] ?? 0)) {
             heal(hero, mulDivRound(hero.attack100, m.potencyBp, BP), m.id);
             readyAt[i] = t + m.cooldownMs;
             bump(m.id);
@@ -489,7 +498,7 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
           break;
         }
         case "nth_hit_extra_damage": {
-          if (hitCount % m.every !== 0) break;
+          if (hero.hitCount % m.every !== 0) break;
           if (m.requiresStatus !== undefined && !findStatus(hero, m.requiresStatus)) break;
           const tgt = aliveOr(target);
           if (!tgt) break;
@@ -499,7 +508,7 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
           break;
         }
         case "nth_hit_haste": {
-          if (hitCount % m.every !== 0) break;
+          if (hero.hitCount % m.every !== 0) break;
           applyHaste(hero, m.statusId, m.hasteBp, m.durationMs, kind);
           bump(m.id);
           break;
@@ -507,12 +516,12 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
         case "on_hit_dot": {
           if (!target.alive) break;
           if (!rng.rollBp(m.chanceBp)) break;
-          applyDot(target, m, mulDivRound(hero.attack100, m.potencyBp, BP), kind);
+          applyDot(hero, target, m, mulDivRound(hero.attack100, m.potencyBp, BP), kind);
           bump(m.id);
           break;
         }
         case "nth_attack_splash": {
-          if (attackCount % m.every !== 0) break;
+          if (hero.attackCount % m.every !== 0) break;
           const alive = enemies.filter((e) => e.alive);
           if (alive.length === 0) break;
           for (const e of alive) {
@@ -538,39 +547,39 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
           break;
         }
         case "nth_attack_split": {
-          if (attackCount % m.every !== 0) break;
+          if (hero.attackCount % m.every !== 0) break;
           const extra = otherTargets(target, m.targets);
           if (extra.length === 0) break;
           for (const e of extra) {
             if (!e.alive) continue;
             dealDamage(hero, e, mulDivRound(hero.attack100, m.potencyBp, BP), m.damageType, m.id, kind);
-            if (m.appliesDots === 1) applyClassDots(e);
+            if (m.appliesDots === 1) applyClassDots(hero, e);
           }
           bump(m.id);
           break;
         }
         case "stack_burst": {
           if (!target.alive) break;
-          const s = findStatus(target, m.statusId);
+          const s = findStatus(target, m.statusId, input.companions ? hero.id : undefined);
           if (!s || s.kind !== "dot" || s.stacks < m.minStacks) break;
           const amount = Math.max(
             cfg.minDamage100,
             mulDivRound(mulDivRound(s.perStack100 * s.stacks, m.potencyBp, BP), effects.dotDamageBp, BP),
           );
           removeStatus(target, s);
-          dealPureDamage(target, amount, m.id, kind);
+          dealPureDamage(hero, target, amount, m.id, kind);
           bump(m.id);
           break;
         }
         case "ward": {
-          if (attackCount % m.every !== 0) break;
+          if (hero.attackCount % m.every !== 0) break;
           const gain = mulDivRound(hero.attack100, m.potencyBp, BP);
-          const next = Math.min(wardCap100, ward100 + gain);
-          if (next === ward100) break;
-          const gained = next - ward100;
-          ward100 = next;
+          const next = Math.min(hero.wardCap100, hero.ward100 + gain);
+          if (next === hero.ward100) break;
+          const gained = next - hero.ward100;
+          hero.ward100 = next;
           bump(m.id);
-          if (rec) emit({ t, type: "ward", tgt: hero.id, amt: gained, via: m.id, ward: ward100, cap: wardCap100 });
+          if (rec) emit({ t, type: "ward", tgt: hero.id, amt: gained, via: m.id, ward: hero.ward100, cap: hero.wardCap100 });
           break;
         }
         case "on_damaged_retaliate":
@@ -582,7 +591,8 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
     hero.nextAttackAt = t + intervalOf(hero);
   };
 
-  const enemyAttack = (enemy: ActorState): void => {
+  const enemyAttack = (enemy: ActorState, hero: HeroRuntime): void => {
+    const { mechanics, sources, readyAt } = hero;
     counters.enemyAttacks += 1;
     if (rec) emit({ t, type: "attack", src: enemy.id, tgt: hero.id });
     // Scheduled before any retaliation, so an enemy killed by it stays unscheduled.
@@ -597,15 +607,15 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
       if (t < (readyAt[i] ?? 0)) continue;
       if (!rng.rollBp(m.chanceBp)) continue;
       readyAt[i] = t + m.cooldownMs;
-      dealDamage(hero, enemy, mulDivRound(hero.attack100, m.potencyBp, BP), m.damageType, m.id, mechanicSource[i] ?? "class");
-      if (m.appliesDots === 1) applyClassDots(enemy);
+      dealDamage(hero, enemy, mulDivRound(hero.attack100, m.potencyBp, BP), m.damageType, m.id, sources[i] ?? "class");
+      if (m.appliesDots === 1) applyClassDots(hero, enemy);
       bump(m.id);
     }
   };
 
   let outcome: FightOutcome;
   for (;;) {
-    if (!hero.alive) {
+    if (!heroes.some(ally => ally.alive)) {
       outcome = "defeat";
       break;
     }
@@ -640,8 +650,8 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
           cfg.minDamage100,
           mulDivRound(s.perStack100 * s.stacks, effects.dotDamageBp, BP),
         );
-        const warded = hasWard && actor.isHero;
-        const toHp = warded ? absorb(amount) : amount;
+        const defender = asHero(actor);
+        const toHp = defender?.hasWard ? absorb(defender, amount) : amount;
         const before = actor.hp100;
         actor.hp100 = Math.max(0, before - toHp);
         const effective = before - actor.hp100;
@@ -654,16 +664,16 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
         }
         s.nextTickAt = t + s.tickMs;
         if (rec) {
-          if (warded) {
-            emit({ t, type: "tick", tgt: actor.id, status: s.statusId, amt: amount, eff: effective, stacks: s.stacks, hp: actor.hp100, abs: amount - toHp, ward: ward100 });
+          if (defender?.hasWard) {
+            emit({ t, type: "tick", tgt: actor.id, status: s.statusId, amt: amount, eff: effective, stacks: s.stacks, hp: actor.hp100, abs: amount - toHp, ward: defender.ward100 });
           } else {
-            emit({ t, type: "tick", tgt: actor.id, status: s.statusId, amt: amount, eff: effective, stacks: s.stacks, hp: actor.hp100 });
+            emit({ t, type: "tick", tgt: actor.id, status: s.statusId, amt: amount, eff: effective, stacks: s.stacks, hp: actor.hp100, ...(s.ownerId ? { src: s.ownerId } : {}) });
           }
         }
         if (actor.hp100 === 0) kill(actor);
       }
     }
-    if (!hero.alive || !firstAliveEnemy()) continue;
+    if (!heroes.some(ally => ally.alive) || !firstAliveEnemy()) continue;
 
     // 2. Status expiries
     for (const actor of actors) {
@@ -680,10 +690,15 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
     }
 
     // 3. Attacks
-    if (hero.alive && hero.nextAttackAt === t) heroAttack();
-    for (const enemy of enemies) {
-      if (!hero.alive) break;
-      if (enemy.alive && enemy.nextAttackAt === t) enemyAttack(enemy);
+    for (const ally of heroes) {
+      if (ally.alive && ally.nextAttackAt === t) heroAttack(ally);
+    }
+    for (const [index, enemy] of enemies.entries()) {
+      if (!enemy.alive || enemy.nextAttackAt !== t) continue;
+      const target = heroes[index % heroes.length];
+      const living = target?.alive ? target : heroes.find(ally => ally.alive);
+      if (!living) break;
+      enemyAttack(enemy, living);
     }
   }
 
@@ -701,6 +716,7 @@ export function simulateFight(input: FightInput, sink: EventSink): FightSummary 
     outcome,
     durationMs: t,
     hero: finalOf(hero),
+    ...(input.companions ? { party: heroes.map(finalOf) } : {}),
     enemies: enemies.map(finalOf),
     counters,
     eventCount,

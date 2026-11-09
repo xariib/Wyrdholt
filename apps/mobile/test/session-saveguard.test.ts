@@ -48,7 +48,7 @@ function changedPayload(save: string, change: (value: Record<string, unknown>) =
   change(payload); envelope.schema = schema; envelope.payload = JSON.stringify(payload); envelope.checksum = sha256Hex(envelope.payload);
   return JSON.stringify(envelope);
 }
-const unsupported = (schema = 5, savedAt = 100) => changedPayload(text("Original", savedAt), p => { p.schema = schema; }, schema);
+const unsupported = (schema = 6, savedAt = 100) => changedPayload(text("Original", savedAt), p => { p.schema = schema; }, schema);
 class ProbeFs extends MemorySaveFs {
   readonly mutations: string[] = [];
   readonly reads = new Map<string, number>();
@@ -97,7 +97,7 @@ afterEach(async () => {
 });
 
 describe("SG01–SG07 strict refusal preserves every slot", () => {
-  it.each([0, 5, 99].flatMap(schema => [50, 100, 500].map(savedAt => ({ schema, savedAt }))))("SG04/05 refuses schema $schema savedAt $savedAt in each slot", async ({ schema, savedAt }) => {
+  it.each([0, 6, 99].flatMap(schema => [50, 100, 500].map(savedAt => ({ schema, savedAt }))))("SG04/05 refuses schema $schema savedAt $savedAt in each slot", async ({ schema, savedAt }) => {
     for (const slot of ["main", "temp", "backup"] as const) {
       const fs = new ProbeFs(); fs.files.set(paths.main, text("Main", 100)); fs.files.set(paths.backup, text("Backup", 100));
       fs.files.set(paths[slot], unsupported(schema, savedAt)); const original = filesSnapshot(fs);
@@ -443,7 +443,7 @@ describe("SAVE-GUARD-001A-R1 observed main and revoked owners", () => {
     expect(["error", "storage-blocked"]).toContain(s.getSnapshot().phase);
     expect(fs.mutations).toEqual([]); expect(s.dispatch({ type: "devUnlockZones" }).ok).toBe(false);
   });
-  const lateCases = ["schema5", "schema99", "inventory", "compatible", "present-to-missing", "missing-to-present"];
+  const lateCases = ["schema6", "schema99", "inventory", "compatible", "present-to-missing", "missing-to-present"];
   it.each(["memory", "capacitor"].flatMap(adapter => lateCases.map(kind => ({ adapter, kind }))))(
     "$adapter preserves $kind observed after temp-write, with an honest partial receipt", async ({ adapter, kind }) => {
       const memory = new ProbeFs();
@@ -454,7 +454,7 @@ describe("SAVE-GUARD-001A-R1 observed main and revoked owners", () => {
       const s = new GameSession({ fs: adapter === "capacitor" ? new CapacitorSaveFs() : memory }); sessions.push(s);
       await s.init(); expect(s.getSnapshot().phase).toBe("playing");
       const beforeMetadata = { ...s.getSnapshot().save };
-      const external = kind === "present-to-missing" ? null : kind === "schema5" ? unsupported(5)
+      const external = kind === "present-to-missing" ? null : kind === "schema6" ? unsupported(6)
         : kind === "schema99" ? unsupported(99) : kind === "inventory" ? changedPayload(text(), p => { delete p.inventory; }) : text("External");
       const changeMain = () => { if (external === null) files.delete(paths.main); else files.set(paths.main, external); };
       if (adapter === "capacitor") bridge.writeHook = path => { if (path === paths.temp) changeMain(); };

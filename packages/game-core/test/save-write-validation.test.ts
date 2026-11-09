@@ -80,7 +80,7 @@ describe("SAVE-001 parser boundaries and compatibility", () => {
     expect(parsed.profile.clock).toEqual(payload.clock);
   });
 
-  it.each([5, 99])("rejects future schema %i", (schema) => {
+  it.each([6, 99])("rejects future schema %i", (schema) => {
     expect(parseSave(JSON.stringify({ ...envelope(), schema }))).toEqual({ ok: false, reason: "newer-schema" });
   });
   it("keeps the existing unsupported-schema result", () => {

@@ -12,7 +12,8 @@ import { grantRewards, stageReward } from "../progression/rewards";
 import type { Profile, RewardTotals, RunMode, RunResult, RunState, ZoneProgress } from "../profile/types";
 import { executeRecord } from "../replay/replay";
 import { resolveActiveRuleIds } from "../rules/modifiers";
-import { RULES_VERSION } from "../rules/version";
+import { LONG_TERM_RULES_VERSION, RULES_VERSION } from "../rules/version";
+import { activeBossAttempt } from "../boss/progress";
 
 // ---------------------------------------------------------------------------
 // Seeds
@@ -126,10 +127,10 @@ export function prepareFight(
   const instances = equippedInstances(profile, build);
   const hero = heroStatsFor(profile, content, options.cache, build);
   const record: FightRecord = {
-    format: build.artifactAttackBp === undefined ? "emberbound-fight-record/1" : "emberbound-fight-record/2",
-    rulesVersion: RULES_VERSION,
+    format: build.promoted ? "emberbound-fight-record/3" : build.artifactAttackBp === undefined ? "emberbound-fight-record/1" : "emberbound-fight-record/2",
+    rulesVersion: build.promoted ? LONG_TERM_RULES_VERSION : RULES_VERSION,
     contentVersion: content.snapshot.contentVersion,
-    contentHash: content.hash,
+    contentHash: build.promoted ? content.promotionHash : content.hash,
     seed,
     build,
     // Snapshot copies for kept records; offline records are transient and use references.
@@ -238,7 +239,7 @@ export function leaveCurrentRun(profile: Profile): void {
 
 export function isFightActive(profile: Profile): boolean {
   const adv = profile.adventure;
-  return Boolean(profile.ashenKing?.active) || (adv.activity !== "idle" && adv.run !== null && adv.run.phase === "fight");
+  return Boolean(activeBossAttempt(profile)) || (adv.activity !== "idle" && adv.run !== null && adv.run.phase === "fight");
 }
 
 /** Apply queued class/gear changes. Only called at safe fight boundaries. */

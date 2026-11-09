@@ -25,6 +25,7 @@
     "parity:webkit": "node tools/parity/run-webkit.mjs",
     "parity": "node tools/parity/run-all.mjs",
     "replay": "tsx apps/server/src/replay-cli.ts",
+    "authority": "tsx apps/server/src/serve.ts",
     "bench:offline": "tsx tools/bench-offline.ts",
     "sim:classes": "bun tools/sim/class-report.ts",
     "sim:multi-target": "bun tools/sim/multi-target-report.ts",

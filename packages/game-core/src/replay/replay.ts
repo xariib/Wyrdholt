@@ -6,7 +6,8 @@ import { buildBossEncounter, buildEncounter, type BossEncounterSetup, type Encou
 import { canonicalJson } from "../hash/canonical";
 import { sha256Hex } from "../hash/sha256";
 import { combineRuleEffects } from "../rules/modifiers";
-import { RULES_VERSION } from "../rules/version";
+import { ASHEN_KING_ID } from "../boss/progress";
+import { LONG_TERM_RULES_VERSION, RULES_VERSION } from "../rules/version";
 
 export class ReplayMismatchError extends Error {}
 
@@ -71,7 +72,7 @@ export interface ReplayResult<RecordType extends CombatRecord = FightRecord> {
 
 export function checkRecordCompatibility(content: ContentIndex, record: CombatRecord): void {
   const format = record.format;
-  if (format !== "emberbound-fight-record/1" && format !== "emberbound-fight-record/2" && format !== "emberbound-boss-fight-record/1") {
+  if (format !== "emberbound-fight-record/1" && format !== "emberbound-fight-record/2" && format !== "emberbound-fight-record/3" && format !== "emberbound-boss-fight-record/1") {
     throw new ReplayMismatchError(`Unsupported record format ${String(format)}`);
   }
   const attackBp = record.build?.artifactAttackBp;
@@ -80,10 +81,33 @@ export function checkRecordCompatibility(content: ContentIndex, record: CombatRe
     || attackBp !== undefined && (!Number.isSafeInteger(attackBp) || attackBp <= 0 || attackBp > 10_000)) {
     throw new ReplayMismatchError("Invalid Artifact bonus for this fight record");
   }
-  if (record.rulesVersion !== RULES_VERSION) {
-    throw new ReplayMismatchError(`Rules version mismatch: record ${record.rulesVersion}, core ${RULES_VERSION}`);
+  const boss = record.format === "emberbound-boss-fight-record/1";
+  const bossId = boss ? record.encounter.bossId : undefined;
+  const season = bossId ? content.seasons.get(bossId) : undefined;
+  const promoted = record.build.promoted;
+  if ((promoted !== undefined && (promoted !== true || !content.promotions.has(record.build.classId)))
+    || (!boss && (format === "emberbound-fight-record/3") !== (promoted === true))) {
+    throw new ReplayMismatchError("Invalid promotion for this fight record");
   }
-  const contentHash = format === "emberbound-boss-fight-record/1" ? content.bossHash : content.hash;
+  if (season && boss) {
+    const tier = record.encounter.tier;
+    if (record.activeRuleIds.length !== 1 || record.activeRuleIds[0] !== season.rule.id
+      || record.build.seasonRelicAttackBp !== season.relicAttackBp[tier - 2]) {
+      throw new ReplayMismatchError("Invalid seasonal rule or Relic");
+    }
+  } else if (record.build.seasonRelicAttackBp !== undefined || (boss && record.activeRuleIds.length !== 0)) {
+    throw new ReplayMismatchError("Unexpected seasonal rule or Relic");
+  }
+  const longTerm = promoted === true || (boss && bossId !== ASHEN_KING_ID);
+  const rulesVersion = longTerm ? LONG_TERM_RULES_VERSION : RULES_VERSION;
+  if (record.rulesVersion !== rulesVersion) {
+    throw new ReplayMismatchError(`Rules version mismatch: record ${record.rulesVersion}, core ${rulesVersion}`);
+  }
+  if (boss && !content.soloBosses.get(record.encounter.bossId)?.tiers[record.encounter.tier - 1]) {
+    throw new ReplayMismatchError("Unknown boss or tier");
+  }
+  const contentHash = (bossId ? content.seasonHashes.get(bossId) : undefined)
+    ?? (longTerm ? content.promotionHash : boss ? content.bossHash : content.hash);
   if (record.contentVersion !== content.snapshot.contentVersion || record.contentHash !== contentHash) {
     throw new ReplayMismatchError(
       `Content mismatch: record ${record.contentVersion}/${record.contentHash.slice(0, 12)}, ` +

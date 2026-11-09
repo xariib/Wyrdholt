@@ -79,6 +79,13 @@ export function resolveHeroStats(
 
   let attack100 = attack * HP_SCALE + foundation100;
   if (build.artifactAttackBp !== undefined) attack100 = mulDivRound(attack100, BP + build.artifactAttackBp, BP);
+  if (build.promoted) {
+    const promotion = content.promotions.get(cls.id);
+    if (!promotion) throw new Error(`Unknown promotion for ${cls.id}`);
+    attack100 = mulDivRound(attack100, BP + promotion.attackBp, BP);
+    activeEffects.push({ name: promotion.name, source: "class" });
+  }
+  if (build.seasonRelicAttackBp !== undefined) attack100 = mulDivRound(attack100, BP + build.seasonRelicAttackBp, BP);
   return {
     classId: cls.id,
     level,

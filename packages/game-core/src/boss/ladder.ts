@@ -1,13 +1,15 @@
 import type { BossFightRecord } from "@emberbound/shared-types";
 import { applyPendingBuild, leaveCurrentRun, offlineFallback, startRun } from "../adventure/run";
 import type { ContentIndex } from "../content";
+import { masteryRank } from "../character/progression";
 import type { BossEncounterSetup } from "../encounter/budget";
 import { canonicalJson } from "../hash/canonical";
 import { sha256Hex } from "../hash/sha256";
 import type { BossAttempt, BossProgress, BossResult, Profile } from "../profile/types";
 import { checkRecordCompatibility, executeRecord, ReplayMismatchError, type ExecutedFight } from "../replay/replay";
-import { BOSS_SAVE_SCHEMA_VERSION } from "../rules/version";
-import { ASHEN_KING_ID, createBossFightRecord } from "./attempt";
+import { BOSS_SAVE_SCHEMA_VERSION, LONG_TERM_SAVE_SCHEMA_VERSION } from "../rules/version";
+import { createBossFightRecord } from "./attempt";
+import { ASHEN_KING_ID, activeBossAttempt, bossProgress, seasonTierOpenAt } from "./progress";
 
 export interface PreparedBossFight extends ExecutedFight<BossEncounterSetup> {
   key: string;
@@ -36,28 +38,49 @@ export function prepareBossFight(
   return fight;
 }
 
-export function startBossAttempt(profile: Profile, content: ContentIndex, tier: number, autoPush: boolean): string | null {
-  const boss = content.soloBosses.get(ASHEN_KING_ID);
-  const progress = profile.ashenKing;
-  if (!boss || !profile.adventure.zones[boss.unlockZoneId]?.cleared) return "Clear Ashen Mountains to challenge the Ashen King.";
-  if (progress?.active) return "An Ashen King attempt is already in progress.";
+export function startBossAttempt(profile: Profile, content: ContentIndex, tier: number, autoPush: boolean, bossId = ASHEN_KING_ID, atMs = 0): string | null {
+  const boss = content.soloBosses.get(bossId);
+  if (!boss || (bossId !== ASHEN_KING_ID && !bossId.startsWith("trial_") && !content.seasons.has(bossId))) return "Unknown challenge.";
+  const progress = bossProgress(profile, bossId);
+  if (!profile.adventure.zones[boss.unlockZoneId]?.cleared) return `Clear ${content.zone(boss.unlockZoneId).name} to challenge ${boss.name}.`;
+  if (activeBossAttempt(profile)) return "A challenge attempt is already in progress.";
   const nextTier = (progress?.highestClearedTier ?? 0) + 1;
-  if (nextTier > boss.tiers.length) return "You have cleared the Ashen King ladder.";
-  if (tier !== nextTier || typeof autoPush !== "boolean") return "Choose the next available Ashen King tier.";
-  if (progress?.attemptCount === Number.MAX_SAFE_INTEGER) return "The Ashen King attempt counter is full.";
+  if (nextTier > boss.tiers.length) return `You have cleared ${boss.name}.`;
+  if (tier !== nextTier || typeof autoPush !== "boolean" || (autoPush && bossId !== ASHEN_KING_ID)) return "Choose the next available challenge tier.";
+  if (progress?.attemptCount === Number.MAX_SAFE_INTEGER) return "The challenge attempt counter is full.";
+
+  const classId = profile.pending?.activeClassId ?? profile.character.activeClassId;
+  const promotion = content.promotions.get(classId);
+  if (bossId.startsWith("trial_") && (promotion?.boss.id !== bossId
+    || profile.character.level < promotion.level
+    || masteryRank(content, classId, profile.character.masteryXp[classId] ?? 0) < promotion.mastery)) {
+    return "Meet the trial requirements and make that class active first.";
+  }
+  const season = content.seasons.get(bossId);
+  const time = Math.max(atMs, profile.clock.lastSettledWallMs);
+  if (season && (!Number.isSafeInteger(time) || time < seasonTierOpenAt(season, tier) || time >= season.endMs)) {
+    return "This seasonal tier is currently closed.";
+  }
 
   leaveCurrentRun(profile);
   profile.adventure.lastResult = null;
   applyPendingBuild(profile);
-  const state = profile.ashenKing ??= { version: 1, highestClearedTier: 0, attemptCount: 0, active: null, lastResult: null };
-  beginAttempt(profile, content, state, tier, autoPush);
-  profile.schema = BOSS_SAVE_SCHEMA_VERSION;
+  const state = progress ?? { version: 1, highestClearedTier: 0, attemptCount: 0, active: null, lastResult: null };
+  if (bossId === ASHEN_KING_ID) {
+    profile.ashenKing = state;
+    profile.schema = Math.max(profile.schema, BOSS_SAVE_SCHEMA_VERSION);
+  } else {
+    const longTerm = profile.longTerm ??= { version: 1, ladders: {} };
+    longTerm.ladders[bossId] = state;
+    profile.schema = LONG_TERM_SAVE_SCHEMA_VERSION;
+  }
+  beginAttempt(profile, content, state, bossId, tier, autoPush);
   return null;
 }
 
-function beginAttempt(profile: Profile, content: ContentIndex, state: BossProgress, tier: number, autoPush: boolean): void {
+function beginAttempt(profile: Profile, content: ContentIndex, state: BossProgress, bossId: string, tier: number, autoPush: boolean): void {
   const attemptIndex = state.attemptCount + 1;
-  const record = createBossFightRecord(profile, content, { bossId: ASHEN_KING_ID, tier, attemptIndex });
+  const record = createBossFightRecord(profile, content, { bossId, tier, attemptIndex });
   state.active = { record, autoPush, elapsedMs: 0 };
   state.attemptCount = attemptIndex;
 }
@@ -71,7 +94,9 @@ interface AdvanceBossOptions {
 
 /** Consume time on the active boss ladder and return the time available to Adventure. */
 export function advanceBoss(profile: Profile, content: ContentIndex, deltaMs: number, options: AdvanceBossOptions): number {
-  const state = profile.ashenKing;
+  const bossId = activeBossAttempt(profile)?.record.encounter.bossId;
+  if (!bossId) return deltaMs;
+  const state = bossProgress(profile, bossId);
   let remaining = deltaMs;
   while (remaining > 0 && state?.active) {
     const attempt = state.active;
@@ -98,10 +123,10 @@ export function advanceBoss(profile: Profile, content: ContentIndex, deltaMs: nu
       }
     }
     applyPendingBuild(profile);
-    const boss = content.soloBosses.get(ASHEN_KING_ID);
-    if (outcome === "victory" && attempt.autoPush && !options.offline && boss && tier < boss.tiers.length
+    const boss = content.soloBosses.get(bossId);
+    if (bossId === ASHEN_KING_ID && outcome === "victory" && attempt.autoPush && !options.offline && boss && tier < boss.tiers.length
       && state.attemptCount < Number.MAX_SAFE_INTEGER) {
-      beginAttempt(profile, content, state, tier + 1, true);
+      beginAttempt(profile, content, state, bossId, tier + 1, true);
     } else {
       const farm = offlineFallback(profile, content, { mode: "push", zoneId: boss?.unlockZoneId ?? profile.adventure.zoneId });
       if (farm) startRun(profile, content, farm.zoneId, farm.mode, content.snapshot.config.restMs);

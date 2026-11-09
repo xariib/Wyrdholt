@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ASHEN_KING_ID, type Profile } from "@emberbound/game-core";
+import { ASHEN_KING_ID, activeBossAttempt, type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { safeFarmZone, zoneViews, type ZoneView } from "../adventureModel";
 import { CombatView } from "../components/CombatView";
@@ -8,11 +8,12 @@ import { FarmIcon, PushIcon } from "../components/icons";
 import { number } from "../format";
 
 export function AdventureScreen({ profile, active, nextAttempt, onChallenges }: { profile: Profile; active: boolean; nextAttempt: ReactNode; onChallenges: () => void }) {
-  const boss = profile.ashenKing?.active;
+  const boss = activeBossAttempt(profile);
   if (boss) {
+    const name = session.content.soloBosses.get(boss.record.encounter.bossId)?.name ?? "Challenge";
     return (
       <section className="panel stack">
-        <h2>Ashen King attempt in progress</h2>
+        <h2>{name} attempt in progress</h2>
         <p className="small muted">Adventure farming resumes after the challenge.</p>
         <button className="btn primary block" onClick={onChallenges}>Watch Tier {boss.record.encounter.tier} in Challenges</button>
       </section>

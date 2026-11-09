@@ -318,6 +318,49 @@ export interface SoloBossDef extends Omit<EnemyArchetypeDef, "hpWeight" | "damag
   tiers: SoloBossTierDef[];
 }
 
+export interface PromotionDef {
+  classId: Id;
+  name: string;
+  boss: SoloBossDef;
+  level: number;
+  mastery: number;
+  attackBp: Bp;
+}
+
+export interface SeasonDef {
+  boss: SoloBossDef;
+  name: string;
+  startMs: number;
+  endMs: number;
+  tierIntervalMs: number;
+  rule: RuleDef;
+  relicName: string;
+  relicAttackBp: Bp[];
+  titles: string[];
+}
+
+export interface PartyWaveDef extends SoloBossTierDef {
+  enemies: Id[];
+  ruleIds?: Id[];
+}
+
+export interface DungeonDef {
+  id: Id;
+  name: string;
+  unlockZoneId: Id;
+  waves: PartyWaveDef[];
+  rewardGold: number;
+  guildMarks: number;
+}
+
+export interface RaidDef {
+  id: Id;
+  name: string;
+  durationMs: number;
+  phases: (PartyWaveDef & { damageGoal100: number; addGoal: number })[];
+  rewardGold: number;
+}
+
 export type StageRole = "normal" | "elite" | "boss";
 
 export interface StageDef {
@@ -452,6 +495,8 @@ export interface ContentSnapshot {
   rules: RuleDef[];
   starterItems: Id[];
   soloBosses?: SoloBossDef[];
+  longTerm?: { promotions: PromotionDef[]; seasons: SeasonDef[] };
+  social?: { dungeons: DungeonDef[]; raids: RaidDef[] };
 }
 
 // ---------------------------------------------------------------------------
@@ -493,6 +538,10 @@ export interface BuildSnapshot {
   artifactId: Id | null;
   /** Resolved permanent Artifact bonus at fight start, in basis points. */
   artifactAttackBp?: Bp;
+  /** Permanent trial completion for this base class. */
+  promoted?: true;
+  /** Relic Attack is locked to a seasonal attempt. */
+  seasonRelicAttackBp?: Bp;
 }
 
 export interface EncounterRef {
@@ -503,7 +552,7 @@ export interface EncounterRef {
 /** Everything needed to reproduce one fight exactly. */
 export interface FightRecord {
   /** Version 2 adds a snapshotted Artifact bonus. */
-  format: "emberbound-fight-record/1" | "emberbound-fight-record/2";
+  format: "emberbound-fight-record/1" | "emberbound-fight-record/2" | "emberbound-fight-record/3";
   rulesVersion: string;
   contentVersion: string;
   contentHash: string;
@@ -526,6 +575,21 @@ export interface BossFightRecord extends Omit<FightRecord, "format" | "encounter
 }
 
 export type CombatRecord = FightRecord | BossFightRecord;
+
+export interface PartyMemberSnapshot {
+  profileId: Id;
+  revision: number;
+  build: BuildSnapshot;
+  itemInstances: ItemInstance[];
+}
+
+export interface PartyFightRecord {
+  format: "emberbound-party-fight-record/1";
+  contentHash: string;
+  seed: number;
+  members: [PartyMemberSnapshot, PartyMemberSnapshot, PartyMemberSnapshot];
+  encounter: { kind: "dungeon" | "raid"; id: Id; wave: number };
+}
 
 export type FightOutcome = "victory" | "defeat" | "timeout";
 

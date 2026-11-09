@@ -125,6 +125,7 @@ export interface BossProgress {
 export interface Profile {
   /** Permanent Ashen King ladder. Present from the first attempt (schema 4). */
   ashenKing?: BossProgress;
+  longTerm?: { version: 1; ladders: Record<string, BossProgress> };
   /** Per-copy player protection. Presence requires schema 3 or later. */
   itemLocks?: { version: 1; lockedInstanceIds: number[] };
   forge?: import("@emberbound/shared-types").ForgeState;

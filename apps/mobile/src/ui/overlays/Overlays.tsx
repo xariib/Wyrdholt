@@ -107,7 +107,7 @@ export function OfflineOverlay({
       )}
       {s.boss && (
         <div className="panel small stack">
-          <b>Ashen King · {s.boss.result ? bossResultLabel(s.boss.result) : `Tier ${s.boss.tier} still in progress`}</b>
+          <b>{content.soloBosses.get(s.boss.bossId ?? ASHEN_KING_ID)?.name ?? "Challenge"} · {s.boss.result ? bossResultLabel(s.boss.result) : `Tier ${s.boss.tier} still in progress`}</b>
           {s.boss.result && s.boss.result.enemyHp100 > 0 && (
             <span className="muted">Boss HP left {hp(s.boss.result.enemyHp100)} / {hp(s.boss.result.enemyMaxHp100)}</span>
           )}

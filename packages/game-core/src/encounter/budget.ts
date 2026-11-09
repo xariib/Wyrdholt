@@ -1,4 +1,4 @@
-import type { BossFightRecord, DamageType, EnemyArchetypeDef, SoloBossDef, StageDef, ZoneDef } from "@emberbound/shared-types";
+import type { BossFightRecord, DamageType, EnemyArchetypeDef, PartyWaveDef, SoloBossDef, StageDef, ZoneDef } from "@emberbound/shared-types";
 import type { ContentIndex } from "../content";
 import { BP, HP_SCALE, mulDivRound } from "../math/fixed";
 import type { RuleEffects } from "../rules/modifiers";
@@ -64,21 +64,24 @@ export function buildEncounter(
   const zone = content.zone(zoneId);
   const stage = zone.stages[stageIndex];
   if (!stage) throw new Error(`Zone ${zoneId} has no stage ${stageIndex}`);
-  const archetypes = stage.enemies.map((id) => content.enemy(id));
+  return { zone, stage, enemies: buildWaveEnemies(content, stage, effects) };
+}
+
+export function buildWaveEnemies(content: ContentIndex, wave: PartyWaveDef, effects: RuleEffects): EnemyInit[] {
+  const archetypes = wave.enemies.map((id) => content.enemy(id));
   let hpWeights = 0;
   let damageWeights = 0;
   for (const a of archetypes) {
     hpWeights += a.hpWeight;
     damageWeights += a.damageWeight;
   }
-  const hpBudget100 = mulDivRound(stage.hpBudget * HP_SCALE, effects.enemyHpBp, BP);
-  const dpsBudget100 = mulDivRound(stage.dpsBudget100, effects.enemyDamageBp, BP);
-  const enemies = archetypes.map((a, index) => {
+  const hpBudget100 = mulDivRound(wave.hpBudget * HP_SCALE, effects.enemyHpBp, BP);
+  const dpsBudget100 = mulDivRound(wave.dpsBudget100, effects.enemyDamageBp, BP);
+  return archetypes.map((a, index) => {
     const hp100 = mulDivRound(hpBudget100, a.hpWeight, hpWeights);
     const dps100 = mulDivRound(dpsBudget100, a.damageWeight, damageWeights);
     return enemyInit(a, index, hp100, dps100);
   });
-  return { zone, stage, enemies };
 }
 
 export function buildBossEncounter(

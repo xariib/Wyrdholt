@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Spike only: Node replay tool proving the game-core can validate fights server-side. Not a production backend.",
+  "description": "Wyrdholt authoritative gameplay service and deterministic replay tool.",
   "scripts": {
     "replay": "tsx src/replay-cli.ts"
   },

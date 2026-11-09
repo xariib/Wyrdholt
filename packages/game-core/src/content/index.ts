@@ -1,13 +1,17 @@
 import type {
   ClassDef,
   ContentSnapshot,
+  DungeonDef,
   EnemyArchetypeDef,
   ItemDef,
   LootTableDef,
   MasteryTrackDef,
   ProgressionDef,
+  RaidDef,
+  PromotionDef,
   RarityDef,
   RuleDef,
+  SeasonDef,
   SoloBossDef,
   SoloBossTierDef,
   ZoneDef,
@@ -28,6 +32,14 @@ export class ContentIndex {
   readonly hash: string;
   /** Solo Boss replays pin both boss data and the shared combat content. */
   readonly bossHash: string;
+  readonly promotionHash: string;
+  readonly longTermHash: string;
+  readonly socialHash: string;
+  readonly promotions = new Map<string, PromotionDef>();
+  readonly seasons = new Map<string, SeasonDef>();
+  readonly seasonHashes = new Map<string, string>();
+  readonly dungeons = new Map<string, DungeonDef>();
+  readonly raids = new Map<string, RaidDef>();
   readonly classes = new Map<string, ClassDef>();
   readonly tracks = new Map<string, MasteryTrackDef>();
   readonly items = new Map<string, ItemDef>();
@@ -45,9 +57,12 @@ export class ContentIndex {
   constructor(snapshot: ContentSnapshot) {
     this.snapshot = snapshot;
     // canonicalJson also enforces "integers only" across all content.
-    const { soloBosses = [], ...adventure } = snapshot;
+    const { soloBosses = [], longTerm, social, ...adventure } = snapshot;
     this.hash = sha256Hex(canonicalJson(adventure));
     this.bossHash = sha256Hex(canonicalJson({ adventureHash: this.hash, soloBosses }));
+    this.promotionHash = sha256Hex(canonicalJson({ bossHash: this.bossHash, promotions: longTerm?.promotions ?? [] }));
+    this.longTermHash = sha256Hex(canonicalJson({ bossHash: this.bossHash, longTerm: longTerm ?? null }));
+    this.socialHash = sha256Hex(canonicalJson({ promotionHash: this.promotionHash, social: social ?? null }));
     for (const c of snapshot.classes) addUnique(this.classes, c.id, c, "class");
     for (const t of snapshot.masteryTracks) addUnique(this.tracks, t.id, t, "mastery track");
     for (const i of snapshot.items) addUnique(this.items, i.id, i, "item");
@@ -56,6 +71,18 @@ export class ContentIndex {
     for (const z of snapshot.zones) addUnique(this.zones, z.id, z, "zone");
     for (const l of snapshot.lootTables) addUnique(this.lootTables, l.id, l, "loot table");
     for (const r of snapshot.rules) addUnique(this.rules, r.id, r, "rule");
+    for (const p of longTerm?.promotions ?? []) {
+      addUnique(this.promotions, p.classId, p, "promotion");
+      addUnique(this.soloBosses, p.boss.id, p.boss, "solo boss");
+    }
+    for (const s of longTerm?.seasons ?? []) {
+      addUnique(this.seasons, s.boss.id, s, "season");
+      this.seasonHashes.set(s.boss.id, sha256Hex(canonicalJson({ promotionHash: this.promotionHash, season: s })));
+      addUnique(this.soloBosses, s.boss.id, s.boss, "solo boss");
+      addUnique(this.rules, s.rule.id, s.rule, "rule");
+    }
+    for (const dungeon of social?.dungeons ?? []) addUnique(this.dungeons, dungeon.id, dungeon, "dungeon");
+    for (const raid of social?.raids ?? []) addUnique(this.raids, raid.id, raid, "raid");
     for (const r of snapshot.rarities) addUnique(this.rarities, r.id, r, "rarity");
     this.raritiesByOrder = [...snapshot.rarities].sort((a, b) => a.order - b.order);
     this.levelTotals = progressionTotals(snapshot.config.levelXp, snapshot.config.maxCharacterLevel, "character level");
@@ -101,6 +128,36 @@ export class ContentIndex {
   }
 
   private validate(): void {
+    for (const dungeon of this.dungeons.values()) {
+      if (!this.zone(dungeon.unlockZoneId).implemented || !dungeon.waves.length || dungeon.rewardGold < 1 || dungeon.guildMarks < 0) {
+        throw new Error(`Invalid dungeon ${dungeon.id}`);
+      }
+    }
+    for (const raid of this.raids.values()) {
+      if (!raid.phases.length || raid.durationMs <= 0 || raid.rewardGold < 1
+        || raid.phases.some(p => p.damageGoal100 <= 0 || p.addGoal <= 0 || p.enemies.length < 2)) throw new Error(`Invalid raid ${raid.id}`);
+    }
+    for (const wave of [...this.dungeons.values()].flatMap(d => d.waves).concat([...this.raids.values()].flatMap(r => r.phases))) {
+      if (!wave.enemies.length || wave.enemies.length > 3 || wave.hpBudget <= 0 || wave.dpsBudget100 <= 0) throw new Error("Invalid party encounter");
+      for (const enemy of wave.enemies) this.enemy(enemy);
+      for (const rule of wave.ruleIds ?? []) must(this.rules.get(rule), `rule ${rule}`);
+    }
+    for (const p of this.promotions.values()) {
+      const cls = this.classDef(p.classId);
+      if (p.boss.id !== `trial_${p.classId}` || p.boss.tiers.length !== 1 || !cls.implemented || cls.tier !== 1
+        || p.level < 1 || p.level > this.levelTotals.length || p.mastery !== this.track(cls.masteryTrackId).maxRank
+        || p.attackBp < 1 || p.attackBp > 10_000) throw new Error(`Invalid promotion ${p.classId}`);
+    }
+    let previousEnd = 0;
+    for (const s of [...this.seasons.values()].sort((a, b) => a.startMs - b.startMs)) {
+      if (!s.boss.id.startsWith("season_") || s.startMs < previousEnd || s.tierIntervalMs <= 0
+        || s.startMs + s.tierIntervalMs * (s.boss.tiers.length - 1) >= s.endMs
+        || s.titles.length !== s.boss.tiers.length || s.relicAttackBp.length !== s.boss.tiers.length
+        || s.relicAttackBp.some(bp => bp < 1 || bp > 10_000) || s.rule.availability || s.rule.testOnly) {
+        throw new Error(`Invalid season ${s.boss.id}`);
+      }
+      previousEnd = s.endMs;
+    }
     for (const boss of this.soloBosses.values()) {
       if (!this.zone(boss.unlockZoneId).implemented || boss.tiers.length === 0 || boss.attackRateMilli <= 0 || boss.armor < 0
         || boss.tiers.some(tier => tier.hpBudget <= 0 || tier.dpsBudget100 <= 0)) {

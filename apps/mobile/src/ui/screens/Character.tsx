@@ -1,4 +1,4 @@
-import { ASHEN_CROWN, ashenCrownAt, masteryProgress, nextMilestone, techniqueStatuses, type Profile } from "@emberbound/game-core";
+import { ASHEN_CROWN, ashenCrownAt, masteryProgress, nextMilestone, promotionCleared, techniqueStatuses, type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { Bar } from "../components/Common";
 import { SpriteImage } from "../components/icons";
@@ -11,7 +11,7 @@ const COMBAT_CUES: Record<string, string> = {
   ranger: "In combat: green marks show Poison. Split Arrow links targets; green pulses show Venom Burst.",
 };
 
-export function CharacterScreen({ profile }: { profile: Profile }) {
+export function CharacterScreen({ profile, onChallenges }: { profile: Profile; onChallenges: () => void }) {
   const c = profile.character;
   const queuedClass = profile.pending?.activeClassId;
   const crown = ashenCrownAt(profile.ashenKing?.highestClearedTier ?? 0);
@@ -33,8 +33,9 @@ export function CharacterScreen({ profile }: { profile: Profile }) {
       )}
       <ClassCodex learned={[c.activeClassId, c.alternateClassId]} />
       <section className="panel stack">
-        <div className="panel-title">Future paths</div>
-        <div className="small muted">One Promotion per class arrives in a later build. Nothing here resets your character.</div>
+        <div className="panel-title">Class advancement</div>
+        <div className="small muted">Each learned class can earn a permanent promotion through its trial.</div>
+        <button className="btn block" onClick={onChallenges}>View promotion trials</button>
       </section>
     </>
   );
@@ -100,6 +101,7 @@ function ClassCard({ profile, classId, role, queued }: { profile: Profile; class
   const progress = masteryProgress(content, classId, xp);
   const rank = progress.level;
   const next = nextMilestone(content, classId, rank);
+  const promotion = promotionCleared(profile, classId) ? content.promotions.get(classId) : undefined;
   return (
     <section
       className="panel class-card"
@@ -140,6 +142,7 @@ function ClassCard({ profile, classId, role, queued }: { profile: Profile; class
         </div>
       )}
       <TechniqueList classId={classId} rank={rank} nextId={next?.id ?? null} />
+      {promotion && <div className="small gold">{promotion.name} promotion · +{pct(promotion.attackBp)} Attack</div>}
       <div className="small muted">{COMBAT_CUES[classId]} Techniques become available at the Mastery ranks shown above.</div>
       {role === "Alternate" && (
         <button

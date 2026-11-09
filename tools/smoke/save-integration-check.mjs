@@ -149,7 +149,7 @@ try {
   report.browser = browser.version(); report.playwright = JSON.parse(readFileSync(join(root, "node_modules/playwright/package.json"))).version;
   const valid = fixture();
   const cases = [
-    { name: "unsupported-main", slots: { main: changed(valid, (p, e) => { p.schema = 5; e.schema = 5; }), backup: valid }, reason: "A saved adventure uses a version this build cannot open." },
+    { name: "unsupported-main", slots: { main: changed(valid, (p, e) => { p.schema = 6; e.schema = 6; }), backup: valid }, reason: "A saved adventure uses a version this build cannot open." },
     { name: "corrupt-sidefile", slots: { main: valid, temp: "not a save", backup: valid }, reason: "A saved adventure could not be read as a valid save." },
     { name: "malformed-profile", slots: { main: changed(valid, p => { delete p.clock; }), backup: valid }, reason: "A saved adventure could not be read as a valid save." },
     { name: "legacy-schema1-rules", slots: { main: legacySave, backup: valid }, reason: "A saved adventure belongs to a different game version." },
@@ -368,6 +368,61 @@ try {
   assert.equal(chained.ashenKing.active.record.encounter.tier, 3);
   report.checks.push({ name: "ashen-king-entry-resume-offline-milestone-and-online-auto-push", passed: true });
   await close(challenge);
+
+  const [season, nextSeason] = [...content.seasons.values()];
+  const c5Wall = season.startMs + 60_000;
+  const c5Profile = cloneProfile(bossProfile);
+  c5Profile.createdAtWallMs = c5Wall;
+  c5Profile.clock.lastSettledWallMs = c5Wall;
+  const c5 = await setup({ main: serializeSave(c5Profile, c5Wall) });
+  const c5Page = c5.page;
+  const readC5 = async () => {
+    const saved = parseSave((await storage(c5.observer, {}, true)).main);
+    assert(saved.ok);
+    return saved.profile;
+  };
+  await c5Page.clock.install({ time: c5Wall });
+  await c5Page.goto(base);
+  await c5Page.getByRole("button", { name: "Character", exact: true }).tap();
+  await c5Page.getByRole("button", { name: "View promotion trials", exact: true }).tap();
+  const trials = c5Page.getByRole("region", { name: "Promotion trials" });
+  assert(await trials.getByRole("button", { name: "Enter Ascendant Trial" }).isDisabled());
+  await trials.getByRole("button", { name: "Enter Arcanist Trial" }).tap();
+  await c5Page.getByRole("region", { name: "Arcanist Trial combat" }).waitFor();
+  const promotion = await readC5();
+  assert.equal(promotion.schema, 5);
+  const trialRecord = promotion.longTerm.ladders.trial_mage.active.record;
+  const trialDuration = executeRecord(content, trialRecord, { recordEvents: false }).summary.durationMs;
+  await c5Page.getByRole("button", { name: "Character", exact: true }).tap();
+  await c5Page.clock.runFor(trialDuration + 1000);
+  await c5Page.getByText("Arcanist promotion · +10% Attack", { exact: true }).waitFor();
+  assert.equal((await readC5()).longTerm.ladders.trial_mage.highestClearedTier, 1);
+
+  await c5Page.getByRole("button", { name: "Challenges", exact: true }).tap();
+  const seasons = c5Page.getByRole("region", { name: "Seasons" });
+  await seasons.getByRole("heading", { name: season.name }).waitFor();
+  await seasons.getByRole("button", { name: "Challenge seasonal Tier 1" }).tap();
+  await c5Page.getByRole("region", { name: `${season.boss.name} combat` }).waitFor();
+  const seasonal = await readC5();
+  const seasonalRecord = seasonal.longTerm.ladders[season.boss.id].active.record;
+  assert.deepEqual(seasonalRecord.activeRuleIds, [season.rule.id]);
+  assert.equal(seasonalRecord.build.promoted, true);
+  const seasonDuration = executeRecord(content, seasonalRecord, { recordEvents: false }).summary.durationMs;
+  await c5Page.getByRole("button", { name: "Character", exact: true }).tap();
+  await c5Page.clock.runFor(seasonDuration + 1000);
+  await c5Page.getByRole("button", { name: "Challenges", exact: true }).tap();
+  await seasons.getByText(`${season.relicName} · Rank 1 · +3% Attack in this ladder`, { exact: true }).waitFor();
+  assert(await seasons.getByRole("button", { name: /Tier 2 opens/ }).isDisabled());
+  await c5Page.clock.setSystemTime(nextSeason.startMs + 1);
+  await c5Page.reload();
+  const offlineModal = c5Page.locator(".modal").filter({ hasText: "While you were away" });
+  await offlineModal.getByRole("button", { name: "Continue", exact: true }).tap();
+  await c5Page.getByRole("button", { name: "Challenges", exact: true }).tap();
+  await seasons.getByRole("heading", { name: nextSeason.name }).waitFor();
+  await seasons.getByText(`${nextSeason.relicName} · Rank 0 · +0% Attack in this ladder`, { exact: true }).waitFor();
+  await seasons.getByText(`${season.name} · ${season.titles[0]}`, { exact: true }).waitFor();
+  report.checks.push({ name: "promotion-and-season-reward-save-tier-cadence-and-rollover", passed: true });
+  await close(c5);
 
   const failed = await setup({}, "write"); await failed.page.goto(base);
   await failed.page.getByRole("button", { name: "Begin in Greenfields", exact: true }).tap();

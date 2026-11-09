@@ -25,19 +25,33 @@ npm run build:web
 
 Run `npm run dev` for development or `npm run preview:web` to play the built game. The build is written to `apps/mobile/dist`.
 
+## Online play
+
+Start the authority service and the browser app in separate terminals. For a local test, enable account creation before starting the service.
+
+```powershell
+$env:WYRDHOLT_AUTHORITY_REGISTRATION = 'true'
+npm run authority
+```
+
+Run `npm run dev`, open the browser app, then choose **Open online adventure**. Use `http://127.0.0.1:8787` as the server origin. Each account keeps one server-side character. The account key lets you reconnect. [Authority and live configuration](docs/technical/ONLINE_AUTHORITY.md)
+
 ## Browser save tests
 
 ```sh
 npx playwright install chromium
 npm run test:save:web
+node --import tsx tools/smoke/online-check.mjs
 ```
 
 The tests serve the built game locally and use disposable browser contexts. They cover save recovery, offline catch-up, the C3 inventory, Forge, and salvage flow, and C4 boss entry and settlement across reloads. To use an installed Chromium-based browser, set `CHROMIUM_EXECUTABLE_PATH` to its executable. Reports go to `tools/smoke/out` by default.
 
 ## Project guide
 
+- [Development roadmap and milestone gates](docs/ROADMAP.md)
 - [Game systems and rules](docs/design/GAMEPLAY_SYSTEMS.md)
 - [C4 Ashen King and Ashen Crown](docs/design/C4_SOLO_BOSSES.md)
+- [C5 promotions and seasons](docs/design/C5_LONG_TERM.md)
 - [Architecture](docs/ARCHITECTURE.md) and [save and lifecycle behavior](docs/technical/CLIENT_RUNTIME.md)
 - [Build and Android update requirements](docs/technical/BUILD_AND_DEPLOY.md)
 - [C1–C3 human playtest guide](docs/playtests/C3_HUMAN_GUIDE_DA.md)

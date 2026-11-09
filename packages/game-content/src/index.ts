@@ -3,6 +3,8 @@ import { SOLO_BOSSES } from "./bosses";
 import { CLASSES, mageTrack, monkTrack, rangerTrack, warriorTrack } from "./classes";
 import { ENEMIES } from "./enemies";
 import { ITEMS, STARTER_ITEMS } from "./items";
+import { LONG_TERM } from "./longTerm";
+import { SOCIAL } from "./social";
 import { LEVEL_XP_STEPS } from "./progression";
 import { LOOT_TABLES, ZONES } from "./zones";
 
@@ -83,6 +85,8 @@ export const CONTENT: ContentSnapshot = {
   rules,
   starterItems: STARTER_ITEMS,
   soloBosses: SOLO_BOSSES,
+  longTerm: LONG_TERM,
+  social: SOCIAL,
 };
 
 export { FORGE_V1 } from "./forge";

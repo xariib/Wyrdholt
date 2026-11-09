@@ -3,8 +3,11 @@ import {
   ContentIndex,
   FightCache,
   RULES_VERSION,
+  ASHEN_KING_ID,
+  activeBossAttempt,
   advanceGame,
   applyCommand,
+  bossProgress,
   canonicalJson,
   createProfile,
   heroStatsFor,
@@ -408,7 +411,7 @@ export class GameSession {
         ? `${failed.mode} ${this.content.zone(failed.zoneId).name} failed at stage ${failed.stage}; started ${resumed.mode} ${this.content.zone(resumed.zoneId).name}`
         : null;
     const resumedRetry = resumed && failed?.mode === "push" ? { zoneId: failed.zoneId, stage: failed.stage } : null;
-    if (elapsed === 0 || !working.ashenKing?.active && (elapsed < 1_000 || working.adventure.activity === "idle")) {
+    if (elapsed === 0 || !activeBossAttempt(working) && (elapsed < 1_000 || working.adventure.activity === "idle")) {
       if (resumedRetry) setRetryTarget(working, resumedRetry);
       working.clock.lastSettledWallMs = Math.max(profile.clock.lastSettledWallMs, nowWallMs);
       this.bump({ profile: working, phase: "playing" });
@@ -524,11 +527,11 @@ export class GameSession {
     const events: AdventureEvent[] = [];
     const wallNow = Date.now();
     if (step > 0) {
-      const attempt = profile.ashenKing?.active;
+      const attempt = activeBossAttempt(profile);
       if (attempt) {
         const fight = prepareBossFight(this.content, attempt, true, this.bossCache);
         if (!fight || attempt.elapsedMs + step >= fight.summary.durationMs) {
-          this.saveBossBoundary(step, wallNow);
+          this.saveBossBoundary(step, wallNow, attempt.record.encounter.bossId);
           return;
         }
       }
@@ -554,20 +557,21 @@ export class GameSession {
     profile.clock.lastSettledWallMs = wallNow;
   }
 
-  private saveBossBoundary(step: number, wallNow: number): void {
+  private saveBossBoundary(step: number, wallNow: number, bossId: string): void {
     const events: AdventureEvent[] = [];
+    const bossName = this.content.soloBosses.get(bossId)?.name ?? "Challenge";
     void this.saveProfileAction({
-      name: "Ashen King result",
-      busy: "Saving Ashen King result…",
+      name: `${bossName} result`,
+      busy: `Saving ${bossName} result…`,
       preserveLiveTime: true,
       apply: (candidate) => {
         this.advanceLive(candidate, step, wallNow, events);
         return { ok: true, queued: false };
       },
       onSaved: (candidate) => {
-        const result = candidate.ashenKing?.lastResult;
+        const result = bossProgress(candidate, bossId)?.lastResult;
         if (result) {
-          const text = result.outcome === "victory" ? `Ashen King tier ${result.tier} cleared!` : `Ashen King tier ${result.tier} attempt ended.`;
+          const text = result.outcome === "victory" ? `${bossName} tier ${result.tier} cleared!` : `${bossName} tier ${result.tier} attempt ended.`;
           this.bump({ toast: this.makeToast(text, result.outcome === "victory" ? "success" : "info") });
         }
         if (events.length > 0) this.handleEvents(events);
@@ -579,7 +583,7 @@ export class GameSession {
     const profile = this.profile;
     if (!profile || this.frameListeners.size === 0) return;
     const run = profile.adventure.run;
-    const attempt = profile.ashenKing?.active;
+    const attempt = activeBossAttempt(profile);
     let fight: CombatFrame["fight"] = null;
     if (attempt) {
       fight = prepareBossFight(this.content, attempt, true, this.bossCache);
@@ -694,14 +698,15 @@ export class GameSession {
     return this.saveItemCommand({ type: "bulkSalvage", input: input && { ...input, copies: Array.isArray(input.copies) ? input.copies.map(c => c && { ...c }) : input.copies } });
   }
 
-  startBoss(tier: number, autoPush: boolean): Promise<CommandResult> {
+  startBoss(tier: number, autoPush: boolean, bossId = ASHEN_KING_ID): Promise<CommandResult> {
+    const bossName = this.content.soloBosses.get(bossId)?.name ?? "Challenge";
     return this.saveProfileAction({
-      name: "Ashen King attempt",
-      busy: "Preparing Ashen King attempt…",
+      name: `${bossName} attempt`,
+      busy: `Preparing ${bossName} attempt…`,
       preserveLiveTime: false,
       apply: (candidate) => {
         const now = Date.now();
-        const result = applyCommand(candidate, this.content, { type: "startBoss", tier, autoPush }, { contentTimeMs: now });
+        const result = applyCommand(candidate, this.content, { type: "startBoss", tier, autoPush, bossId }, { contentTimeMs: now });
         if (result.ok) candidate.clock.lastSettledWallMs = Math.max(candidate.clock.lastSettledWallMs, now);
         return result;
       },
@@ -776,11 +781,11 @@ export class GameSession {
     if (command.type === "forge") return { ok: false, error: "Use the saved Forge confirmation flow." };
     if (command.type === "salvage" || command.type === "bulkSalvage") return { ok: false, error: "Use the saved salvage confirmation flow." };
     if (command.type === "setItemLock") return { ok: false, error: "Use the saved item lock flow." };
-    if (command.type === "startBoss") return { ok: false, error: "Use the saved Ashen King entry flow." };
+    if (command.type === "startBoss") return { ok: false, error: "Use the saved challenge entry flow." };
     if (!this.canPlay() || this.catchingUp) return { ok: false, error: "Save access or settlement is paused; no command was applied." };
     const profile = this.profile;
     if (!profile) return { ok: false, error: "No character." };
-    if (command.type === "advance" && profile.ashenKing?.active) return { ok: false, error: "The session clock advances Ashen King attempts." };
+    if (command.type === "advance" && activeBossAttempt(profile)) return { ok: false, error: "The session clock advances challenge attempts." };
     const result = applyCommand(profile, this.content, command, { contentTimeMs: Date.now(), forgeConfig: FORGE_V1, allowDevForge: DEV_TOOLS });
     const patch: Partial<UiState> = {};
     if (!result.ok) {
@@ -908,7 +913,8 @@ export class GameSession {
 
   currentFightRecord(): CombatRecord | null {
     const profile = this.profile;
-    if (profile?.ashenKing?.active) return profile.ashenKing.active.record;
+    const attempt = profile && activeBossAttempt(profile);
+    if (attempt) return attempt.record;
     const run = profile?.adventure.run;
     if (!profile || !run) return this.lastFight?.record ?? null;
     return prepareFight(profile, this.content, run, { contentTimeMs: Date.now(), recordEvents: false, cache: this.cache }).record;

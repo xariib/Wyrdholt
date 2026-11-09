@@ -4,7 +4,7 @@ import { useUi } from "../hooks";
 import { SpriteImage } from "../components/icons";
 import { actionFailureText } from "./SaveRecovery";
 
-export function CreateCharacterScreen() {
+export function CreateCharacterScreen({ onOnline }: { onOnline?: () => void }) {
   const content = session.content;
   const classes = content.snapshot.classes.filter((c) => c.tier === 1);
   const [name, setName] = useState("Adventurer");
@@ -94,6 +94,7 @@ export function CreateCharacterScreen() {
       >
         Begin in Greenfields
       </button>
+      {onOnline && <button className="btn block" disabled={pending} onClick={onOnline}>Open online adventure</button>}
     </div>
   );
 }

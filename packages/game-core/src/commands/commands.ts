@@ -7,6 +7,7 @@ import {
   zoneProgress,
 } from "../adventure/run";
 import { startBossAttempt } from "../boss/ladder";
+import { activeBossAttempt } from "../boss/progress";
 import type { ContentIndex } from "../content";
 import { advanceGame, type AdvanceGameOptions } from "../game";
 import { fuse, forgeState } from "../items/forge";
@@ -28,7 +29,7 @@ export type Command =
   | { type: "devForge"; action: "unlock" | "gold" | "emptyGold" | "grant" | "reset"; slot?: SlotId; rarity?: string; count?: number }
   | { type: "startPush"; zoneId: string }
   | { type: "startFarm"; zoneId: string }
-  | { type: "startBoss"; tier: number; autoPush: boolean }
+  | { type: "startBoss"; tier: number; autoPush: boolean; bossId?: string }
   | { type: "equip"; slot: SlotId; instanceId: number }
   | { type: "setActiveClass"; classId: string }
   | { type: "cancelPending" }
@@ -88,7 +89,7 @@ export function applyCommand(
       advanceGame(profile, content, command.ms, { ...options, offline: options.offline ?? false });
       return OK;
     case "startBoss": {
-      const error = startBossAttempt(profile, content, command.tier, command.autoPush);
+      const error = startBossAttempt(profile, content, command.tier, command.autoPush, command.bossId, options.contentTimeMs);
       return error ? { ok: false, error } : OK;
     }
     case "startPush":
@@ -123,7 +124,7 @@ export function applyCommand(
 }
 
 function startActivity(profile: Profile, content: ContentIndex, zoneId: string, kind: "push" | "farm"): CommandResult {
-  if (profile.ashenKing?.active) return { ok: false, error: "Adventure resumes when the Ashen King attempt ends." };
+  if (activeBossAttempt(profile)) return { ok: false, error: "Adventure resumes when the challenge attempt ends." };
   const zone = content.zones.get(zoneId);
   if (!zone || zone.hidden) return { ok: false, error: "Unknown zone." };
   if (!zone.implemented) return { ok: false, error: `${zone.name} is not playable in this build.` };
