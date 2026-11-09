@@ -1,12 +1,15 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
-const SaveBackup = registerPlugin<{ exportFile(input: { filename: string; text: string }): Promise<{ saved: boolean }> }>("SaveBackup");
+const SaveBackup = registerPlugin<{
+  exportFile(input: { filename: string; text: string }): Promise<{ saved: boolean; downloads?: boolean }>;
+}>("SaveBackup");
 
-export async function exportBackupFile(text: string): Promise<"saved" | "cancelled" | "downloaded"> {
+export async function exportBackupFile(text: string): Promise<"saved" | "cancelled" | "downloaded" | "downloads-folder"> {
   const date = new Date().toISOString().slice(0, 10);
   const filename = `Wyrdholt-Backup-${date}.json`;
   if (Capacitor.isPluginAvailable("SaveBackup")) {
-    return (await SaveBackup.exportFile({ filename, text })).saved ? "saved" : "cancelled";
+    const { saved, downloads } = await SaveBackup.exportFile({ filename, text });
+    return saved ? (downloads ? "downloads-folder" : "saved") : "cancelled";
   }
   const file = new File([text], filename, { type: "application/json" });
   if (Capacitor.isNativePlatform() && navigator.canShare?.({ files: [file] })) {

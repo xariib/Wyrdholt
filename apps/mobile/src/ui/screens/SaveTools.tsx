@@ -70,7 +70,13 @@ export function SaveTools({ onChanged, restoreOnly = false }: { onChanged: () =>
       const text = session.exportSave();
       if (!text) throw new Error("No backup is available.");
       const result = await exportBackupFile(text);
-      setStatus(result === "saved" ? "Backup exported." : result === "downloaded" ? "Backup download started." : "Backup export cancelled.");
+      const message = {
+        saved: "Backup exported.",
+        "downloads-folder": "Backup saved in Downloads/Wyrdholt.",
+        downloaded: "Backup download started.",
+        cancelled: "Backup export cancelled.",
+      };
+      setStatus(message[result]);
     }, "The backup file could not be exported. You can copy the backup text instead.");
   }
 

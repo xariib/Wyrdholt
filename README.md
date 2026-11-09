@@ -8,7 +8,7 @@ Wyrdholt is a portrait idle-fantasy RPG. Choose a class, push into Adventure, fa
 
 Open the downloaded APK on your Android device and follow the installation prompts. When a newer version is available, Wyrdholt shows **Update available** in the game. Tap **View update** to download it and follow Android's installation prompts.
 
-Open **Menu** for the encyclopedia, backup export, backup restore, or a confirmed restart. A backup can also be restored from the character creation screen.
+Open **Menu** for the encyclopedia, backup export, backup restore, or a confirmed restart. On Android 10 and later, **Back up save** exports a JSON file to **Downloads/Wyrdholt**. A backup can also be restored from the character creation screen.
 
 This repository starts from the game snapshot identified as `81153feef35d1bad949fe11329ecfe4223b7ac59` in the source ZIP. The active branch is `main`.
 
