@@ -454,15 +454,15 @@ try {
   await encyclopedia.getByRole("button", { name: "Back to menu" }).tap();
 
   await menuPage.getByText("Restore backup", { exact: true }).tap();
-  await menuPage.getByLabel("Or paste backup text").fill(fixture("Replacement Tester"));
+  await menuPage.getByLabel("Or paste backup text").fill(fixture("Restore Tester"));
   await menuPage.getByRole("button", { name: "Review backup text", exact: true }).tap();
-  await menuPage.getByText("Replacement Tester · Level 1", { exact: true }).waitFor();
+  await menuPage.getByText("Restore Tester · Level 1", { exact: true }).waitFor();
   const beforeRestore = parseSave((await storage(menu.observer, {}, true)).main);
   assert(beforeRestore.ok && beforeRestore.profile.character.name === "Backup Tester");
   await menuPage.getByRole("button", { name: "Confirm restore", exact: true }).tap();
   await navigation.getByRole("button", { name: "Adventure", exact: true }).and(menuPage.locator('[aria-current="page"]')).waitFor();
   const replaced = parseSave((await storage(menu.observer, {}, true)).main);
-  assert(replaced.ok && replaced.profile.character.name === "Replacement Tester");
+  assert(replaced.ok && replaced.profile.character.name === "Restore Tester");
   await navigation.getByRole("button", { name: "Menu", exact: true }).tap();
 
   await menuPage.getByRole("button", { name: "Restart save", exact: true }).tap();
