@@ -28,6 +28,15 @@ public class UpdatePolicyTest {
         assertThrows(IllegalArgumentException.class, () -> UpdatePolicy.validateSize(UpdatePolicy.MAX_APK + 1));
     }
 
+    @Test public void acceptsOnlyAnOfficialVersionedApkRedirect() {
+        assertEquals(TAG, UpdatePolicy.apkTag(UpdatePolicy.assetUrl(TAG, APK)));
+        assertThrows(IllegalArgumentException.class, () -> UpdatePolicy.apkTag(UpdatePolicy.LATEST_APK));
+        assertThrows(IllegalArgumentException.class, () -> UpdatePolicy.apkTag(UpdatePolicy.assetUrl(TAG + "/extra", APK)));
+        assertThrows(IllegalArgumentException.class, () -> UpdatePolicy.apkTag(UpdatePolicy.assetUrl(TAG, APK) + "?download=1"));
+        assertThrows(IllegalArgumentException.class, () -> UpdatePolicy.apkTag(
+            "https://github.com/xariib/Other/releases/download/" + TAG + "/" + APK));
+    }
+
     @Test public void acceptsOnlyCompatibleNewerApkWithPinnedIdentity() {
         UpdatePolicy.archive(UpdatePolicy.PACKAGE, 100008, "0.2.0", 100007, 100008, "0.2.0", 24, 36, UpdatePolicy.CERT);
         assertThrows(IllegalArgumentException.class, () -> UpdatePolicy.archive(

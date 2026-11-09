@@ -134,28 +134,36 @@ public class AppUpdaterPlugin extends Plugin {
         return () -> call.resolve(result);
     }
     private static class NoRelease extends IOException {}
+    private static class RateLimited extends IOException {}
 
     private String message(Exception e) {
         return e instanceof IllegalArgumentException || e instanceof IOException ? e.getMessage() :
             "The update could not be verified. Please try again.";
     }
 
+    private HttpURLConnection request(String address, boolean api, String method) throws Exception {
+        UpdatePolicy.trustedUrl(address, api);
+        HttpURLConnection c = (HttpURLConnection) new URL(address).openConnection();
+        connection = c;
+        if (cancelled) {
+            c.disconnect();
+            throw new IOException("Download cancelled.");
+        }
+        c.setRequestMethod(method);
+        c.setInstanceFollowRedirects(false);
+        c.setConnectTimeout(15000);
+        c.setReadTimeout(20000);
+        c.setRequestProperty("User-Agent", "Wyrdholt-Android-Updater");
+        c.setRequestProperty("Accept", api ? "application/vnd.github+json" : "application/octet-stream");
+        c.setRequestProperty("Accept-Encoding", "identity");
+        if (api || UpdatePolicy.LATEST_APK.equals(address)) c.setRequestProperty("Cache-Control", "no-cache");
+        return c;
+    }
+
     // Redirects are followed explicitly, keeping every hop HTTPS and on GitHub's asset hosts.
-    private HttpURLConnection open(String address, boolean api) throws Exception {
+    private HttpURLConnection open(String address, boolean api, String method) throws Exception {
         for (int redirects = 0; redirects < 6; redirects++) {
-            UpdatePolicy.trustedUrl(address, api);
-            HttpURLConnection c = (HttpURLConnection) new URL(address).openConnection();
-            connection = c;
-            if (cancelled) {
-                c.disconnect();
-                throw new IOException("Download cancelled.");
-            }
-            c.setInstanceFollowRedirects(false);
-            c.setConnectTimeout(15000);
-            c.setReadTimeout(20000);
-            c.setRequestProperty("User-Agent", "Wyrdholt-Android-Updater");
-            c.setRequestProperty("Accept", api ? "application/vnd.github+json" : "application/octet-stream");
-            c.setRequestProperty("Accept-Encoding", "identity");
+            HttpURLConnection c = request(address, api, method);
             int status = c.getResponseCode();
             if (status >= 300 && status <= 399) {
                 String location = c.getHeaderField("Location");
@@ -167,6 +175,7 @@ public class AppUpdaterPlugin extends Plugin {
             if (status != 200) {
                 c.disconnect();
                 if (api && status == 404) throw new NoRelease();
+                if (api && (status == 403 || status == 429)) throw new RateLimited();
                 throw new IOException(status == 403 || status == 429 ? "Update service is busy. Try again later." :
                     "Cannot reach the update service. Check your connection and try again.");
             }
@@ -176,7 +185,7 @@ public class AppUpdaterPlugin extends Plugin {
     }
     private String text(String url, boolean api, int limit) throws Exception {
         long started = android.os.SystemClock.elapsedRealtime();
-        HttpURLConnection c = open(url, api);
+        HttpURLConnection c = open(url, api, "GET");
         try (InputStream in = c.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] bytes = new byte[8192]; int n;
             while ((n = in.read(bytes)) != -1) {
@@ -190,43 +199,82 @@ public class AppUpdaterPlugin extends Plugin {
 
     @PluginMethod public void getState(PluginCall call) { run(call, () -> resolveState(call)); }
 
+    private JSONObject releaseData(String tag, long size, String url, String sumUrl) throws Exception {
+        Matcher version = UpdatePolicy.releaseTag(tag);
+        UpdatePolicy.validateSize(size);
+        UpdatePolicy.assetUrl(url, tag, UpdatePolicy.APK);
+        UpdatePolicy.assetUrl(sumUrl, tag, UpdatePolicy.CHECKSUM);
+        String hash = UpdatePolicy.checksum(text(sumUrl, false, 1024));
+        JSONObject data = new JSONObject();
+        data.put("code", Long.parseLong(version.group(2)));
+        data.put("version", version.group(1));
+        data.put("size", size);
+        data.put("sha256", hash);
+        data.put("url", url);
+        return data;
+    }
+
+    private JSONObject apiRelease(long installedCode) throws Exception {
+        JSONObject release = new JSONObject(text(UpdatePolicy.RELEASES, true, 1024 * 1024));
+        if (release.getBoolean("draft") || release.getBoolean("prerelease")) throw new IOException("No stable update is available.");
+        String tag = release.getString("tag_name");
+        if (Long.parseLong(UpdatePolicy.releaseTag(tag).group(2)) <= installedCode) return null;
+        JSONObject binary = null;
+        JSONObject checksum = null;
+        JSONArray assets = release.getJSONArray("assets");
+        for (int i = 0; i < assets.length(); i++) {
+            JSONObject asset = assets.getJSONObject(i);
+            if (UpdatePolicy.APK.equals(asset.getString("name"))) binary = asset;
+            if (UpdatePolicy.CHECKSUM.equals(asset.getString("name"))) checksum = asset;
+        }
+        if (binary == null || checksum == null) throw new IOException("This release is missing verified update files.");
+        return releaseData(tag, binary.getLong("size"), binary.getString("browser_download_url"),
+            checksum.getString("browser_download_url"));
+    }
+
+    private JSONObject downloadRelease(long installedCode) throws Exception {
+        String url;
+        HttpURLConnection latest = request(UpdatePolicy.LATEST_APK, false, "HEAD");
+        try {
+            int status = latest.getResponseCode();
+            if (status == 404) throw new NoRelease();
+            String location = latest.getHeaderField("Location");
+            if (status < 300 || status > 399 || location == null)
+                throw new IOException("Cannot reach the update service. Check your connection and try again.");
+            url = new URL(latest.getURL(), location).toString();
+        } finally { latest.disconnect(); connection = null; }
+
+        // Pin the tag from the first redirect before following any asset URLs.
+        String tag = UpdatePolicy.apkTag(url);
+        if (Long.parseLong(UpdatePolicy.releaseTag(tag).group(2)) <= installedCode) return null;
+        long size;
+        HttpURLConnection apk = open(url, false, "HEAD");
+        try { size = apk.getContentLength(); }
+        finally { apk.disconnect(); connection = null; }
+        return releaseData(tag, size, url, UpdatePolicy.assetUrl(tag, UpdatePolicy.CHECKSUM));
+    }
+
+    private JSONObject latestRelease(long installedCode) throws Exception {
+        try { return apiRelease(installedCode); }
+        catch (RateLimited e) { return downloadRelease(installedCode); }
+    }
+
     @PluginMethod public void check(PluginCall call) {
         run(call, () -> {
-            PackageInfo installed = requireSupported();
-            JSONObject release;
+            long installedCode = version(requireSupported());
+            JSONObject data;
             try {
-                release = new JSONObject(text(UpdatePolicy.RELEASES, true, 1024 * 1024));
+                data = latestRelease(installedCode);
             } catch (NoRelease e) {
                 prefs().edit().remove("release").remove("ready").putBoolean("noRelease", true).apply();
                 apk().delete();
                 return resolveState(call);
             }
-            if (release.getBoolean("draft") || release.getBoolean("prerelease")) throw new IOException("No stable update is available.");
-            String tag = release.getString("tag_name");
-            Matcher version = UpdatePolicy.releaseTag(tag);
-            long code = Long.parseLong(version.group(2));
-            if (code <= version(installed)) {
+            if (data == null) {
                 prefs().edit().remove("release").remove("ready").remove("noRelease").apply();
                 apk().delete();
                 return resolveState(call);
             }
-            JSONObject binary = null;
-            JSONObject checksum = null;
-            JSONArray assets = release.getJSONArray("assets");
-            for (int i = 0; i < assets.length(); i++) {
-                JSONObject asset = assets.getJSONObject(i);
-                if ("Wyrdholt-Idle.apk".equals(asset.getString("name"))) binary = asset;
-                if ("Wyrdholt-Idle.apk.sha256".equals(asset.getString("name"))) checksum = asset;
-            }
-            if (binary == null || checksum == null) throw new IOException("This release is missing verified update files.");
-            long size = binary.getLong("size"); UpdatePolicy.validateSize(size);
-            String url = binary.getString("browser_download_url"), sumUrl = checksum.getString("browser_download_url");
-            UpdatePolicy.assetUrl(url, tag, "Wyrdholt-Idle.apk");
-            UpdatePolicy.assetUrl(sumUrl, tag, "Wyrdholt-Idle.apk.sha256");
-            String hash = UpdatePolicy.checksum(text(sumUrl, false, 1024));
-            JSONObject data = new JSONObject();
-            data.put("code", code); data.put("version", version.group(1));
-            data.put("size", size); data.put("sha256", hash); data.put("url", url);
             JSONObject old = pending();
             if (old == null || !old.toString().equals(data.toString())) {
                 prefs().edit().remove("ready").apply(); apk().delete();
@@ -268,7 +316,7 @@ public class AppUpdaterPlugin extends Plugin {
             if (directory().getUsableSpace() < expected * 2 + 10 * 1024 * 1024) throw new IOException("Not enough storage space for this update.");
             HttpURLConnection c = null;
             try {
-                c = open(release.getString("url"), false);
+                c = open(release.getString("url"), false, "GET");
                 long advertised = c.getContentLength();
                 if (advertised >= 0 && advertised != expected) throw new IOException("Update download size changed.");
                 try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(partial)) {
