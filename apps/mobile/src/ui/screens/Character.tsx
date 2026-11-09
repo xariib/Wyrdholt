@@ -70,7 +70,7 @@ function ClassCodex({ learned }: { learned: string[] }) {
   );
 }
 
-function TechniqueList({ classId, rank, nextId }: { classId: string; rank: number; nextId: string | null }) {
+export function TechniqueList({ classId, rank, nextId }: { classId: string; rank: number; nextId: string | null }) {
   const techniques = techniqueStatuses(session.content, classId, rank);
   return (
     <div>

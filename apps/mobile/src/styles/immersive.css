@@ -73,14 +73,6 @@
   padding-right:0}
 .immersive .tag.new{
   color:var(--gold)}
-.immersive .nav{
-  background:#0b1922;
-  border-color:var(--line)}
-.immersive .nav-btn{
-  font-family:var(--font-body);
-  font-size:12px}
-.immersive .nav-btn.active{
-  color:var(--gold)}
 .immersive .small{
   font-size:13px}
 .immersive .btn.small{

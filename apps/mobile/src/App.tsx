@@ -16,16 +16,21 @@ import { CharacterScreen } from "./ui/screens/Character";
 import { CreateCharacterScreen } from "./ui/screens/CreateCharacter";
 import { GearScreen, type GearFocus } from "./ui/screens/Gear";
 import { OnlineScreen } from "./ui/screens/Online";
+import { EncyclopediaScreen } from "./ui/screens/Encyclopedia";
+import { SaveTools } from "./ui/screens/SaveTools";
 import { AppUpdates } from "./ui/screens/AppUpdates";
 import { SaveRecoveryScreen } from "./ui/screens/SaveRecovery";
 
-type Tab = "adventure" | "character" | "gear" | "challenges";
+type NavTab = "adventure" | "character" | "gear" | "challenges" | "menu";
+type Tab = NavTab | "encyclopedia";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "adventure", label: "Adventure" },
+const ONLINE_PLAY_ENABLED = import.meta.env.VITE_WYRDHOLT_ONLINE_PLAY === "true";
+const TABS: { id: NavTab; label: string }[] = [
   { id: "character", label: "Character" },
   { id: "gear", label: "Gear" },
+  { id: "adventure", label: "Adventure" },
   { id: "challenges", label: "Challenges" },
+  { id: "menu", label: "Menu" },
 ];
 
 function readOverlayPref(): boolean {
@@ -51,7 +56,7 @@ export function App() {
       return true;
     }
     if (tab === "adventure") return false;
-    setTab("adventure");
+    setTab(tab === "encyclopedia" ? "menu" : "adventure");
     return true;
   }), [tab, onlineOpen]);
 
@@ -88,14 +93,14 @@ export function App() {
       </div>
     );
   }
-  if (onlineOpen) return <div className="app immersive"><OnlineScreen onBack={() => setOnlineOpen(false)} /></div>;
+  if (ONLINE_PLAY_ENABLED && onlineOpen) return <div className="app immersive"><OnlineScreen onBack={() => setOnlineOpen(false)} /></div>;
   if (ui.phase === "create" || !ui.profile) {
     if (ui.save.gate.mode !== "verified-empty" || !ui.save.gate.canCreate) {
       return <div className="app immersive"><SaveRecoveryScreen /></div>;
     }
     return (
       <div className="app immersive">
-        <CreateCharacterScreen onOnline={() => setOnlineOpen(true)} />
+        <CreateCharacterScreen onOnline={ONLINE_PLAY_ENABLED ? () => setOnlineOpen(true) : undefined} />
       </div>
     );
   }
@@ -122,7 +127,7 @@ export function App() {
   return (
     <div className="app immersive">
       <Header profile={profile} {...(DEV_TOOLS ? { onDebug: () => setDebugOpen(true) } : {})} />
-      <AppUpdates showSettings={tab === "character"} />
+      <AppUpdates showSettings={tab === "character" || tab === "menu"} />
       <main className="screen adventure-screen" hidden={tab !== "adventure"}>
         <AdventureScreen profile={profile} active={tab === "adventure" && !debugOpen} onChallenges={() => setTab("challenges")} nextAttempt={retry && !ui.runResult && !ui.offline && (
           <section className="panel stack" aria-label="Next attempt">
@@ -136,11 +141,11 @@ export function App() {
       {tab === "character" && (
         <main className="screen character-screen">
           <CharacterScreen profile={profile} onChallenges={() => setTab("challenges")} />
-          <section className="panel stack" aria-label="Online play">
+          {ONLINE_PLAY_ENABLED && <section className="panel stack" aria-label="Online play">
             <div className="panel-title">Online play</div>
             <p className="small muted">Join friends in dungeons, build a guild and contribute to raids.</p>
             <button className="btn block" onClick={() => setOnlineOpen(true)}>Open online adventure</button>
-          </section>
+          </section>}
         </main>
       )}
       {tab === "gear" && (
@@ -153,15 +158,33 @@ export function App() {
           <ChallengesScreen profile={profile} active={!debugOpen} onReviewGear={() => openGear(null)} />
         </main>
       )}
+      {tab === "menu" && (
+        <main className="screen menu-screen" aria-labelledby="menu-title">
+          <section className="panel stack">
+            <h2 id="menu-title">Menu</h2>
+            <button className="btn block menu-encyclopedia" onClick={() => setTab("encyclopedia")}>
+              <NavIcon name="book" />
+              <span><b>Encyclopedia</b><small>Classes, gear, creatures, and regions</small></span>
+            </button>
+          </section>
+          <SaveTools onChanged={() => setTab("adventure")} />
+          {!ONLINE_PLAY_ENABLED && <p className="small muted">Online Play is temporarily disabled.</p>}
+        </main>
+      )}
+      {tab === "encyclopedia" && <EncyclopediaScreen onBack={() => setTab("menu")} />}
 
-      <nav className="nav">
-        {TABS.map((t) => (
-          <button key={t.id} className={`nav-btn ${tab === t.id ? "active" : ""}`} onClick={() => setTab(t.id)}>
-            <NavIcon name={t.id} />
-            {t.label}
-            {t.id === "gear" && newCount > 0 && <span className="nav-badge">{newCount > 99 ? "99+" : newCount}</span>}
-          </button>
-        ))}
+      <nav className="nav" aria-label="Game navigation">
+        {TABS.map(({ id, label }) => {
+          const current = tab === id || (id === "menu" && tab === "encyclopedia");
+          return (
+            <button key={id} className={`nav-btn ${id === "adventure" ? "nav-adventure" : ""}${current ? " active" : ""}`}
+              aria-current={current ? "page" : undefined} onClick={() => setTab(id)}>
+              <span className="nav-icon" aria-hidden="true"><NavIcon name={id} /></span>
+              <span className="nav-label">{label}</span>
+              {id === "gear" && newCount > 0 && <span className="nav-badge" aria-hidden="true">{newCount > 99 ? "99+" : newCount}</span>}
+            </button>
+          );
+        })}
       </nav>
 
       {ui.offline && (

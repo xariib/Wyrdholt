@@ -921,16 +921,17 @@ export class GameSession {
   }
 
   /**
-   * Developer tool: replace the character with a pasted save (e.g. a playtest export) to
-   * reproduce its exact state. Time since the save's last settlement is caught up normally.
+   * Review a backup before replacing or creating a local adventure.
+   * Time since the backup's last settlement is caught up when it is restored.
    */
-  prepareImport(text: string): { status: "ready"; intent: SaveIntent } | Exclude<ActionOutcome, { status: "created" | "imported" | "reset" }> {
+  prepareImport(text: string): { status: "ready"; intent: SaveIntent; name: string; level: number } | Exclude<ActionOutcome, { status: "created" | "imported" | "reset" }> {
     if (!this.guard.gate.canImport) return this.blockedResult();
     try {
       const parsed = parseSave(text.trim());
       if (!parsed.ok || parsed.profile.rulesVersion !== RULES_VERSION) return { status: "rejected", reason: "invalid", message: "Import is not compatible with this build." };
       const intent = this.guard.prepareIntent("import", text);
-      return intent ? { status: "ready", intent } : this.blockedResult();
+      const { name, level } = parsed.profile.character;
+      return intent ? { status: "ready", intent, name, level } : this.blockedResult();
     } catch { return { status: "rejected", reason: "invalid", message: "Import could not be decoded." }; }
   }
 

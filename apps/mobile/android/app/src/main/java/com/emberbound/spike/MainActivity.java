@@ -12,6 +12,7 @@ public class MainActivity extends BridgeActivity {
         // run AFTER that switch. Calling it earlier builds the decor from the launch theme, which on
         // Android 12+ has a title bar and the splash drawable as background (device finding F1).
         registerPlugin(AppUpdaterPlugin.class);
+        registerPlugin(SaveBackupPlugin.class);
         super.onCreate(savedInstanceState);
         // Draw edge to edge; Capacitor SystemBars (insetsHandling "css") provides --safe-area-inset-* to the web layer.
         EdgeToEdge.enable(this);
