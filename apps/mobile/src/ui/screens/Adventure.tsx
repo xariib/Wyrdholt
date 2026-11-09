@@ -6,12 +6,13 @@ import { CombatView } from "../components/CombatView";
 import { Sheet } from "../components/Common";
 import { number } from "../format";
 
-export function AdventureScreen({ profile, active, retryZoneId, nextAttempt, onChallenges }: {
+export function AdventureScreen({ profile, active, retryZoneId, nextAttempt, onChallenges, onFieldTrials }: {
   profile: Profile;
   active: boolean;
   retryZoneId?: string;
   nextAttempt: ReactNode;
   onChallenges: () => void;
+  onFieldTrials: () => void;
 }) {
   const [zonesOpen, setZonesOpen] = useState(false);
   const boss = activeBossAttempt(profile);
@@ -142,6 +143,9 @@ export function AdventureScreen({ profile, active, retryZoneId, nextAttempt, onC
         </button>
         <button className="activity-btn" aria-haspopup="dialog" onClick={() => setZonesOpen(true)}>
           <span className="title">Change Zone</span>
+        </button>
+        <button className="activity-btn" onClick={onFieldTrials}>
+          <span className="title">Field Trials</span>
         </button>
       </section>
 

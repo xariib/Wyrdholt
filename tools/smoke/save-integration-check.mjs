@@ -383,8 +383,7 @@ try {
   };
   await c5Page.clock.install({ time: c5Wall });
   await c5Page.goto(base);
-  await c5Page.getByRole("button", { name: "Character", exact: true }).tap();
-  await c5Page.getByRole("button", { name: "View promotion trials", exact: true }).tap();
+  await c5Page.getByRole("button", { name: "Challenges", exact: true }).tap();
   const trials = c5Page.getByRole("region", { name: "Promotion trials" });
   assert(await trials.getByRole("button", { name: "Enter Ascendant Trial" }).isDisabled());
   await trials.getByRole("button", { name: "Enter Arcanist Trial" }).tap();

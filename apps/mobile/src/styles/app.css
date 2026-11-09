@@ -1080,35 +1080,3 @@ h3 {
     transition: none !important;
   }
 }
-
-/* C2: class codex (functional; final styling is Codex's job) */
-.codex-entry {
-  border-top: 1px solid var(--line, rgba(255, 255, 255, 0.08));
-  padding-top: 8px;
-}
-.codex-entry > summary {
-  list-style: none;
-  cursor: pointer;
-  gap: 10px;
-  align-items: center;
-  min-height: 44px;
-}
-.codex-entry > summary::-webkit-details-marker {
-  display: none;
-}
-.codex-entry[open] > summary {
-  margin-bottom: 6px;
-}
-.class-art.small-art {
-  width: 40px;
-  height: 44px;
-  flex: none;
-  overflow: hidden;
-}
-.class-art.small-art img {
-  width: 28px;
-  height: 32px;
-}
-.codex-entry > .small {
-  margin: 4px 0;
-}

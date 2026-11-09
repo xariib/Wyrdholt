@@ -229,7 +229,7 @@
   font-size:11px}
 .immersive .activity{
   flex:none;
-  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-columns:repeat(4,minmax(0,1fr));
   gap:8px}
 .immersive .activity-btn{
   min-height:48px;
@@ -497,6 +497,25 @@
 
 /* Approved production art: native pixels always map to 2 CSS px in combat. */
 .immersive .combat-frame{height:544px;min-height:544px}
+
+.field-trials-screen .field-classes{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px}
+.field-trials-screen .field-tactic{
+  display:grid;
+  justify-content:stretch;
+  text-align:left;
+  gap:2px}
+.field-trials-screen .field-goals{
+  margin:0;
+  padding:0;
+  list-style:none;
+  font-size:13px}
+.field-goal-earned{color:var(--gold)}
+.immersive .field-trials-screen .field-combat{
+  height:clamp(340px,48vh,390px);
+  min-height:340px}
 
 /* Logical body rows 12–59 never crop the visual frame, plume, staff or bow. */
 .production-portrait{display:block;position:relative;box-sizing:content-box;width:192px;height:192px;padding:8px;overflow:visible;flex:none}

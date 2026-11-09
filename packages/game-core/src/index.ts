@@ -54,6 +54,10 @@ export {
   buildKey,
 } from "./items/inventory";
 export { rollLoot } from "./loot/loot";
+export {
+  FIELD_TRIALS, FIELD_TACTICS, FIELD_TRIAL_LEVEL, FIELD_TRIAL_MASTERY, FIELD_TRIAL_ZONE, FIELD_TRIAL_ROTATION_MS,
+  featuredFieldTrial, runFieldTrial, type FieldTrial, type FieldTactic,
+} from "./adventure/fieldTrials";
 export { stageReward, grantRewards, type StageReward } from "./progression/rewards";
 export {
   advanceAdventure,

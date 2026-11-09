@@ -47,11 +47,13 @@ export function OfflineOverlay({
   data,
   onReview,
   onChallenges,
+  onFieldTrials,
   retryAction,
 }: {
   data: OfflineView;
   onReview: (focus: GearFocus | "new") => void;
   onChallenges: () => void;
+  onFieldTrials: () => void;
   retryAction: ReactNode;
 }) {
   const content = session.content;
@@ -103,6 +105,7 @@ export function OfflineOverlay({
             </span>
           )}
           <AttemptTrail profile={data.profileAfter} zoneId={s.push.zoneId} />
+          {data.kept && <button className="btn block" onClick={onFieldTrials}>Try Field Trials</button>}
         </div>
       )}
       {s.boss && (
@@ -223,9 +226,9 @@ export function OfflineOverlay({
   );
 }
 
-export function RunResultOverlay({ result, profile, newCount, onReview, onRetry }: {
+export function RunResultOverlay({ result, profile, newCount, onReview, onRetry, onFieldTrials }: {
   result: RunResult; profile: Profile; newCount: number;
-  onReview: (focus: "new" | null) => void; onRetry: () => void;
+  onReview: (focus: "new" | null) => void; onRetry: () => void; onFieldTrials: () => void;
 }) {
   const content = session.content;
   const zone = content.zone(result.zoneId);
@@ -290,7 +293,8 @@ export function RunResultOverlay({ result, profile, newCount, onReview, onRetry 
         ) : (
           <p className="small">Farm {farmName} to gain levels, Mastery and a chance at different gear.</p>
         )}
-        <button className={newCount || hasBuildOption ? "btn block" : "btn primary block"} onClick={() => session.dispatch({ type: "startFarm", zoneId: farmZone.id })}>
+        <button className={newCount || hasBuildOption ? "btn block" : "btn primary block"} onClick={onFieldTrials}>Try Field Trials</button>
+        <button className="btn block" onClick={() => session.dispatch({ type: "startFarm", zoneId: farmZone.id })}>
           {farmLabel}
         </button>
         {result.mode === "push" && <button className="btn ghost block" onClick={onRetry}>Retry {zone.name}</button>}

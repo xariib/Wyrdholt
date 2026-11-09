@@ -22,6 +22,15 @@ Farm repeats cleared content; safe fallback chooses completed content, with a Tr
 
 Closing or suspending is not death. Checkpoints reconstruct the run; offline uses the same simulation, capped at 24 h. Failed offline Push stops risky attempts and uses remaining time for safe Farm. Successful offline Push farms the just-cleared zone, never pushes the next one.
 
+## PROTOTYPE — Field Trials
+
+Adventure and the defeat screen lead to six repeatable Greenfields fights. The
+player chooses either learned class and a temporary tactic. Each fight uses a
+fixed seed and a level 5, Mastery 5 trial build. Stars for winning, finishing
+quickly, and finishing with enough HP can be earned across separate attempts.
+Stars live on the device. The featured fight changes every 12 hours and all six
+remain open. Adventure continues during the trial.
+
 ## IMPLEMENTED — gear and loot
 
 Six slots: Weapon, Head, Chest, Gloves, Boots, Ring. Fixed named definitions and uniquely identified owned copies; UI groups duplicates. NEW status persists and comparison marks that group's copies reviewed. Loadout opens a slot-filtered item list, followed by in-place comparison; equip may be queued. Build summary describes stats/effects, not a universal rating. No Equip Best.
