@@ -1,6 +1,6 @@
 # Wyrdholt development roadmap
 
-The milestone order comes from the original `docs/ROADMAP.md` in the Wyrdholt Mobile source archive. The status below tracks `main` in [xariib/Wyrdholt](https://github.com/xariib/Wyrdholt). Android 0.2.1 is the current [public release](https://github.com/xariib/Wyrdholt/releases/tag/android-v0.2.1-2). The signed C4 candidate is available for testing through the [Android build run](https://github.com/xariib/Wyrdholt/actions/runs/42523633779).
+The milestone order comes from the original `docs/ROADMAP.md` in the Wyrdholt Mobile source archive. The integrated test candidate is on `feature/roadmap-c5-c9`, based on `main` in [xariib/Wyrdholt](https://github.com/xariib/Wyrdholt). Android 0.2.1 is the current [public release](https://github.com/xariib/Wyrdholt/releases/tag/android-v0.2.1-2).
 
 | Milestone | Scope | Status |
 | --- | --- | --- |
@@ -21,6 +21,12 @@ The milestone order comes from the original `docs/ROADMAP.md` in the Wyrdholt Mo
 Run typecheck, core purity, unit tests, cross-engine parity and relevant browser smoke tests. Update gameplay contracts, prepare browser and Android test builds, and record balance and UX risks. Human playtesting follows the integrated roadmap build. Record browser, emulator, physical-device and human results separately.
 
 The [Android Ashen King playtest](design/C4_SOLO_BOSSES.md#android-playtest) and [earlier human checks](playtests/C3_OBSERVATIONS_DA.md) are queued for that playtest. Online play is available against the [local authority service](technical/ONLINE_AUTHORITY.md).
+
+## Integrated test candidate
+
+The `0.4.0-roadmap.1` Android APK was built from `666e0f3` with version code 4 and the existing Wyrdholt release certificate. On the Android 15 emulator it installed over the C4 candidate, retained the test character and active class, and opened the new Challenges screen. The browser build passed the save, gear, promotion, season rollover and online dungeon flows. Authority tests covered SQLite restart, dungeon retries, raid rewards and leaderboard validation. All 1,537 tests passed. Node, Chromium and WebKit matched all 31 golden cases, including all 29 prior hashes.
+
+Physical-device checks, human playtesting and public hosting remain pending.
 
 ## Design boundaries
 

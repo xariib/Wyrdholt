@@ -29,10 +29,10 @@ if (build.status !== 0) throw new Error("bundle failed");
 const html = `<!doctype html><html><head><meta charset="utf-8"><title>parity</title></head><body>running…<script src="/parity.js"></script></body></html>`;
 const server = createServer((req, res) => {
   if (req.url === "/parity.js") {
-    res.writeHead(200, { "content-type": "text/javascript" });
+    res.writeHead(200, { "content-type": "text/javascript; charset=utf-8" });
     res.end(readFileSync(bundle));
   } else {
-    res.writeHead(200, { "content-type": "text/html" });
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
     res.end(html);
   }
 });
