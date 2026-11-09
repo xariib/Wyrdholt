@@ -4,7 +4,7 @@ import { masteryRank } from "../character/progression";
 import { resolveHeroStats, type HeroStats } from "../character/stats";
 import type { FightSummary } from "../combat/engine";
 import type { EncounterSetup } from "../encounter/budget";
-import { buildKey, currentBuild, equippedInstances } from "../items/inventory";
+import { buildKey, canUseItem, currentBuild, equippedInstances, findInstance, reconcileEquipment, upgradeClassGear } from "../items/inventory";
 import { rollLoot } from "../loot/loot";
 import { BP, applyBp, mulDivFloor } from "../math/fixed";
 import { Prng, deriveSeed } from "../math/prng";
@@ -242,11 +242,17 @@ export function isFightActive(profile: Profile): boolean {
   return Boolean(activeBossAttempt(profile)) || (adv.activity !== "idle" && adv.run !== null && adv.run.phase === "fight");
 }
 
+export function upgradeClassGearIfSafe(profile: Profile, content: ContentIndex): void {
+  if (!isFightActive(profile)) upgradeClassGear(profile, content);
+}
+
 /** Apply queued class/gear changes. Only called at safe fight boundaries. */
-export function applyPendingBuild(profile: Profile): boolean {
+export function applyPendingBuild(profile: Profile, content: ContentIndex): boolean {
+  const upgraded = upgradeClassGear(profile, content);
   const pending = profile.pending;
-  if (!pending) return false;
+  if (!pending) return upgraded;
   const character = profile.character;
+  const previousClassId = character.activeClassId;
   if (pending.activeClassId !== undefined && pending.activeClassId !== character.activeClassId) {
     if (pending.activeClassId === character.alternateClassId) {
       character.alternateClassId = character.activeClassId;
@@ -256,8 +262,12 @@ export function applyPendingBuild(profile: Profile): boolean {
   for (const [slot, id] of Object.entries(pending.equipment ?? {})) {
     const key = slot as keyof Profile["equipment"];
     if (id === null || id === undefined) delete profile.equipment[key];
-    else profile.equipment[key] = id;
+    else {
+      const instance = findInstance(profile, id);
+      if (instance && canUseItem(content.item(instance.baseId), character.activeClassId)) profile.equipment[key] = id;
+    }
   }
+  if (character.activeClassId !== previousClassId) reconcileEquipment(profile, content);
   profile.pending = null;
   return true;
 }
@@ -339,8 +349,7 @@ export function advanceAdventure(
       consume(profile, run, need, options);
       remaining -= need;
       // Fight boundary: queued build changes apply before the fight starts.
-      if (profile.pending) {
-        applyPendingBuild(profile);
+      if (applyPendingBuild(profile, content)) {
         run.hp100 = clampHpToBuild(run.hp100, heroStatsFor(profile, content, options.cache).maxHp100);
       }
       run.phase = "fight";
@@ -411,7 +420,7 @@ function settleFight(
       profile.stats.itemsFound += 1;
     }
 
-    const buildChanged = applyPendingBuild(profile);
+    const buildChanged = applyPendingBuild(profile, content);
     const maxHp100 = heroStatsFor(profile, content, options.cache).maxHp100;
     const endHp = Math.min(summary.hero.hp100, maxHp100);
     const isFinal = run.stageIndex >= zone.stages.length - 1;
@@ -443,6 +452,8 @@ function settleFight(
           stage.level,
           lootSeed(profile.masterSeed, run.runIndex, run.stageIndex, `cache/${i}`),
           { source: "cache", zoneId: zone.id, stageIndex: stage.index, runIndex: run.runIndex },
+          BP,
+          fightClassId,
         );
         if (cacheDrop) {
           itemIds.push(cacheDrop.id);
@@ -530,7 +541,7 @@ function settleFight(
 
   // Defeat or timeout: the run ends. Earned rewards stay; this fight grants nothing.
   profile.stats.defeats += 1;
-  const buildChanged = applyPendingBuild(profile);
+  const buildChanged = applyPendingBuild(profile, content);
   const alive = summary.enemies.filter((e) => e.alive);
   const stageNumber = run.stageIndex + 1;
   const result: RunResult = {

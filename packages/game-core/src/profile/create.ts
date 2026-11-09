@@ -67,7 +67,9 @@ export function createProfile(content: ContentIndex, input: NewCharacterInput): 
     clock: { lastSettledWallMs: input.nowWallMs, simulatedMs: 0 },
   };
 
-  for (const baseId of content.snapshot.starterItems) {
+  const starterWeapon = content.snapshot.starterWeapons?.[input.activeClassId];
+  const starterItems = content.snapshot.starterItems;
+  for (const baseId of starterWeapon ? [starterWeapon, ...starterItems] : starterItems) {
     const item = content.item(baseId);
     const instance = createInstance(profile, baseId, { isNew: false, provenance: { source: "starter" } });
     profile.equipment[item.slot] = instance.id;

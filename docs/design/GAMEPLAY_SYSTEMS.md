@@ -26,11 +26,17 @@ Closing or suspending is not death. Checkpoints reconstruct the run; offline use
 
 Six slots: Weapon, Head, Chest, Gloves, Boots, Ring. Fixed named definitions and uniquely identified owned copies; UI groups duplicates. NEW status persists and comparison marks that group's copies reviewed. Loadout opens a slot-filtered item list, followed by in-place comparison; equip may be queued. Build summary describes stats/effects, not a universal rating. No Equip Best.
 
-Current catalog: 30 items, five rarities × six slots. ITEM-EFFECTS-006 adds the ten
-missing named Epic/Legendary effects for a provisional C3 playtest; all twelve
-high-rarity items now have effects. [Effect contract](C3_ITEM_EFFECTS.md).
-Gear includes combined name/effect search, rarity and NEW filters. Drop eligibility
-and zone rarity ceilings are unchanged; human balance acceptance remains open.
+Monks wield wraps, Mages wield staves, Warriors wield swords, and Rangers wield
+bows. Each class has a weapon at every rarity and two pieces of class-specific
+armor. The rest of the armor and all rings are shared. Adventure drops and clear
+caches use the class that fought. Forge results use the active class. Encounter
+level gates and zone rarity ceilings still apply. [Effect contract](C3_ITEM_EFFECTS.md).
+
+Gear includes name and effect search, rarity filters, and a NEW filter. A class
+switch keeps shared equipment on and returns incompatible gear to inventory. It
+equips the first compatible owned weapon by acquisition order if the weapon slot
+is empty. In an older save, an incompatible equipped weapon gets a same-rarity
+replacement at a fight boundary. The original copy stays in inventory.
 
 ## INTEGRATED FOR WEB TESTING / HUMAN VALIDATION OPEN — Forge V1
 

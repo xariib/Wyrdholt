@@ -24,7 +24,8 @@ for (const engine of engines) {
       await page.getByRole("button", { name: "Developer tools" }).click();
       await page.getByRole("button", { name: /Unlock all zones/i }).click();
       await page.getByRole("button", { name: "Close" }).click().catch(() => {});
-      await page.getByRole("button", { name: /Begin Darkwood/ }).click();
+      await page.getByRole("button", { name: "Change Zone", exact: true }).click();
+      await page.locator('.zone-row[data-zone="darkwood"]').getByRole("button", { name: "Push", exact: true }).click();
       await page.waitForTimeout(1500);
       await page.evaluate(() => {
         const r = window.__emberRenderer, log = (window.__syncProbe = { hits: [], contacts: [] });

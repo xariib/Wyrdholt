@@ -84,7 +84,8 @@ export class ProfileAuthority {
       active: profile.ashenKing.active?.record.encounter.tier ?? null, lastResult: profile.ashenKing.lastResult });
     return { ok: true as const, profileId: record.profileId, revision: record.revision,
       character: profile.character, gold: profile.gold, adventure: profile.adventure, ladders,
-      equipment: profile.equipment, inventory: profile.inventory.instances.map(item => ({ id: item.id, baseId: item.baseId, isNew: item.isNew })),
+      equipment: profile.equipment, pendingClassId: profile.pending?.activeClassId ?? null,
+      inventory: profile.inventory.instances.map(item => ({ id: item.id, baseId: item.baseId, isNew: item.isNew })),
       lockedItems: profile.itemLocks?.lockedInstanceIds ?? [], forgeTransactionId: profile.forge?.nextTransactionId ?? 1,
     };
   }
@@ -101,7 +102,9 @@ export class ProfileAuthority {
     if (state.revision !== request.revision || state.revision === Number.MAX_SAFE_INTEGER) return refusal("Profile revision changed.");
     const atMs = this.now();
     if (!Number.isSafeInteger(atMs) || atMs < state.profile.clock.lastSettledWallMs) return refusal("Authority time unavailable.");
-    const next = executeAuthorityCommand(this.content, state.profile, request, atMs);
+    const forgeSeed = request.command?.type === "forge" && request.command.input.transactionId === (state.profile.forge?.nextTransactionId ?? 1)
+      ? randomBytes(4).readUInt32LE() : undefined;
+    const next = executeAuthorityCommand(this.content, state.profile, request, atMs, forgeSeed);
     if (!next.ok) return next;
     const updated = { ...state, profile: next.profile, revision: state.revision + 1, lastCommand: next.entry };
     if (await this.store.commit(state.revision, updated, next.entry)) return receipt(updated);

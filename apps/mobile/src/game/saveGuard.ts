@@ -214,10 +214,15 @@ export class SaveGuard {
           if (!acknowledged) throw new Error("No acknowledged save snapshot.");
           const expectedMain = acknowledged.observations.find(o => o.info.slot === "main")!.raw;
           stage = "serialize";
-          const text = produce();
+          const staged = produce();
           stage = "validate";
-          const parsed = parseSave(text);
+          const parsed = parseSave(staged);
           if (!parsed.ok || parsed.profile.rulesVersion !== this.rulesVersion) throw new Error("Staged save rejected.");
+          // Recovery orders the slots by timestamp and prefers main on a tie.
+          // A clock rollback must not make a successful write older than its backup.
+          const previous = acknowledged.loaded?.status === "loaded" ? acknowledged.loaded.result.envelope.savedAtWallMs : -Infinity;
+          const savedAtWallMs = Math.max(parsed.envelope.savedAtWallMs, previous);
+          const text = savedAtWallMs === parsed.envelope.savedAtWallMs ? staged : JSON.stringify({ ...parsed.envelope, savedAtWallMs });
           if (options.newOwner || options.intent) {
             this.info = { ...this.info, generation: this.info.generation + 1 };
             owner = this.info.generation;
@@ -256,7 +261,7 @@ export class SaveGuard {
           }
           this.publish("writable", undefined, after);
           if (options.isCurrent?.() === false) return { status: "failed", stage: "stale-commit", storageMayHaveChanged: true };
-          return { status: "saved", savedAtWallMs: parsed.envelope.savedAtWallMs, bytes: new TextEncoder().encode(text).length, mainHash: sha256Hex(text), readbackVerified: true, durability: "not-verified" };
+          return { status: "saved", savedAtWallMs, bytes: new TextEncoder().encode(text).length, mainHash: sha256Hex(text), readbackVerified: true, durability: "not-verified" };
         });
       } catch (error) {
         const changedMain = observedDuringWrite.changedMain;

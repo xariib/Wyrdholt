@@ -1,6 +1,7 @@
-import { SLOT_ORDER, type BuildSnapshot, type ItemInstance, type SlotId } from "@emberbound/shared-types";
+import { SLOT_ORDER, type BuildSnapshot, type ItemDef, type ItemInstance, type SlotId } from "@emberbound/shared-types";
 import { ASHEN_CROWN, ashenCrownAt } from "../boss/artifact";
 import { promotionCleared } from "../boss/progress";
+import type { ContentIndex } from "../content";
 import type { Profile } from "../profile/types";
 
 /**
@@ -39,6 +40,65 @@ export function createInstance(
   // ids only grow, so appending keeps the list sorted.
   profile.inventory.instances.push(instance);
   return instance;
+}
+
+export function canUseItem(item: ItemDef, classId: string): boolean {
+  return item.classId === undefined || item.classId === classId;
+}
+
+export function discardIncompatiblePendingGear(profile: Profile, content: ContentIndex, classId: string): void {
+  const equipment = profile.pending?.equipment;
+  if (!equipment) return;
+  for (const slot of SLOT_ORDER) {
+    const instance = findInstance(profile, equipment[slot] ?? 0);
+    if (instance && !canUseItem(content.item(instance.baseId), classId)) delete equipment[slot];
+  }
+}
+
+/** Keep owned gear when changing classes, but clear slots the new class cannot wear. */
+export function reconcileEquipment(profile: Profile, content: ContentIndex, upgrade = false): boolean {
+  const classId = profile.character.activeClassId;
+  let changed = false;
+  for (const slot of SLOT_ORDER) {
+    const instance = findInstance(profile, profile.equipment[slot] ?? 0);
+    if (!instance) continue;
+    const item = content.item(instance.baseId);
+    if (canUseItem(item, classId)) continue;
+    delete profile.equipment[slot];
+    changed = true;
+    if (slot === "weapon" && upgrade) {
+      // Preserve the tier of an old equipped weapon and keep the original copy intact.
+      const replacement = content.snapshot.items.find(i => i.slot === slot && i.rarity === item.rarity && i.classId === classId);
+      if (!replacement) continue;
+      const owned = profile.inventory.instances.find(i => i.baseId === replacement.id);
+      if (owned) profile.equipment.weapon = owned.id;
+      else if (Number.isSafeInteger(profile.inventory.nextInstanceId + 1)) {
+        profile.equipment.weapon = createInstance(profile, replacement.id, {
+          isNew: false, provenance: { source: "class-gear-upgrade" },
+        }).id;
+      }
+    }
+  }
+  if (profile.equipment.weapon === undefined && content.snapshot.starterWeapons) {
+    const weapon = profile.inventory.instances.find(i => {
+      const item = content.item(i.baseId);
+      return item.slot === "weapon" && canUseItem(item, classId);
+    });
+    if (weapon) {
+      profile.equipment.weapon = weapon.id;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+/** Apply the catalog upgrade once at a safe fight boundary. */
+export function upgradeClassGear(profile: Profile, content: ContentIndex): boolean {
+  if (!content.snapshot.starterWeapons || profile.contentVersion === content.snapshot.contentVersion) return false;
+  const changed = reconcileEquipment(profile, content, true);
+  discardIncompatiblePendingGear(profile, content, profile.pending?.activeClassId ?? profile.character.activeClassId);
+  profile.contentVersion = content.snapshot.contentVersion;
+  return changed;
 }
 
 /** Instances that cannot be consumed (equipped or queued). Used by a future Forge. */

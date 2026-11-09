@@ -1,5 +1,5 @@
 import type { ContentIndex } from "../content";
-import { FightCache, type AdventureEvent } from "../adventure/run";
+import { FightCache, upgradeClassGearIfSafe, type AdventureEvent } from "../adventure/run";
 import { ASHEN_KING_ID, activeBossAttempt } from "../boss/progress";
 import { advanceGame } from "../game";
 import { findInstance } from "../items/inventory";
@@ -45,6 +45,7 @@ export function simulateOffline(
   /** Optional telemetry hook (balance simulations, dev tools). Never changes results. */
   hooks?: { onEvent?: (event: AdventureEvent) => void },
 ): OfflineSummary {
+  upgradeClassGearIfSafe(profile, content);
   const cfg = content.snapshot.config;
   const simulatedMs = Math.max(0, Math.min(elapsedMs, cfg.offlineCapMs));
   const adv = profile.adventure;

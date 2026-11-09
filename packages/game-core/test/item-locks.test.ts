@@ -9,7 +9,7 @@ import { content, newProfile } from "./helpers";
 
 function fixture() {
   const p = newProfile(1042); p.gold = 500; p.adventure.zones.greenfields!.cleared = true;
-  const ids = Array.from({ length: 6 }, () => createInstance(p, "wayfarer_blade", { isNew: true }).id);
+  const ids = Array.from({ length: 6 }, () => createInstance(p, "wayfarer_wraps", { isNew: true }).id);
   const input: ForgeInput = { transactionId: 1, configVersion: FORGE_V1.version, slot: "weapon", rarity: "common", instanceIds: ids.slice(0, 5) };
   return { p, ids, input };
 }

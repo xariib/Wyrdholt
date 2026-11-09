@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * C1 zone flow in the built app (Chromium, 390x844 touch):
- * - a new character sees Greenfields open and Darkwood / Ashen Mountains locked
+ * - Stage progress, full-size actors and Adventure actions have separate space on compact and standard phones
+ * - the zone picker shows Greenfields open and Darkwood / Ashen Mountains locked
  * - the developer "Unlock all zones" helper opens them (visual check only)
  * - Push in Darkwood and in Ashen Mountains renders the zone's scene and enemies
  * - a level-1 Push in Ashen fails and the result recommends safe Farm and keeps the same zone available to retry
@@ -28,6 +29,41 @@ const shot = (label) => page.screenshot({ path: `${out}/zones-${label}.png` });
 
 const zoneRow = (id) => page.locator(`.zone-row[data-zone="${id}"]`);
 const rowText = async (id) => (await zoneRow(id).innerText()).replace(/\s+/g, " ").trim();
+const actions = page.getByRole("region", { name: "Adventure actions" });
+const changeZone = actions.getByRole("button", { name: "Change Zone", exact: true });
+const picker = page.getByRole("dialog", { name: "Change Zone", exact: true });
+
+async function checkAdventureLayout(width, height) {
+  await page.setViewportSize({ width, height });
+  const insets = width === 320 ? await page.addStyleTag({
+    content: ":root { --safe-area-inset-top: 20px; --safe-area-inset-bottom: 24px; }",
+  }) : null;
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await actions.evaluate((el) => {
+    const screen = el.closest("main");
+    const nav = document.querySelector(".nav");
+    const progress = screen.querySelector(".world-zone").getBoundingClientRect();
+    const arena = screen.querySelector(".combat-host").getBoundingClientRect();
+    const canvas = screen.querySelector(".combat-canvas").getBoundingClientRect();
+    if (screen.scrollHeight !== screen.clientHeight) throw new Error("Adventure must fit without scrolling");
+    if (progress.bottom > arena.top) throw new Error("Stage progress must sit above combat");
+    const scene = window.__emberRenderer.presentationSnapshot();
+    for (const actor of scene.actors) {
+      const top = canvas.top + (actor.world[1] - actor.anchor[1] * actor.scale[1]) * scene.cssScale;
+      const bottom = top + actor.frame[1] * actor.scale[1] * scene.cssScale;
+      if (top < arena.top || bottom > arena.bottom) throw new Error(`${actor.name} must fit fully inside the arena`);
+      if (actor.production && actor.scale[1] !== 1) throw new Error(`${actor.name} must retain its native scale`);
+    }
+    if (canvas.width !== scene.width * 2) throw new Error("Combat sprites must retain their native 2× scale");
+    for (const button of el.querySelectorAll("button")) {
+      const bounds = button.getBoundingClientRect();
+      if (bounds.top < 0 || bounds.bottom > nav.getBoundingClientRect().top || bounds.height < 48) {
+        throw new Error(`${button.innerText} must fit above navigation at touch size`);
+      }
+    }
+  });
+  await insets?.evaluate((el) => el.remove());
+}
 
 // Fix the disposable character seed so the offline trail drops are reproducible.
 await context.addInitScript(() => {
@@ -41,32 +77,48 @@ await context.addInitScript(() => {
 await page.goto(base);
 await page.getByText("Begin in Greenfields").tap({ timeout: 15_000 });
 await page.locator(".combat-canvas").waitFor({ timeout: 15_000 });
-await zoneRow("ashen_mountains").scrollIntoViewIfNeeded();
+await page.waitForFunction(() => window.__emberRenderer?.presentationSnapshot().actors.some((actor) => actor.id === "hero" && actor.production));
+await checkAdventureLayout(320, 568);
+await checkAdventureLayout(390, 844);
+await actions.getByRole("button", { name: /^Farm\b/ }).tap();
+await page.locator(".zone-context").getByText("Farming the trail", { exact: true }).waitFor();
+await actions.getByRole("button", { name: /^Push\b/ }).tap();
+await page.locator(".zone-context").getByText("Pushing", { exact: true }).waitFor();
+await changeZone.tap();
 await shot("01-list-new");
 const fresh = {
   greenfields: await rowText("greenfields"),
   darkwood: await rowText("darkwood"),
   ashen: await rowText("ashen_mountains"),
 };
+await page.keyboard.press("Escape");
+await picker.waitFor({ state: "hidden" });
 
 await page.getByRole("button", { name: "Developer tools" }).tap();
 await page.getByText("Unlock all zones").tap();
 await page.getByRole("button", { name: "Close" }).first().tap();
 
 const pushZone = async (id) => {
-  await zoneRow(id).scrollIntoViewIfNeeded();
+  await changeZone.tap();
   await zoneRow(id).getByRole("button", { name: "Push" }).tap();
+  await picker.waitFor({ state: "hidden" });
   await page.locator(".zone-name").filter({ hasText: id === "darkwood" ? "Darkwood" : "Ashen Mountains" }).waitFor({ timeout: 5_000 });
-  await page.evaluate(() => window.scrollTo(0, 0));
   await page.waitForTimeout(3_000);
 };
 
 await pushZone("darkwood");
+await page.waitForFunction(() => window.__emberRenderer?.presentationSnapshot().actors.some((actor) => actor.name === "spider" && actor.production));
+await checkAdventureLayout(320, 568);
+await page.setViewportSize({ width: 390, height: 844 });
 await shot("02-darkwood");
 const darkwoodEnemies = await page.locator(".combat-names span[title]").getAttribute("title");
 const combatFailed = await page.getByText("Combat view unavailable").count();
 
 await pushZone("ashen_mountains");
+await checkAdventureLayout(320, 568);
+const ashenSizes = await page.evaluate(() => window.__emberRenderer.presentationSnapshot().actors.filter((actor) => ["hound", "imp"].includes(actor.name)).map((actor) => actor.scale[1]));
+assert.deepEqual(ashenSizes, [2, 2], "The compact Ashen formation has room for larger placeholder enemies");
+await page.setViewportSize({ width: 390, height: 844 });
 await shot("03-ashen");
 const ashenEnemies = await page.locator(".combat-names span[title]").getAttribute("title");
 
@@ -81,14 +133,16 @@ const noEmptyBuildReview = !modal.includes("Change build");
 const hasFarm = /(Keep farming|Farm) (the Greenfields trail|Greenfields)/.test(modal);
 // Validate the level comparison and class context, not the obsolete sentence prefix.
 const hasHint = /enemies are level \d+/.test(modal) && /level 1 Monk/.test(modal) && /Mastery M1/.test(modal);
-await page.getByRole("button", { name: /(Keep farming|Farm) (the Greenfields trail|Greenfields)/ }).tap();
+await page.locator(".modal").getByRole("button", { name: /(Keep farming|Farm) (the Greenfields trail|Greenfields)/ }).tap();
 await page.waitForTimeout(800);
 const afterFarm = await page.locator(".zone-name").innerText();
-await zoneRow("greenfields").scrollIntoViewIfNeeded();
 await shot("05-after-farm");
 
+await actions.getByRole("button", { name: /^Push.*Retry.*Ashen Mountains/ }).waitFor();
+await changeZone.tap();
 const next = page.getByRole("region", { name: "Next attempt" });
-await next.getByRole("button", { name: "Retry Ashen Mountains" }).waitFor();
+await next.getByText(/Last Push: Ashen Mountains/).waitFor();
+await picker.getByRole("button", { name: "Close zone picker" }).tap();
 // Return through a real browser save with no imported gear or reward grants.
 await page.clock.setFixedTime(new Date(Date.now() + 2 * 3_600_000));
 await page.reload();

@@ -125,16 +125,14 @@ export function App() {
   );
 
   return (
-    <div className="app immersive">
+    <div className={`app immersive${tab === "adventure" ? " adventure-active" : ""}`}>
       <Header profile={profile} {...(DEV_TOOLS ? { onDebug: () => setDebugOpen(true) } : {})} />
-      <AppUpdates showSettings={tab === "character" || tab === "menu"} />
       <main className="screen adventure-screen" hidden={tab !== "adventure"}>
-        <AdventureScreen profile={profile} active={tab === "adventure" && !debugOpen} onChallenges={() => setTab("challenges")} nextAttempt={retry && !ui.runResult && !ui.offline && (
+        <AdventureScreen profile={profile} active={tab === "adventure" && !debugOpen} onChallenges={() => setTab("challenges")} retryZoneId={retry?.zoneId} nextAttempt={retry && !ui.runResult && !ui.offline && (
           <section className="panel stack" aria-label="Next attempt">
             <div className="panel-title">Next attempt</div>
             <p className="small muted">Last Push: {session.content.zone(retry.zoneId).name} · stage {retry.stage}</p>
             {newCount > 0 && <button className="btn block" onClick={() => openGear("new")}>Review new gear ({newCount})</button>}
-            {retryAction}
           </section>
         )} />
       </main>
@@ -143,7 +141,6 @@ export function App() {
           <CharacterScreen profile={profile} onChallenges={() => setTab("challenges")} />
           {ONLINE_PLAY_ENABLED && <section className="panel stack" aria-label="Online play">
             <div className="panel-title">Online play</div>
-            <p className="small muted">Join friends in dungeons, build a guild and contribute to raids.</p>
             <button className="btn block" onClick={() => setOnlineOpen(true)}>Open online adventure</button>
           </section>}
         </main>
@@ -158,19 +155,18 @@ export function App() {
           <ChallengesScreen profile={profile} active={!debugOpen} onReviewGear={() => openGear(null)} />
         </main>
       )}
-      {tab === "menu" && (
-        <main className="screen menu-screen" aria-labelledby="menu-title">
-          <section className="panel stack">
-            <h2 id="menu-title">Menu</h2>
-            <button className="btn block menu-encyclopedia" onClick={() => setTab("encyclopedia")}>
-              <NavIcon name="book" />
-              <span><b>Encyclopedia</b><small>Classes, gear, creatures, and regions</small></span>
-            </button>
-          </section>
-          <SaveTools onChanged={() => setTab("adventure")} />
-          {!ONLINE_PLAY_ENABLED && <p className="small muted">Online Play is temporarily disabled.</p>}
-        </main>
-      )}
+      <main className="screen menu-screen" aria-labelledby="menu-title" hidden={tab !== "menu"}>
+        <section className="panel stack">
+          <h2 id="menu-title">Menu</h2>
+          <button className="btn block menu-encyclopedia" onClick={() => setTab("encyclopedia")}>
+            <NavIcon name="book" />
+            <span><b>Encyclopedia</b><small>Classes, gear, creatures, and regions</small></span>
+          </button>
+          <AppUpdates menuOpen={tab === "menu"} />
+        </section>
+        {tab === "menu" && <SaveTools onChanged={() => setTab("adventure")} />}
+        {!ONLINE_PLAY_ENABLED && <p className="small muted">Online Play is temporarily disabled.</p>}
+      </main>
       {tab === "encyclopedia" && <EncyclopediaScreen onBack={() => setTab("menu")} />}
 
       <nav className="nav" aria-label="Game navigation">

@@ -347,9 +347,12 @@ export class CombatRenderer {
 
   private makeActor(id: string, spriteName: string, isHero: boolean, x: number, max100: number, hp100: number): ActorView {
     const tex = this.sprites.get(spriteName);
+    // Enlarge the small placeholder silhouettes where their formation has room.
+    const placeholderEnemy = !isHero && !tex.asset;
+    const targetScale = placeholderEnemy ? 2 : tex.scale;
     // Limit unusually wide art to its slot; quantize to whole device pixels.
-    const available = isHero ? this.W * 0.29 : this.W * (this.enemyCount >= 3 ? 0.16 : this.enemyCount === 2 ? 0.2 : 0.3);
-    const wanted = Math.min(tex.scale, available / tex.width, (this.H * 0.65) / tex.height);
+    const available = isHero ? this.W * 0.29 : this.W * (this.enemyCount >= 3 ? 0.16 : this.enemyCount === 2 ? 0.25 : 0.3);
+    const wanted = Math.min(targetScale, available / tex.width, (this.H * 0.65) / tex.height);
     const displayScale = actorPack[spriteName] ? 1 : Math.min(wanted, Math.max(1 / this.scale, Math.floor(wanted * this.scale) / this.scale));
     const leftWidth = ((isHero ? "right" : "left") === tex.facing ? tex.anchorX : tex.width - tex.anchorX) * displayScale;
     x = Math.round(Math.max(leftWidth + 2, Math.min(this.W - 2 - (tex.width * displayScale - leftWidth), x)));
@@ -1004,7 +1007,7 @@ export class CombatRenderer {
   }
 
   private attackArt(src: ActorView, target: ActorView, now: number, scheduled = false): void {
-    const contact: [number, number] = [target.baseX, this.ground() + target.groundOffset - Math.round(target.tex.anchorY * 0.5)];
+    const contact: [number, number] = [target.baseX, this.ground() + target.groundOffset - Math.round(target.tex.anchorY * target.displayScale * 0.5)];
     const crit = src.motion!.critical;
     const projectile = src.spriteName === "mage" ? "arcane_bolt" : src.spriteName === "ranger" ? "arrow" : src.spriteName === "spider" ? "venom_glob" : null;
     if (projectile) {
@@ -1019,7 +1022,7 @@ export class CombatRenderer {
   }
 
   private contactArt(src: ActorView, target: ActorView, now: number, crit: boolean): void {
-    const point: [number, number] = [target.baseX, this.ground() + target.groundOffset - Math.round(target.tex.anchorY * 0.5)];
+    const point: [number, number] = [target.baseX, this.ground() + target.groundOffset - Math.round(target.tex.anchorY * target.displayScale * 0.5)];
     const name = src.spriteName === "mage" ? "arcane_bolt_hit" : src.spriteName === "ranger" ? "arrow_hit" : src.spriteName === "spider" ? "venom_splash" : src.spriteName === "wolf" ? "wolf_bite" : `${src.spriteName}_impact${crit ? "_crit" : ""}`;
     this.artBurst(name, point, point, now);
   }

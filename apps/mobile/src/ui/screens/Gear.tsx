@@ -4,7 +4,7 @@ import { ForgeSheet } from "./Forge";
 import { SalvageConfirmation, BulkSalvageConfirmation } from "./Salvage";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ItemDef, SlotId } from "@emberbound/shared-types";
-import { findInstance, isFightActive, isItemLocked, previewSalvage, previewBulkSalvage, type BulkSalvageReceipt, type Profile, type SalvageReceipt } from "@emberbound/game-core";
+import { canUseItem, findInstance, isFightActive, isItemLocked, previewSalvage, previewBulkSalvage, type BulkSalvageReceipt, type Profile, type SalvageReceipt } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { Sheet } from "../components/Common";
 import { ItemIcon, SpriteImage } from "../components/icons";
@@ -282,6 +282,7 @@ function GroupRow({ profile, group, selected, onSelect }: { profile: Profile; gr
         </div>
         <div className="rarity" style={{ color }}>
           {content.rarity(group.item.rarity).name}
+          {group.item.classId ? ` · ${content.classDef(group.item.classId).name} only` : ""}
           {group.item.effect ? ` · ${group.item.effect.name}` : ""}
         </div>
       </span>
@@ -297,6 +298,8 @@ function GroupRow({ profile, group, selected, onSelect }: { profile: Profile; gr
 function Compare({ profile, slot, current, candidate, onDone }: { profile: Profile; slot: SlotId; current: ItemDef | null; candidate: ItemGroup; onDone: () => void }) {
   const rows = useMemo(() => statRows(current, candidate.item, { pct, rate }), [current, candidate]);
   const inFight = isFightActive(profile);
+  const classId = (inFight ? profile.pending?.activeClassId : undefined) ?? profile.character.activeClassId;
+  const canEquip = canUseItem(candidate.item, classId);
   return (
     <div className="stack">
       <div className="compare item-compare-head">
@@ -307,13 +310,13 @@ function Compare({ profile, slot, current, candidate, onDone }: { profile: Profi
       <div className="compare comparison-effects"><div><div className="slot-label">CURRENT EFFECT</div><strong>{current?.effect?.name ?? "None"}</strong><p>{current?.effect?.description}</p></div><div><div className="slot-label">NEW EFFECT</div><strong>{candidate.item.effect?.name ?? "None"}</strong><p>{candidate.item.effect?.description}</p></div></div>
       <button
         className="btn gold block equip-cta"
-        disabled={candidate.queuedHere}
+        disabled={candidate.queuedHere || !canEquip}
         onClick={() => {
           const result = session.dispatch({ type: "equip", slot, instanceId: pickInstance(profile, candidate, slot) });
           if (result.ok) onDone();
         }}
       >
-        {candidate.queuedHere ? "Queued for next fight" : `Equip ${candidate.item.name}`}
+        {candidate.queuedHere ? "Queued for next fight" : canEquip ? `Equip ${candidate.item.name}` : `Requires ${session.content.classDef(candidate.item.classId!).name}`}
       </button>
       {inFight && <div className="small faint">A fight is in progress: the change applies when it ends.</div>}
     </div>

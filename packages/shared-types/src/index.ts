@@ -278,6 +278,8 @@ export interface ItemDef {
   id: Id;
   name: string;
   slot: SlotId;
+  /** Omitted for gear shared by all classes. */
+  classId?: Id;
   rarity: Id;
   stats: StatBlock;
   effect?: ItemEffectDef;
@@ -494,6 +496,7 @@ export interface ContentSnapshot {
   lootTables: LootTableDef[];
   rules: RuleDef[];
   starterItems: Id[];
+  starterWeapons?: Record<Id, Id>;
   soloBosses?: SoloBossDef[];
   longTerm?: { promotions: PromotionDef[]; seasons: SeasonDef[] };
   social?: { dungeons: DungeonDef[]; raids: RaidDef[] };

@@ -4,10 +4,10 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { CONTENT } from "@emberbound/game-content";
-import { activeBossAttempt, createInstance, replayFight, replayPartyFight } from "@emberbound/game-core";
+import { CONTENT, FORGE_V1 } from "@emberbound/game-content";
+import { activeBossAttempt, createInstance, deriveSeed, FORGE_RULES_VERSION, Prng, replayFight, replayPartyFight } from "@emberbound/game-core";
 import type { PartyFightRecord } from "@emberbound/shared-types";
-import { verifyAuthorityReplay } from "../src/authority/commands";
+import { executeAuthorityCommand, parseCommandEnvelope, verifyAuthorityReplay } from "../src/authority/commands";
 import { ProfileAuthority } from "../src/authority/profiles";
 import { SqliteAuthorityStore } from "../src/authority/sqlite";
 import { createAuthorityHttp } from "../src/http";
@@ -74,6 +74,46 @@ describe("authoritative profiles", () => {
       expect(sync).toMatchObject({ ok: true, revision: 2 });
       expect((await store.read(owner.accountId))!.profile.clock.simulatedMs).toBe(30_000);
       expect((await authority.view(owner))).not.toHaveProperty("masterSeed");
+    } finally { store.close(); }
+  });
+
+  it("settles online Forge from server entropy even when materials were picked for a known seed", async () => {
+    const { content } = loadLiveConfig();
+    const store = new SqliteAuthorityStore(":memory:");
+    try {
+      const now = 10_000;
+      const identity = { accountId: "smith" };
+      const authority = new ProfileAuthority(content, store, () => now);
+      await authority.create(identity, { name: "Smith", activeClassId: "monk", alternateClassId: "mage" });
+      const original = (await store.read(identity.accountId))!;
+      const before = original.profile;
+      before.masterSeed = 1042;
+      before.gold = 100;
+      before.adventure.zones.greenfields!.cleared = true;
+      const commonHead = CONTENT.items.find(item => item.rarity === "common" && item.slot === "head")!;
+      const materials = Array.from({ length: 100 }, () => createInstance(before, commonHead.id, { isNew: false }).id);
+      const candidates = materials.slice(4).map(id => [...materials.slice(0, 4), id]);
+      const instanceIds = candidates.find(ids => new Prng(deriveSeed(before.masterSeed,
+        `${FORGE_RULES_VERSION}|${FORGE_V1.version}|1|head|common|${ids.join(",")}`)).rollBp(500))!;
+      expect(instanceIds).toBeDefined();
+      expect(await store.commit(0, { ...original, revision: 1 })).toBe(true);
+      const request = parseCommandEnvelope(command("forge", 1, { type: "forge", input: {
+        transactionId: 1, configVersion: FORGE_V1.version, slot: "head", rarity: "common", instanceIds,
+      } }))!;
+      const legacy = executeAuthorityCommand(content, before, request, now);
+      if (!legacy.ok) throw new Error(legacy.error);
+      expect(legacy.entry.result.forge?.critical).toBe(true);
+      expect(verifyAuthorityReplay(content, before, legacy.entry)).toEqual(legacy.profile);
+
+      const response = await authority.submit(identity, { ...request, forgeSeed: 0 });
+      expect(response).toMatchObject({ ok: true, revision: 2 });
+      const [entry] = store.journal(identity.accountId);
+      expect(entry?.forgeSeed).toEqual(expect.any(Number));
+      expect(entry?.result.forge?.seed).toBe(entry?.forgeSeed);
+      expect(verifyAuthorityReplay(content, before, entry!)).toEqual((await store.read(identity.accountId))!.profile);
+      expect(verifyAuthorityReplay(content, before, { ...entry!, forgeSeed: (entry!.forgeSeed! + 1) >>> 0 })).toBeNull();
+      expect(await authority.submit(identity, request)).toEqual(response);
+      expect(store.journal(identity.accountId)).toHaveLength(1);
     } finally { store.close(); }
   });
 });
@@ -168,6 +208,22 @@ describe("party and live authority over HTTP", () => {
       expect((await call("raids/claim", first!.token, { raidId })).ok).toBe(true);
       expect((await call("raids/claim", first!.token, { raidId })).ok).toBe(true);
       expect((await call("profile", first!.token)).gold).toBe(beforeClaim + 300);
+
+      for (const account of accounts) expect((await call("guilds/leave", account.token, {})).ok).toBe(true);
+      const secondGuild = (await call("guilds", leader!.token, { name: "Cinder Council" })).guild;
+      for (const ally of [first!, second!]) {
+        expect((await call("guilds/invite", leader!.token, { profileId: ally.profileId })).ok).toBe(true);
+        expect((await call("guilds/join", ally.token, { guildId: secondGuild.id })).ok).toBe(true);
+      }
+      const socialState = await store.readSocial();
+      socialState.guilds[secondGuild.id]!.expeditionTable = true;
+      expect(await store.commitSocial(socialState.revision, { ...socialState, revision: socialState.revision + 1 }, [])).toBe(true);
+      const secondRaid = await call("raids", leader!.token, { raidId: "cinder_breach" });
+      expect(secondRaid.ok).toBe(true);
+      const nextAttempt = { raidId: secondRaid.raid.id, requestId: "other-guild", allies: alliesFor(leader!) };
+      expect(await call("raids/contribute", leader!.token, nextAttempt)).toMatchObject({ ok: false, error: "You already led a raid attempt today." });
+      now += DAY;
+      expect((await call("raids/contribute", leader!.token, nextAttempt)).ok).toBe(true);
 
       const view = await call("profile", leader!.token);
       const event = await call("events");

@@ -1,5 +1,5 @@
-import { randomUUID } from "node:crypto";
-import { deriveSeed, partySnapshot, replayPartyFight, runPartyDungeon, type ContentIndex } from "@emberbound/game-core";
+import { randomBytes, randomUUID } from "node:crypto";
+import { partySnapshot, replayPartyFight, runPartyDungeon, type ContentIndex } from "@emberbound/game-core";
 import type { PartyFightRecord } from "@emberbound/shared-types";
 import type { AccountIdentity, AuthorityProfile, AuthorityStore, ProfileChange } from "../authority/profiles";
 import type { DungeonReceipt, Guild, GuildRaid, RaidReceipt, SocialState } from "./state";
@@ -110,8 +110,8 @@ export class SocialAuthority {
     if ((state.lastDungeonStart[leader.profileId] ?? -1) >= day) return error("This character already led a dungeon today.");
     const roster = await this.roster(state, leader, allies, false);
     if (!roster) return error("Choose two different opted-in friends or guildmates.");
-    const members = roster.map(p => partySnapshot(p.profileId, p.revision, p.profile)) as PartyFightRecord["members"];
-    const result = runPartyDungeon(this.content, dungeonId, members, deriveSeed(leader.profile.masterSeed, `party/${dungeonId}/${day}`));
+    const members = roster.map(p => partySnapshot(this.content, p.profileId, p.revision, p.profile)) as PartyFightRecord["members"];
+    const result = runPartyDungeon(this.content, dungeonId, members, randomBytes(4).readUInt32LE());
     const party: DungeonReceipt["party"] = [roster[0].profileId, roster[1].profileId, roster[2].profileId];
     const receipt: DungeonReceipt = {
       requestId, dungeonId, party, won: result.won, atMs, rewards: [],
@@ -236,14 +236,17 @@ export class SocialAuthority {
       return error("This raid is unavailable.");
     }
     const day = Math.floor(atMs / DAY);
-    if (raid.receipts.some(r => r.profileId === profile.profileId && Math.floor(r.atMs / DAY) >= day)) return error("You already led a raid attempt today.");
+    const dayStart = day * DAY;
+    const alreadyLed = Object.values(state.guilds).some(g => g.raids.some(candidate => candidate.endsAtMs > dayStart
+      && candidate.receipts.some(r => r.profileId === profile.profileId && r.atMs >= dayStart)));
+    if (alreadyLed) return error("You already led a raid attempt today.");
     const goal = this.content.raids.get(raid.raidId)?.phases[raid.phase];
     const roster = await this.roster(state, profile, allies, true);
     if (!goal || !roster) return error("Choose two different opted-in guildmates.");
-    const members = roster.map(p => partySnapshot(p.profileId, p.revision, p.profile)) as PartyFightRecord["members"];
+    const members = roster.map(p => partySnapshot(this.content, p.profileId, p.revision, p.profile)) as PartyFightRecord["members"];
     const record: PartyFightRecord = {
       format: "emberbound-party-fight-record/1", contentHash: raid.contentHash, members,
-      encounter: { kind: "raid", id: raid.raidId, wave: raid.phase }, seed: deriveSeed(profile.profile.masterSeed, `raid/${raid.id}/${raid.phase}/${day}`),
+      encounter: { kind: "raid", id: raid.raidId, wave: raid.phase }, seed: randomBytes(4).readUInt32LE(),
     };
     const fight = replayPartyFight(this.content, record);
     const [boss, ...adds] = fight.summary.enemies;

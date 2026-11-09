@@ -15,6 +15,7 @@ import {
   FightCache,
   advanceAdventure,
   applyCommand,
+  canUseItem,
   createProfile,
   currentBuild,
   masteryRank,
@@ -177,6 +178,7 @@ export function runModelPlayer(
     masterSeed: options.seed,
     nowWallMs: INSTALL_AT,
   });
+  const starterCount = profile.inventory.instances.length;
   const cache = new FightCache(4);
   let simMs = 0;
   let wallNow = INSTALL_AT;
@@ -381,7 +383,7 @@ export function runModelPlayer(
         level: profile.character.level,
         mastery: rank(),
         clears: report.clears.map((c) => c.zoneId),
-        drops: profile.inventory.instances.length - content.snapshot.starterItems.length,
+        drops: profile.inventory.instances.length - starterCount,
       };
     }
     // ---- leaving: equip, then Push if there is new content (offline tries once, then farms)
@@ -425,7 +427,9 @@ export function runModelPlayer(
 function equipUpgrades(profile: Profile, content: ContentIndex): void {
   const owned = new Map<SlotId, Map<string, number>>();
   for (const inst of profile.inventory.instances) {
-    const slot = content.item(inst.baseId).slot;
+    const item = content.item(inst.baseId);
+    if (!canUseItem(item, profile.character.activeClassId)) continue;
+    const slot = item.slot;
     const bySlot = owned.get(slot) ?? new Map<string, number>();
     if (!bySlot.has(inst.baseId)) bySlot.set(inst.baseId, inst.id);
     owned.set(slot, bySlot);

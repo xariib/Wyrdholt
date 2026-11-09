@@ -8,7 +8,7 @@ Use a separate test device or disposable test installation for debug builds. Ver
 
 ## In-game updates
 
-Install the [latest signed APK](https://github.com/xariib/Wyrdholt/releases/latest/download/Wyrdholt-Idle.apk) for the first setup. Wyrdholt checks for updates when you start playing, when you return to the app, and while the game is open. Automatic checks are at least 30 minutes apart. Tap **View update** on the **Update available** notice or check manually under **Character → App updates**.
+Install the [latest signed APK](https://github.com/xariib/Wyrdholt/releases/latest/download/Wyrdholt-Idle.apk) for the first setup. Wyrdholt checks for updates when you start playing, when you return to the app, and while the game is open. Automatic checks are at least 30 minutes apart. Tap **Menu** in the navigation bar, then **App updates** to see available versions or check manually.
 
 Download the update and choose **Install update**. Wyrdholt saves before handing off to Android. If prompted, allow installs from Wyrdholt, confirm the update, then tap **Open** on Android's completion screen. The new app displays its installed version under App updates.
 

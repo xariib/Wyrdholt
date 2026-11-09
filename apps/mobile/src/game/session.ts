@@ -8,6 +8,7 @@ import {
   advanceGame,
   applyCommand,
   bossProgress,
+  canUseItem,
   canonicalJson,
   createProfile,
   heroStatsFor,
@@ -16,6 +17,7 @@ import {
   prepareFight,
   serializeSave,
   cloneProfile,
+  upgradeClassGearIfSafe,
   type AdventureEvent,
   type BossFightCache,
   type Command,
@@ -344,7 +346,7 @@ export class GameSession {
     perfMonitor.pause();
     const profile = this.profile;
     if (!profile || this.catchingUp || !this.canPlay()) return;
-    profile.clock.lastSettledWallMs = Date.now();
+    profile.clock.lastSettledWallMs = Math.max(profile.clock.lastSettledWallMs, Date.now());
     void this.saveNow();
   }
 
@@ -401,6 +403,7 @@ export class GameSession {
     if (!profile || this.catchingUp || !this.canSettle()) return;
     const epoch = this.ownerEpoch;
     const working = cloneProfile(profile);
+    upgradeClassGearIfSafe(working, this.content);
     const elapsed = Math.max(0, nowWallMs - profile.clock.lastSettledWallMs);
     // A character left standing after a defeat (e.g. the app was closed on the result
     // screen, or a save from the C1 playtest build) farms safely instead of idling.
@@ -554,7 +557,7 @@ export class GameSession {
       bossCache: this.bossCache,
       onEvent: (e) => events.push(e),
     });
-    profile.clock.lastSettledWallMs = wallNow;
+    profile.clock.lastSettledWallMs = Math.max(profile.clock.lastSettledWallMs, wallNow);
   }
 
   private saveBossBoundary(step: number, wallNow: number, bossId: string): void {
@@ -846,7 +849,9 @@ export class GameSession {
   // ------------------------------------------------------------ dev tools
 
   grantSampleGear(): void {
-    this.dispatch({ type: "devGrant", baseIds: [...DEV_SAMPLE_ITEMS] });
+    const classId = this.profile?.character.activeClassId;
+    if (!classId) return;
+    this.dispatch({ type: "devGrant", baseIds: DEV_SAMPLE_ITEMS.filter(id => canUseItem(this.content.item(id), classId)) });
   }
 
   /** Visual checks of later zones. Spoils a pacing playtest (zones open early). */

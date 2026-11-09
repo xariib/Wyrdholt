@@ -5,13 +5,19 @@ import type { ContentIndex } from "../content";
 import { buildWaveEnemies } from "../encounter/budget";
 import { canonicalJson } from "../hash/canonical";
 import { sha256Hex } from "../hash/sha256";
-import { currentBuild, equippedInstances } from "../items/inventory";
+import { currentBuild, equippedInstances, upgradeClassGear } from "../items/inventory";
 import { deriveSeed } from "../math/prng";
+import { cloneProfile } from "../profile/clone";
 import type { Profile } from "../profile/types";
 import { combineRuleEffects } from "../rules/modifiers";
 import { ReplayMismatchError } from "./replay";
 
-export function partySnapshot(profileId: string, revision: number, profile: Profile): PartyMemberSnapshot {
+export function partySnapshot(content: ContentIndex, profileId: string, revision: number, profile: Profile): PartyMemberSnapshot {
+  if (content.snapshot.starterWeapons && profile.contentVersion !== content.snapshot.contentVersion) {
+    // The borrowed build starts a new fight independently of the owner's current fight.
+    profile = cloneProfile(profile);
+    upgradeClassGear(profile, content);
+  }
   const build = currentBuild(profile);
   const itemInstances = [...equippedInstances(profile, build).values()];
   return JSON.parse(canonicalJson({ profileId, revision, build, itemInstances })) as PartyMemberSnapshot;
