@@ -11,6 +11,7 @@ import { drawBackground, groundY } from "./background";
 import { GLYPHS, glyphCanvas } from "./pixelArt";
 import { animationFrame, ART_BUDGET, type Pose } from "../art/types";
 import { TextureBank, type SpriteTextures } from "./textures";
+import { attackStyle, drawAttackImpact, drawAttackTrail, type EffectPoint } from "./attackEffects";
 
 /**
  * PixiJS combat presentation.
@@ -111,6 +112,8 @@ interface Effect {
   node: Graphics;
   start: number;
   duration: number;
+  owner?: string;
+  target?: string;
   update(node: Graphics, p: number): void;
 }
 
@@ -347,9 +350,12 @@ export class CombatRenderer {
 
   private makeActor(id: string, spriteName: string, isHero: boolean, x: number, max100: number, hp100: number): ActorView {
     const tex = this.sprites.get(spriteName);
+    // Enlarge the small placeholder silhouettes where their formation has room.
+    const placeholderEnemy = !isHero && !tex.asset;
+    const targetScale = placeholderEnemy ? 2 : tex.scale;
     // Limit unusually wide art to its slot; quantize to whole device pixels.
-    const available = isHero ? this.W * 0.29 : this.W * (this.enemyCount >= 3 ? 0.16 : this.enemyCount === 2 ? 0.2 : 0.3);
-    const wanted = Math.min(tex.scale, available / tex.width, (this.H * 0.65) / tex.height);
+    const available = isHero ? this.W * 0.29 : this.W * (this.enemyCount >= 3 ? 0.16 : this.enemyCount === 2 ? 0.25 : 0.3);
+    const wanted = Math.min(targetScale, available / tex.width, (this.H * 0.65) / tex.height);
     const displayScale = actorPack[spriteName] ? 1 : Math.min(wanted, Math.max(1 / this.scale, Math.floor(wanted * this.scale) / this.scale));
     const leftWidth = ((isHero ? "right" : "left") === tex.facing ? tex.anchorX : tex.width - tex.anchorX) * displayScale;
     x = Math.round(Math.max(leftWidth + 2, Math.min(this.W - 2 - (tex.width * displayScale - leftWidth), x)));
@@ -428,6 +434,8 @@ export class CombatRenderer {
     // A suspended/reconstructed renderer settles historical state without replaying old VFX.
     const settling = this.rebuilding || (this.lastPlayback >= 0 && t - this.lastPlayback > FAST_FORWARD_MS);
     if (settling) {
+      for (const effect of this.effects) effect.node.destroy();
+      this.effects = [];
       for (const effect of this.artEffects) effect.node.destroy();
       this.artEffects = [];
       this.prerolled.clear(); this.launched.clear();
@@ -534,6 +542,7 @@ export class CombatRenderer {
         tgt.motion?.hit(now, Number(e.abs ?? 0) > 0);
         if (Number(e.abs ?? 0) > 0) { tgt.wardPhase = tgt.ward100 > 0 ? "absorb_hit" : "break"; tgt.wardAt = now; }
         if (src?.motion && e.via === "basic" && this.events.includes(e)) this.contactArt(src, tgt, now, e.crit === 1);
+        if (src) this.attackImpact(src, tgt, now, e.crit === 1, String(e.via));
         const crit = e.crit === 1;
         const via = String(e.via);
         let color = COLORS.heroHit;
@@ -749,12 +758,17 @@ export class CombatRenderer {
       return true;
     });
     this.effects = this.effects.filter((e) => {
+      if (e.owner && (!this.actors.get(e.owner)?.alive || !this.actors.get(e.target!)?.alive)) {
+        e.node.destroy();
+        return false;
+      }
       const p = (now - e.start) / e.duration;
       if (p >= 1) {
         e.node.destroy();
         return false;
       }
-      e.update(e.node, p);
+      e.node.visible = p >= 0;
+      if (p >= 0) e.update(e.node, p);
       return true;
     });
   }
@@ -1004,22 +1018,45 @@ export class CombatRenderer {
   }
 
   private attackArt(src: ActorView, target: ActorView, now: number, scheduled = false): void {
-    const contact: [number, number] = [target.baseX, this.ground() + target.groundOffset - Math.round(target.tex.anchorY * 0.5)];
+    const contact: [number, number] = [target.baseX, this.ground() + target.groundOffset - Math.round(target.tex.anchorY * target.displayScale * 0.5)];
     const crit = src.motion!.critical;
     const projectile = src.spriteName === "mage" ? "arcane_bolt" : src.spriteName === "ranger" ? "arrow" : src.spriteName === "spider" ? "venom_glob" : null;
     if (projectile) {
       const clip = actorPack[src.spriteName]!.animations.attack;
       const point = clip.fx_projectile_spawn!;
       const start: [number, number] = [src.baseX + point[0]! - clip.anchor[0]!, this.ground() + src.groundOffset + point[1]! - clip.anchor[1]!];
+      this.attackTrail(src, target, start, contact, now);
       this.artBurst(projectile, start, contact, now, PROJECTILE_MS, scheduled ? undefined : projectile === "arcane_bolt" ? "arcane_bolt_hit" : projectile === "arrow" ? "arrow_hit" : "venom_splash");
     } else {
       const name = src.spriteName === "wolf" ? "wolf_bite" : `${src.spriteName}_impact${crit ? "_crit" : ""}`;
       if (fxPack[name]) this.artBurst(name, contact, contact, now);
+      if (!scheduled) this.attackImpact(src, target, now, crit, "basic");
     }
   }
 
+  private attackTrail(src: ActorView, target: ActorView, from: EffectPoint, to: EffectPoint, now: number): void {
+    // Keep procedural accents bounded separately from the existing sprite effects.
+    if (this.effects.length >= ART_BUDGET.maxVfx / 2) return;
+    const node = new Graphics();
+    this.fxLayer.addChild(node);
+    const style = attackStyle(src.spriteName);
+    this.effects.push({ node, start: now, duration: PROJECTILE_MS, owner: src.id, target: target.id,
+      update: (g, p) => drawAttackTrail(g, p, style, from, to) });
+  }
+
+  private attackImpact(src: ActorView, target: ActorView, now: number, critical: boolean, via: string): void {
+    if (this.effects.length >= ART_BUDGET.maxVfx / 2) return;
+    const node = new Graphics();
+    this.fxLayer.addChild(node);
+    const from: EffectPoint = [src.baseX, this.ground() + src.groundOffset - src.tex.anchorY * src.displayScale * 0.5];
+    const to: EffectPoint = [target.baseX, this.ground() + target.groundOffset - target.tex.anchorY * target.displayScale * 0.5];
+    const style = via === "wildfire" ? "fire" : via === "venom_burst" ? "venom" : attackStyle(src.spriteName);
+    this.effects.push({ node, start: now, duration: critical ? 340 : via === "basic" ? 240 : 300,
+      update: (g, p) => drawAttackImpact(g, p, style, from, to, critical, via !== "basic") });
+  }
+
   private contactArt(src: ActorView, target: ActorView, now: number, crit: boolean): void {
-    const point: [number, number] = [target.baseX, this.ground() + target.groundOffset - Math.round(target.tex.anchorY * 0.5)];
+    const point: [number, number] = [target.baseX, this.ground() + target.groundOffset - Math.round(target.tex.anchorY * target.displayScale * 0.5)];
     const name = src.spriteName === "mage" ? "arcane_bolt_hit" : src.spriteName === "ranger" ? "arrow_hit" : src.spriteName === "spider" ? "venom_splash" : src.spriteName === "wolf" ? "wolf_bite" : `${src.spriteName}_impact${crit ? "_crit" : ""}`;
     this.artBurst(name, point, point, now);
   }

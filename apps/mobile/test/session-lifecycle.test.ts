@@ -33,6 +33,23 @@ beforeEach(() => { files.clear(); vi.useFakeTimers(); vi.setSystemTime(180000000
 afterEach(async () => { for (const s of sessions.splice(0)) { s.handleBackground(); await s.saveNow(); } vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe("session lifecycle races and persistence", () => {
+  it.each(["live frame", "background"])("does not replay settled offline time after a clock rollback during %s", async (boundary) => {
+    const s = await fresh();
+    const settledAt = Date.now();
+    vi.setSystemTime(settledAt - 30 * 60_000);
+    if (boundary === "live frame") {
+      (s as unknown as { advanceLive(profile: NonNullable<GameSession["profile"]>, step: number, wallNow: number, events: AdventureEvent[]): void })
+        .advanceLive(s.profile!, 16, Date.now(), []);
+    } else s.handleBackground();
+    expect(await s.saveNow()).toMatchObject({ status: "saved", savedAtWallMs: settledAt });
+    vi.setSystemTime(settledAt);
+    const restored = new GameSession(); sessions.push(restored); await restored.init();
+    expect(runOfflineCatchUp).not.toHaveBeenCalled();
+    expect(restored.getSnapshot().save.loadedFrom).toBe("main");
+    expect(restored.profile!.clock.lastSettledWallMs).toBe(settledAt);
+    expect(restored.profile!.clock.simulatedMs).toBe(boundary === "live frame" ? 16 : 0);
+  });
+
   it.each([1, 3])("settles every return through the latest timestamp with %i re-background cycles pending", async (cycles) => {
     const s = await fresh(); s.handleBackground(); const initial = cloneProfile(s.profile!);
     vi.setSystemTime(Date.now() + 31 * 60_000);

@@ -144,18 +144,18 @@ describe("stages and Push", () => {
 describe("build snapshot rule", () => {
   it("queues gear and class changes during a fight and applies them at the boundary", () => {
     const p = newProfile(20);
-    run(p, { type: "devGrant", baseIds: ["briar_edge"] });
-    const blade = p.inventory.instances[p.inventory.instances.length - 1]!;
+    run(p, { type: "devGrant", baseIds: ["willow_focus"] });
+    const focus = p.inventory.instances[p.inventory.instances.length - 1]!;
     startRun(p, content, "greenfields", "push", 0);
     advanceAdventure(p, content, 1, { offline: false, contentTimeMs: 0 });
     expect(p.adventure.run?.phase).toBe("fight");
     const fightBefore = prepareFight(p, content, p.adventure.run!, { contentTimeMs: 0, recordEvents: true });
 
-    const r1 = run(p, { type: "equip", slot: "weapon", instanceId: blade.id });
-    const r2 = run(p, { type: "setActiveClass", classId: "mage" });
+    const r1 = run(p, { type: "setActiveClass", classId: "mage" });
+    const r2 = run(p, { type: "equip", slot: "weapon", instanceId: focus.id });
     expect(r1).toEqual({ ok: true, queued: true });
     expect(r2).toEqual({ ok: true, queued: true });
-    expect(p.equipment.weapon).not.toBe(blade.id);
+    expect(p.equipment.weapon).not.toBe(focus.id);
     expect(p.character.activeClassId).toBe("monk");
 
     const fightDuring = prepareFight(p, content, p.adventure.run!, { contentTimeMs: 0, recordEvents: true });
@@ -165,7 +165,7 @@ describe("build snapshot rule", () => {
     advanceAdventure(p, content, fightBefore.summary.durationMs, { offline: false, contentTimeMs: 0, onEvent: (e) => events.push(e) });
     const settled = events.find((e): e is Extract<AdventureEvent, { type: "fightSettled" }> => e.type === "fightSettled")!;
     expect(settled.buildChanged).toBe(true);
-    expect(p.equipment.weapon).toBe(blade.id);
+    expect(p.equipment.weapon).toBe(focus.id);
     expect(p.character.activeClassId).toBe("mage");
     expect(p.character.alternateClassId).toBe("monk");
     // The old class earned that fight's mastery.
@@ -175,11 +175,11 @@ describe("build snapshot rule", () => {
 
   it("changes outside a fight apply immediately", () => {
     const p = newProfile(21);
-    run(p, { type: "devGrant", baseIds: ["briar_edge"] });
-    const blade = p.inventory.instances[p.inventory.instances.length - 1]!;
-    expect(run(p, { type: "equip", slot: "weapon", instanceId: blade.id })).toEqual({ ok: true, queued: false });
-    expect(p.equipment.weapon).toBe(blade.id);
-    expect(run(p, { type: "equip", slot: "head", instanceId: blade.id }).ok).toBe(false);
+    run(p, { type: "devGrant", baseIds: ["reedweave_wraps"] });
+    const wraps = p.inventory.instances[p.inventory.instances.length - 1]!;
+    expect(run(p, { type: "equip", slot: "weapon", instanceId: wraps.id })).toEqual({ ok: true, queued: false });
+    expect(p.equipment.weapon).toBe(wraps.id);
+    expect(run(p, { type: "equip", slot: "head", instanceId: wraps.id }).ok).toBe(false);
   });
 
   it("caps carried HP when a new build lowers max HP, and never refills it", () => {

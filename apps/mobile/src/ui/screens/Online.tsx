@@ -1,4 +1,4 @@
-import { masteryRank, type Profile } from "@emberbound/game-core";
+import { canUseItem, masteryRank, type Profile } from "@emberbound/game-core";
 import type { ItemInstance } from "@emberbound/shared-types";
 import { useEffect, useRef, useState } from "react";
 import { session } from "../../game/session";
@@ -7,6 +7,7 @@ import { number, pct } from "../format";
 interface OnlineProfile extends Pick<Profile, "character" | "gold" | "adventure" | "equipment"> {
   profileId: string;
   revision: number;
+  pendingClassId?: string | null;
   inventory: Pick<ItemInstance, "id" | "baseId" | "isNew">[];
   ladders: { id: string; cleared: number; active: number | null; lastResult: { tier: number; outcome: string } | null }[];
 }
@@ -197,6 +198,8 @@ function OnlineAdventure({ profile, events, account, busy, command, mutate }: {
   const [copy, setCopy] = useState(0);
   const available = profile.inventory.filter(item => content.items.get(item.baseId)?.slot === slot);
   const current = available.find(item => item.id === copy);
+  const selectedItem = current ? content.item(current.baseId) : undefined;
+  const canEquip = selectedItem && canUseItem(selectedItem, profile.pendingClassId ?? char.activeClassId);
   const equipped = Object.entries(profile.equipment).find(([key]) => key === slot)?.[1];
 
   const start = (bossId: string, tier: number) => command({ type: "startBoss", tier, autoPush: false, bossId });
@@ -234,8 +237,8 @@ function OnlineAdventure({ profile, events, account, busy, command, mutate }: {
       <label>Owned copy<select value={copy} onChange={e => setCopy(Number(e.target.value))}>
         <option value={0}>Select gear</option>{available.map(item => <option key={item.id} value={item.id}>{content.item(item.baseId).name} #{item.id}{item.id === equipped ? " · Equipped" : ""}</option>)}
       </select></label>
-      {current && <p className="small muted">{content.item(current.baseId).rarity} · {Object.entries(content.item(current.baseId).stats).map(([stat, value]) => `${stat} +${value}`).join(" · ")}</p>}
-      <button className="btn block" disabled={busy || !current || copy === equipped} onClick={() => void command({ type: "equip", slot, instanceId: copy })}>Equip selected copy</button>
+      {selectedItem && <p className="small muted">{selectedItem.rarity}{selectedItem.classId ? ` · ${content.classDef(selectedItem.classId).name} only` : ""} · {Object.entries(selectedItem.stats).map(([stat, value]) => `${stat} +${value}`).join(" · ")}</p>}
+      <button className="btn block" disabled={busy || !canEquip || copy === equipped} onClick={() => void command({ type: "equip", slot, instanceId: copy })}>Equip selected copy</button>
     </section>
     <section className="panel stack" aria-label="Online boss challenges">
       <h2>Boss challenges</h2>

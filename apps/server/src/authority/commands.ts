@@ -1,5 +1,5 @@
 import { FORGE_V1 } from "@emberbound/game-content";
-import { applyCommand, canonicalJson, cloneProfile, settleOffline, sha256Hex, type Command, type CommandResult, type ContentIndex, type Profile } from "@emberbound/game-core";
+import { applyCommand, canonicalJson, cloneProfile, settleOffline, sha256Hex, upgradeClassGearIfSafe, type Command, type CommandResult, type ContentIndex, type Profile } from "@emberbound/game-core";
 import { SLOT_ORDER } from "@emberbound/shared-types";
 
 export type PlayerCommand = Exclude<Command, { type: `dev${string}` | "advance" }>;
@@ -58,19 +58,23 @@ export interface CommandJournalEntry {
   contentHash: string;
   beforeHash: string;
   afterHash: string;
+  /** Server entropy for new Forge actions. Older journal entries derive the seed in game-core. */
+  forgeSeed?: number;
   result: Extract<CommandResult, { ok: true }>;
 }
 
-export function executeAuthorityCommand(content: ContentIndex, before: Profile, request: CommandEnvelope, atMs: number) {
+export function executeAuthorityCommand(content: ContentIndex, before: Profile, request: CommandEnvelope, atMs: number, forgeSeed?: number) {
   if (!Number.isSafeInteger(atMs) || atMs < before.clock.lastSettledWallMs) throw new Error("Authority time moved backwards");
   const profile = cloneProfile(before);
   if (atMs > profile.clock.lastSettledWallMs) settleOffline(profile, content, atMs);
+  else upgradeClassGearIfSafe(profile, content);
   const result: CommandResult = request.command === null ? { ok: true, queued: false }
-    : applyCommand(profile, content, request.command, { contentTimeMs: atMs, forgeConfig: FORGE_V1 });
+    : applyCommand(profile, content, request.command, { contentTimeMs: atMs, forgeConfig: FORGE_V1, authorityForgeSeed: forgeSeed });
   if (!result.ok) return result;
   const entry: CommandJournalEntry = {
     request, atMs, contentHash: content.longTermHash,
     beforeHash: sha256Hex(canonicalJson(before)), afterHash: sha256Hex(canonicalJson(profile)), result,
+    ...(forgeSeed === undefined ? {} : { forgeSeed }),
   };
   return { ok: true as const, profile, entry };
 }
@@ -80,6 +84,9 @@ export function verifyAuthorityReplay(content: ContentIndex, before: Profile, en
   const request = parseCommandEnvelope(entry.request);
   if (!request || entry.contentHash !== content.longTermHash || !Number.isSafeInteger(entry.atMs)
     || entry.atMs < before.clock.lastSettledWallMs || entry.beforeHash !== sha256Hex(canonicalJson(before))) return null;
-  const replayed = executeAuthorityCommand(content, before, request, entry.atMs);
+  const { forgeSeed } = entry;
+  if (forgeSeed !== undefined && (request.command?.type !== "forge" || !Number.isInteger(forgeSeed)
+    || forgeSeed < 0 || forgeSeed > 0xffffffff)) return null;
+  const replayed = executeAuthorityCommand(content, before, request, entry.atMs, forgeSeed);
   return replayed.ok && canonicalJson(replayed.entry) === canonicalJson(entry) ? replayed.profile : null;
 }

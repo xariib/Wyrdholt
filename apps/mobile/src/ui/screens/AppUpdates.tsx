@@ -7,11 +7,11 @@ import { Sheet } from "../components/Common";
 type Phase = "loading" | "checking" | "downloading" | "installing";
 const UPDATE_CHECK_INTERVAL = 30 * 60 * 1000;
 
-export function AppUpdates({ showSettings }: { showSettings: boolean }) {
-  return hasAppUpdater() ? <UpdateControl showSettings={showSettings} /> : null;
+export function AppUpdates({ menuOpen }: { menuOpen: boolean }) {
+  return hasAppUpdater() ? <UpdateControl menuOpen={menuOpen} /> : null;
 }
 
-function UpdateControl({ showSettings }: { showSettings: boolean }) {
+function UpdateControl({ menuOpen }: { menuOpen: boolean }) {
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<UpdateState | null>(null);
   const [phase, setPhase] = useState<Phase | null>(null);
@@ -20,6 +20,10 @@ function UpdateControl({ showSettings }: { showSettings: boolean }) {
   const [notice, setNotice] = useState("");
   const working = useRef(false);
   const lastCheck = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) setOpen(false);
+  }, [menuOpen]);
 
   useEffect(() => {
     const listener = AppUpdater.addListener("progress", setProgress);
@@ -83,6 +87,8 @@ function UpdateControl({ showSettings }: { showSettings: boolean }) {
     return current;
   });
 
+  if (!menuOpen) return null;
+
   const close = () => { if (!working.current) setOpen(false); };
   const percent = progress ? Math.min(100, Math.floor(100 * progress.received / progress.total)) : 0;
   const status = phase === "loading" ? "Reading installed version…"
@@ -96,13 +102,10 @@ function UpdateControl({ showSettings }: { showSettings: boolean }) {
     : "";
 
   return <>
-    {(showSettings || state?.available) && <section className="app-update-bar row spread" aria-label="Android app updates">
-      <div aria-live="polite">{state?.available ? `Update available · ${state.version}` : "Wyrdholt Android"}</div>
-      <button className={`btn small${state?.available ? " primary" : ""}`} onClick={() => {
-        setOpen(true);
-        if (!state) void perform("loading", () => AppUpdater.getState());
-      }}>{state?.available ? "View update" : "App updates"}</button>
-    </section>}
+    <button className={`btn block${state?.available ? " primary" : ""}`} onClick={() => {
+      setOpen(true);
+      if (!state) void perform("loading", () => AppUpdater.getState());
+    }}>App updates{state?.available ? ` · ${state.version} available` : ""}</button>
     {open && <Sheet label="App updates" onClose={close}>
       <div className="row spread">
         <h2>App updates</h2>

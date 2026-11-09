@@ -1,8 +1,8 @@
 import type { ItemDef } from "@emberbound/shared-types";
 
 /**
- * Item catalog: five rarities × six slots, names from the Godot catalog
- * (PROGRESSION_BALANCE). Stats are PROVISIONAL.
+ * Shared gear and class gear across five rarities and six slots.
+ * Stats are provisional.
  *
  * Eligibility by encounter level: Rare 5+, Epic 9+, Legendary 13+.
  * C3 adds the ten previously missing Epic/Legendary effects. Their values are
@@ -10,7 +10,7 @@ import type { ItemDef } from "@emberbound/shared-types";
  */
 export const ITEMS: ItemDef[] = [
   // ---------------------------------------------------------------- Common
-  { id: "wayfarer_blade", name: "Wayfarer Blade", slot: "weapon", rarity: "common", stats: { attack: 3 }, minEncounterLevel: 1, tags: [], icon: "blade" },
+  { id: "wayfarer_blade", name: "Wayfarer Blade", slot: "weapon", classId: "warrior", rarity: "common", stats: { attack: 3 }, minEncounterLevel: 1, tags: [], icon: "blade" },
   { id: "linen_hood", name: "Linen Hood", slot: "head", rarity: "common", stats: { hp: 8 }, minEncounterLevel: 1, tags: [], icon: "hood" },
   { id: "trail_tunic", name: "Trail Tunic", slot: "chest", rarity: "common", stats: { hp: 12, armor: 2 }, minEncounterLevel: 1, tags: [], icon: "tunic" },
   { id: "worn_grips", name: "Worn Grips", slot: "gloves", rarity: "common", stats: { attackRateMilli: 50 }, minEncounterLevel: 1, tags: [], icon: "gloves" },
@@ -18,7 +18,7 @@ export const ITEMS: ItemDef[] = [
   { id: "copper_band", name: "Copper Band", slot: "ring", rarity: "common", stats: { attack: 1, critBp: 100 }, minEncounterLevel: 1, tags: [], icon: "ring" },
 
   // -------------------------------------------------------------- Uncommon
-  { id: "briar_edge", name: "Briar Edge", slot: "weapon", rarity: "uncommon", stats: { attack: 6 }, minEncounterLevel: 1, tags: [], icon: "blade" },
+  { id: "briar_edge", name: "Briar Edge", slot: "weapon", classId: "warrior", rarity: "uncommon", stats: { attack: 6 }, minEncounterLevel: 1, tags: [], icon: "blade" },
   { id: "scout_hood", name: "Scout Hood", slot: "head", rarity: "uncommon", stats: { hp: 14, critBp: 150 }, minEncounterLevel: 1, tags: ["CRIT"], icon: "hood" },
   { id: "rootwoven_coat", name: "Rootwoven Coat", slot: "chest", rarity: "uncommon", stats: { hp: 24, armor: 4 }, minEncounterLevel: 1, tags: [], icon: "tunic" },
   { id: "duelist_gloves", name: "Duelist Gloves", slot: "gloves", rarity: "uncommon", stats: { attack: 2, attackRateMilli: 80 }, minEncounterLevel: 1, tags: ["FAST ATTACKS"], icon: "gloves" },
@@ -30,6 +30,7 @@ export const ITEMS: ItemDef[] = [
     id: "bloodletter",
     name: "Bloodletter",
     slot: "weapon",
+    classId: "warrior",
     rarity: "rare",
     stats: { attack: 9, critBp: 300 },
     effect: {
@@ -86,6 +87,7 @@ export const ITEMS: ItemDef[] = [
     id: "stormcaller",
     name: "Stormcaller",
     slot: "weapon",
+    classId: "mage",
     rarity: "epic",
     stats: { attack: 12, critBp: 200 },
     effect: {
@@ -149,7 +151,7 @@ export const ITEMS: ItemDef[] = [
 
   // ------------------------------------------------------------- Legendary
   {
-    id: "venomstring", name: "Venomstring", slot: "weapon", rarity: "legendary",
+    id: "venomstring", name: "Venomstring", slot: "weapon", classId: "ranger", rarity: "legendary",
     stats: { attack: 18, attackRateMilli: 60, critBp: 400 }, minEncounterLevel: 13, tags: ["FAST ATTACKS", "CRIT", "POISON"], icon: "bow",
     effect: {
       name: "Venom Thread", description: "25% chance on hit to apply Poison for 5s (15% attack per second per stack), up to 2 stacks. Separate from class Poison.",
@@ -196,13 +198,117 @@ export const ITEMS: ItemDef[] = [
       mechanics: [{ kind: "execute", id: "ember_oath", thresholdBp: 2_500, bonusBp: 2_000 }],
     },
   },
+
+  // Monk wraps and training gear.
+  { id: "wayfarer_wraps", name: "Wayfarer Wraps", slot: "weapon", classId: "monk", rarity: "common", stats: { attack: 3 }, minEncounterLevel: 1, tags: [], icon: "wraps" },
+  { id: "reedweave_wraps", name: "Reedweave Wraps", slot: "weapon", classId: "monk", rarity: "uncommon", stats: { attack: 6 }, minEncounterLevel: 1, tags: [], icon: "wraps" },
+  {
+    id: "iron_palm_wraps", name: "Iron Palm Wraps", slot: "weapon", classId: "monk", rarity: "rare",
+    stats: { attack: 9, critBp: 300 }, minEncounterLevel: 5, tags: ["ON-HIT", "CRIT"], icon: "wraps",
+    effect: {
+      name: "Iron Palm", description: "Every fifth hit adds a physical strike for 50% attack.",
+      mechanics: [{ kind: "nth_hit_extra_damage", id: "iron_palm", every: 5, potencyBp: 5_000, damageType: "physical" }],
+    },
+  },
+  {
+    id: "thunder_palm_wraps", name: "Thunder Palm Wraps", slot: "weapon", classId: "monk", rarity: "epic",
+    stats: { attack: 12, critBp: 200 }, minEncounterLevel: 9, tags: ["ON-HIT", "MULTI-TARGET"], icon: "wraps",
+    effect: {
+      name: "Shockwave", description: "Every sixth attack deals 20% attack as physical damage to each living enemy.",
+      mechanics: [{ kind: "nth_attack_splash", id: "palm_shockwave", every: 6, potencyBp: 2_000, damageType: "physical" }],
+    },
+  },
+  {
+    id: "stillwater_fists", name: "Stillwater Fists", slot: "weapon", classId: "monk", rarity: "legendary",
+    stats: { attack: 18, attackRateMilli: 60, critBp: 400 }, minEncounterLevel: 13, tags: ["FAST ATTACKS", "HASTE"], icon: "wraps",
+    effect: {
+      name: "Stillwater Rhythm", description: "Every sixth hit grants +15% attack speed for 3s.",
+      mechanics: [{ kind: "nth_hit_haste", id: "stillwater_rhythm", every: 6, statusId: "stillwater_rhythm", hasteBp: 1_500, durationMs: 3_000 }],
+    },
+  },
+  { id: "courtyard_sandals", name: "Courtyard Sandals", slot: "boots", classId: "monk", rarity: "uncommon", stats: { armor: 1, attackRateMilli: 80 }, minEncounterLevel: 1, tags: ["FAST ATTACKS"], icon: "boots" },
+  { id: "temple_vest", name: "Temple Vest", slot: "chest", classId: "monk", rarity: "rare", stats: { hp: 38, armor: 6, attackRateMilli: 60 }, minEncounterLevel: 5, tags: ["FAST ATTACKS"], icon: "tunic" },
+
+  // Mage staves and spellweave.
+  { id: "apprentice_staff", name: "Apprentice Staff", slot: "weapon", classId: "mage", rarity: "common", stats: { attack: 3 }, minEncounterLevel: 1, tags: [], icon: "staff" },
+  { id: "willow_focus", name: "Willow Focus", slot: "weapon", classId: "mage", rarity: "uncommon", stats: { attack: 6 }, minEncounterLevel: 1, tags: [], icon: "staff" },
+  {
+    id: "coalheart_staff", name: "Coalheart Staff", slot: "weapon", classId: "mage", rarity: "rare",
+    stats: { attack: 9, critBp: 300 }, minEncounterLevel: 5, tags: ["DOT", "BURN"], icon: "staff",
+    effect: {
+      name: "Coal Spark", description: "20% chance on hit to apply Coal Burn for 4s (25% attack per second).",
+      mechanics: [{ kind: "on_hit_dot", id: "coal_spark", statusId: "coal_burn", chanceBp: 2_000, maxStacks: 1, tickMs: 1_000, durationMs: 4_000, potencyBp: 2_500 }],
+    },
+  },
+  {
+    id: "starfall_spire", name: "Starfall Spire", slot: "weapon", classId: "mage", rarity: "legendary",
+    stats: { attack: 18, attackRateMilli: 60, critBp: 400 }, minEncounterLevel: 13, tags: ["CRIT", "MULTI-TARGET"], icon: "staff",
+    effect: {
+      name: "Starfall", description: "Every fifth attack deals 45% attack as magic damage to each living enemy.",
+      mechanics: [{ kind: "nth_attack_splash", id: "starfall", every: 5, potencyBp: 4_500, damageType: "magic" }],
+    },
+  },
+  { id: "scribe_hood", name: "Scribe Hood", slot: "head", classId: "mage", rarity: "uncommon", stats: { hp: 12, critBp: 200 }, minEncounterLevel: 1, tags: ["CRIT"], icon: "hood" },
+  { id: "spellweave_robe", name: "Spellweave Robe", slot: "chest", classId: "mage", rarity: "rare", stats: { hp: 36, armor: 6, attack: 2 }, minEncounterLevel: 5, tags: [], icon: "tunic" },
+
+  // Warrior swords and mail.
+  {
+    id: "iron_vow", name: "Iron Vow", slot: "weapon", classId: "warrior", rarity: "epic",
+    stats: { attack: 12, critBp: 200 }, minEncounterLevel: 9, tags: ["RETALIATION"], icon: "blade",
+    effect: {
+      name: "Riposte", description: "When an enemy attack damages health, 15% chance to strike back for 45% attack. 2s cooldown.",
+      mechanics: [{ kind: "on_damaged_retaliate", id: "iron_vow_riposte", chanceBp: 1_500, potencyBp: 4_500, damageType: "physical", cooldownMs: 2_000, appliesDots: 0 }],
+    },
+  },
+  {
+    id: "kingsfall", name: "Kingsfall", slot: "weapon", classId: "warrior", rarity: "legendary",
+    stats: { attack: 18, attackRateMilli: 60, critBp: 400 }, minEncounterLevel: 13, tags: ["CRIT", "EXECUTE"], icon: "blade",
+    effect: {
+      name: "Final Cut", description: "Direct hits deal +25% damage to enemies at or below 25% health.",
+      mechanics: [{ kind: "execute", id: "final_cut", thresholdBp: 2_500, bonusBp: 2_500 }],
+    },
+  },
+  { id: "watch_helm", name: "Watch Helm", slot: "head", classId: "warrior", rarity: "uncommon", stats: { hp: 12, armor: 2 }, minEncounterLevel: 1, tags: ["SUSTAIN"], icon: "hood" },
+  { id: "bastion_mail", name: "Bastion Mail", slot: "chest", classId: "warrior", rarity: "rare", stats: { hp: 36, armor: 10 }, minEncounterLevel: 5, tags: ["SUSTAIN"], icon: "tunic" },
+
+  // Ranger bows and hunting leathers.
+  { id: "trail_bow", name: "Trail Bow", slot: "weapon", classId: "ranger", rarity: "common", stats: { attack: 3 }, minEncounterLevel: 1, tags: [], icon: "bow" },
+  { id: "yew_shortbow", name: "Yew Shortbow", slot: "weapon", classId: "ranger", rarity: "uncommon", stats: { attack: 6 }, minEncounterLevel: 1, tags: [], icon: "bow" },
+  {
+    id: "viper_bow", name: "Viper Bow", slot: "weapon", classId: "ranger", rarity: "rare",
+    stats: { attack: 9, critBp: 300 }, minEncounterLevel: 5, tags: ["DOT", "POISON"], icon: "bow",
+    effect: {
+      name: "Viper Sting", description: "20% chance on hit to apply Poison for 4s (25% attack per second). Separate from class Poison.",
+      mechanics: [{ kind: "on_hit_dot", id: "viper_sting", statusId: "poison", chanceBp: 2_000, maxStacks: 1, tickMs: 1_000, durationMs: 4_000, potencyBp: 2_500 }],
+    },
+  },
+  {
+    id: "gale_bow", name: "Gale Bow", slot: "weapon", classId: "ranger", rarity: "epic",
+    stats: { attack: 12, critBp: 200 }, minEncounterLevel: 9, tags: ["ON-HIT", "MULTI-TARGET"], icon: "bow",
+    effect: {
+      name: "Gale Arrow", description: "12% chance on hit to strike another enemy for 60% attack as physical damage.",
+      mechanics: [{ kind: "on_hit_chain", id: "gale_arrow", chanceBp: 1_200, potencyBp: 6_000, damageType: "physical" }],
+    },
+  },
+  { id: "fletchers_gloves", name: "Fletcher's Gloves", slot: "gloves", classId: "ranger", rarity: "uncommon", stats: { attack: 2, attackRateMilli: 50, critBp: 150 }, minEncounterLevel: 1, tags: ["CRIT"], icon: "gloves" },
+  { id: "thorntrail_boots", name: "Thorntrail Boots", slot: "boots", classId: "ranger", rarity: "rare", stats: { hp: 8, attackRateMilli: 80, critBp: 400 }, minEncounterLevel: 5, tags: ["CRIT"], icon: "boots" },
 ];
 
-export const STARTER_ITEMS = ["wayfarer_blade", "linen_hood", "trail_tunic", "worn_grips", "road_boots", "copper_band"];
+export const STARTER_ITEMS = ["linen_hood", "trail_tunic", "worn_grips", "road_boots", "copper_band"];
+
+export const STARTER_WEAPONS = {
+  monk: "wayfarer_wraps",
+  mage: "apprentice_staff",
+  warrior: "wayfarer_blade",
+  ranger: "trail_bow",
+};
 
 /** Items the developer "grant sample gear" action adds, for Gear UX evaluation. */
 export const DEV_SAMPLE_ITEMS: readonly string[] = [
   "briar_edge",
+  "reedweave_wraps",
+  "willow_focus",
+  "yew_shortbow",
   "scout_hood",
   "rootwoven_coat",
   "duelist_gloves",

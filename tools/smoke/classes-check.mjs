@@ -4,7 +4,7 @@
  * - both are selectable at character creation (Warrior Active, Ranger Alternate)
  * - combat renders with the Warrior; the in-app self-test passes every current golden case
  * - Character screen: both class cards show identity, Mastery, next milestone and 5 techniques
- *   with lock states; the codex lists Monk and Mage as not learned with their paths
+ *   with lock states; only the two learned classes appear and trials are in Challenges
  * - switching to Ranger works
  *
  *   npm run build:web && (cd apps/mobile && npx vite preview --port 4173)
@@ -50,8 +50,9 @@ const allPass = (await page.getByText("ALL PASS").count()) > 0;
 await page.getByRole("button", { name: "Close" }).first().tap();
 
 await page.getByRole("button", { name: /Character/ }).last().tap();
-await page.waitForTimeout(300);
-const card = (cls) => page.locator(`.class-card[data-class="${cls}"]`);
+const character = page.locator(".character-screen");
+await character.waitFor();
+const card = (cls) => character.locator(`.class-card[data-class="${cls}"]`);
 const cardInfo = async (cls) => ({
   role: await card(cls).getAttribute("data-role"),
   text: (await card(cls).innerText()).replace(/\s+/g, " "),
@@ -60,20 +61,20 @@ const cardInfo = async (cls) => ({
 const warrior = await cardInfo("warrior");
 const ranger = await cardInfo("ranger");
 await shot("03-character");
-const codex = await page.locator(".codex-entry").evaluateAll((els) => els.map((e) => e.dataset.class));
-await page.locator('.codex-entry[data-class="mage"] summary').tap();
-const mageCodex = await page.locator('.codex-entry[data-class="mage"] .technique').count();
-await page.locator('.codex-entry[data-class="mage"]').scrollIntoViewIfNeeded();
-await shot("04-codex");
+const shownClasses = await character.locator("[data-class]").evaluateAll((els) => els.map((e) => e.dataset.class));
+const hasTrialShortcut = (await character.getByText(/promotion trials/i).count()) > 0;
 
 await card("ranger").getByRole("button", { name: /Make Ranger active/ }).tap();
 // During a fight the switch is queued until the fight ends (build snapshot rule).
 const queuedText = (await card("ranger").innerText().catch(() => "")).replace(/\s+/g, " ");
 await page.locator(".header").filter({ hasText: "Ranger" }).waitFor({ timeout: 90_000 }).catch(() => undefined);
 const afterSwitch = await page.locator(".header").innerText();
+await page.getByRole("button", { name: "Challenges", exact: true }).tap();
+const trials = page.getByRole("region", { name: "Promotion trials", exact: true });
+await trials.waitFor();
 await page.getByRole("button", { name: /Adventure/ }).last().tap();
 await page.waitForTimeout(3_000);
-await shot("05-adventure-ranger");
+await shot("04-adventure-ranger");
 await browser.close();
 
 const checks = {
@@ -86,11 +87,12 @@ const checks = {
     warrior.techniques.join(",") ===
     "warrior_bleeding_strikes:unlocked,warrior_retaliation:next,warrior_execute:locked,warrior_deep_wounds:locked,warrior_relentless_finish:locked",
   rangerCard: ranger.role === "Alternate" && /Poisoned Shots/.test(ranger.text) && /Venom Burst/.test(ranger.text) && ranger.techniques.length === 5,
-  codexListsOthers: codex.join(",") === "monk,mage" && mageCodex === 6, // Mage: Ignition + Arcane Ward at M1 (C2), then M5-M20
+  onlyLearnedClassesShown: shownClasses.join(",") === "warrior,ranger",
+  promotionTrialsOnlyInChallenges: !hasTrialShortcut,
   switchToRanger: /Ranger/.test(afterSwitch) && (/Switch queued/.test(queuedText) || /Active/.test(queuedText)),
   noConsoleErrors: errors.length === 0,
 };
-const report = { base, enabled, roles, header, selftestRows, warrior, ranger, codex, queuedText, afterSwitch, checks, errors };
+const report = { base, enabled, roles, header, selftestRows, warrior, ranger, shownClasses, queuedText, afterSwitch, checks, errors };
 writeFileSync(join(out, "classes-report.json"), JSON.stringify(report, null, 2));
 console.log(JSON.stringify({ checks, errors }, null, 2));
 process.exit(Object.values(checks).every(Boolean) ? 0 : 1);

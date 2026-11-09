@@ -182,8 +182,23 @@ export class ContentIndex {
         for (const r of s.ruleIds ?? []) must(this.rules.get(r), `rule ${r}`);
       });
     }
-    for (const i of this.snapshot.items) this.rarity(i.rarity);
-    for (const s of this.snapshot.starterItems) this.item(s);
+    for (const i of this.snapshot.items) {
+      this.rarity(i.rarity);
+      if (i.classId !== undefined) this.classDef(i.classId);
+    }
+    for (const s of this.snapshot.starterItems) {
+      const item = this.item(s);
+      if (this.snapshot.starterWeapons && (item.slot === "weapon" || item.classId !== undefined)) {
+        throw new Error(`Invalid shared starter item ${item.id}`);
+      }
+    }
+    if (this.snapshot.starterWeapons) {
+      for (const cls of this.classes.values()) {
+        if (!cls.implemented || cls.tier !== 1) continue;
+        const starter = this.item(this.snapshot.starterWeapons[cls.id] ?? "");
+        if (starter.slot !== "weapon" || starter.classId !== cls.id) throw new Error(`Invalid starter weapon for ${cls.id}`);
+      }
+    }
     for (const l of this.snapshot.lootTables) {
       this.rarity(l.maxRarity);
       for (const r of Object.keys(l.weights)) this.rarity(r);

@@ -383,8 +383,7 @@ try {
   };
   await c5Page.clock.install({ time: c5Wall });
   await c5Page.goto(base);
-  await c5Page.getByRole("button", { name: "Character", exact: true }).tap();
-  await c5Page.getByRole("button", { name: "View promotion trials", exact: true }).tap();
+  await c5Page.getByRole("button", { name: "Challenges", exact: true }).tap();
   const trials = c5Page.getByRole("region", { name: "Promotion trials" });
   assert(await trials.getByRole("button", { name: "Enter Ascendant Trial" }).isDisabled());
   await trials.getByRole("button", { name: "Enter Arcanist Trial" }).tap();
@@ -423,6 +422,73 @@ try {
   await seasons.getByText(`${season.name} · ${season.titles[0]}`, { exact: true }).waitFor();
   report.checks.push({ name: "promotion-and-season-reward-save-tier-cadence-and-rollover", passed: true });
   await close(c5);
+
+  const menu = await setup({ main: fixture("Backup Tester") });
+  const menuPage = menu.page;
+  await menuPage.goto(base);
+  const navigation = menuPage.getByRole("navigation", { name: "Game navigation" });
+  await navigation.waitFor();
+  assert.deepEqual(await navigation.getByRole("button").allTextContents(), ["Character", "Gear", "Adventure", "Challenges", "Menu"]);
+  await navigation.getByRole("button", { name: "Character", exact: true }).tap();
+  assert.equal(await menuPage.getByRole("button", { name: "Open online adventure" }).count(), 0);
+  await navigation.getByRole("button", { name: "Menu", exact: true }).tap();
+  await menuPage.getByText("Online Play is temporarily disabled.", { exact: true }).waitFor();
+  assert.equal(await navigation.getByRole("button", { name: "Menu", exact: true }).getAttribute("aria-current"), "page");
+  const downloadPending = menuPage.waitForEvent("download");
+  await menuPage.getByRole("button", { name: "Back up save", exact: true }).tap();
+  const downloaded = await downloadPending;
+  assert.match(downloaded.suggestedFilename(), /^Wyrdholt-Backup-\d{4}-\d{2}-\d{2}\.json$/);
+  const backup = readFileSync(await downloaded.path());
+  const decoded = parseSave(backup.toString("utf8"));
+  assert(decoded.ok && decoded.profile.character.name === "Backup Tester");
+
+  await menuPage.getByRole("button", { name: /^Encyclopedia/ }).tap();
+  const encyclopedia = menuPage.getByRole("main", { name: "Encyclopedia" });
+  await encyclopedia.getByText("Mage", { exact: true }).tap();
+  await encyclopedia.getByText("Arcane Ward", { exact: true }).waitFor();
+  await encyclopedia.getByRole("button", { name: "Bestiary", exact: true }).tap();
+  await encyclopedia.getByRole("searchbox", { name: "Search bestiary" }).fill("wolf");
+  await encyclopedia.getByText("Field Wolf", { exact: true }).tap();
+  await encyclopedia.getByText("Appears in Greenfields.", { exact: true }).waitFor();
+  await encyclopedia.getByRole("button", { name: "Back to menu" }).tap();
+
+  await menuPage.getByText("Restore backup", { exact: true }).tap();
+  await menuPage.getByLabel("Or paste backup text").fill(fixture("Restore Tester"));
+  await menuPage.getByRole("button", { name: "Review backup text", exact: true }).tap();
+  await menuPage.getByText("Restore Tester · Level 1", { exact: true }).waitFor();
+  const beforeRestore = parseSave((await storage(menu.observer, {}, true)).main);
+  assert(beforeRestore.ok && beforeRestore.profile.character.name === "Backup Tester");
+  await menuPage.getByRole("button", { name: "Confirm restore", exact: true }).tap();
+  await navigation.getByRole("button", { name: "Adventure", exact: true }).and(menuPage.locator('[aria-current="page"]')).waitFor();
+  const replaced = parseSave((await storage(menu.observer, {}, true)).main);
+  assert(replaced.ok && replaced.profile.character.name === "Restore Tester");
+  await navigation.getByRole("button", { name: "Menu", exact: true }).tap();
+
+  await menuPage.getByRole("button", { name: "Restart save", exact: true }).tap();
+  await menuPage.getByRole("button", { name: "Cancel restart", exact: true }).tap();
+  assert(parseSave((await storage(menu.observer, {}, true)).main).ok);
+  await menuPage.getByRole("button", { name: "Restart save", exact: true }).tap();
+  await menuPage.getByRole("button", { name: "Confirm restart", exact: true }).tap();
+  await menuPage.getByRole("button", { name: "Begin in Greenfields", exact: true }).waitFor();
+  const empty = await storage(menu.observer, {}, true);
+  assert.deepEqual(empty, { main: null, temp: null, backup: null });
+  assert.equal(await menuPage.getByRole("button", { name: "Open online adventure" }).count(), 0);
+
+  await menuPage.getByRole("button", { name: "Restore a backup", exact: true }).tap();
+  const restore = menuPage.getByRole("dialog", { name: "Restore a backup" });
+  const picker = restore.getByLabel("Choose a Wyrdholt backup file");
+  await picker.setInputFiles({ name: "bad.json", mimeType: "application/json", buffer: Buffer.from("{}") });
+  await restore.getByText("This backup is invalid or uses an incompatible game version.").waitFor();
+  assert.equal((await storage(menu.observer, {}, true)).main, null);
+  await picker.setInputFiles({ name: downloaded.suggestedFilename(), mimeType: "application/json", buffer: backup });
+  await restore.getByText("Backup Tester · Level 1", { exact: true }).waitFor();
+  assert.equal((await storage(menu.observer, {}, true)).main, null);
+  await restore.getByRole("button", { name: "Confirm restore", exact: true }).tap();
+  await menuPage.getByRole("navigation", { name: "Game navigation" }).waitFor();
+  const restored = parseSave((await storage(menu.observer, {}, true)).main);
+  assert(restored.ok && restored.profile.character.name === "Backup Tester");
+  report.checks.push({ name: "player-menu-backup-download-restart-restore-and-encyclopedia", passed: true });
+  await close(menu);
 
   const failed = await setup({}, "write"); await failed.page.goto(base);
   await failed.page.getByRole("button", { name: "Begin in Greenfields", exact: true }).tap();

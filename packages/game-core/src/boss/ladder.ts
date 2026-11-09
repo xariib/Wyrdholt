@@ -64,7 +64,7 @@ export function startBossAttempt(profile: Profile, content: ContentIndex, tier: 
 
   leaveCurrentRun(profile);
   profile.adventure.lastResult = null;
-  applyPendingBuild(profile);
+  applyPendingBuild(profile, content);
   const state = progress ?? { version: 1, highestClearedTier: 0, attemptCount: 0, active: null, lastResult: null };
   if (bossId === ASHEN_KING_ID) {
     profile.ashenKing = state;
@@ -122,7 +122,7 @@ export function advanceBoss(profile: Profile, content: ContentIndex, deltaMs: nu
         profile.stats.defeats += 1;
       }
     }
-    applyPendingBuild(profile);
+    applyPendingBuild(profile, content);
     const boss = content.soloBosses.get(bossId);
     if (bossId === ASHEN_KING_ID && outcome === "victory" && attempt.autoPush && !options.offline && boss && tier < boss.tiers.length
       && state.attemptCount < Number.MAX_SAFE_INTEGER) {

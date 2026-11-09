@@ -156,7 +156,9 @@ function InventoryItem({ group }: { group: InventoryGroup }) {
       <ItemIcon icon={item.icon} rarityColor={rarityColor(content, item.rarity)} size={40} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="item-name">{item.name}</div>
-        <div className="rarity" style={{ color: rarityColor(content, item.rarity) }}>{SLOT_LABELS[item.slot]} · {content.rarity(item.rarity).name}</div>
+        <div className="rarity" style={{ color: rarityColor(content, item.rarity) }}>
+          {SLOT_LABELS[item.slot]} · {content.rarity(item.rarity).name}{item.classId ? ` · ${content.classDef(item.classId).name} only` : ""}
+        </div>
       </div>
     </div>
     <div className="small">{number(group.ids.length)} matching / {number(group.totalCount)} owned copies · {number(group.eligibleCount)} salvage eligible</div>

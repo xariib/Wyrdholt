@@ -6,20 +6,22 @@ import {readFileSync,writeFileSync,mkdirSync,statSync} from 'node:fs';
 import {resolve,join,extname,sep} from 'node:path';
 import {chromium,expect} from 'playwright/test';
 import {CONTENT,FORGE_V1} from '@emberbound/game-content';
-import {ContentIndex,createProfile,rollLoot,applyCommand,advanceAdventure,parseSave,serializeSave,eligibleForgeIds,fuse,previewSalvage,salvageItem,previewBulkSalvage,salvageItems,currentBuild,resolveHeroStats} from '@emberbound/game-core';
+import {ContentIndex,createInstance,createProfile,rollLoot,applyCommand,advanceAdventure,parseSave,serializeSave,eligibleForgeIds,fuse,previewSalvage,salvageItem,previewBulkSalvage,salvageItems,currentBuild,resolveHeroStats} from '@emberbound/game-core';
 const content=new ContentIndex(CONTENT),dist=resolve(process.argv[2]??'apps/mobile/dist'),out=resolve(process.argv[3]??'tools/smoke/out/c3-flow');mkdirSync(out,{recursive:true});
 const report={pass:false,scope:'Controlled local Chromium/IDB flow; not natural pacing/native/human acceptance',cases:[],errors:[]};
 // Controlled past clear/Gold, configured loot RNG. No DEV commands; this is not pacing evidence.
-const p=createProfile(content,{name:'C3 QA',activeClassId:'monk',alternateClassId:'mage',masterSeed:1042,nowWallMs:Date.now()});
+const p=createProfile(content,{name:'C3 QA',activeClassId:'mage',alternateClassId:'monk',masterSeed:1042,nowWallMs:Date.now()});
 p.gold=500;p.adventure.zones.greenfields.cleared=true;
+const starter=content.item(CONTENT.starterWeapons[p.character.activeClassId]);
 let seeds=0;
 const copies=base=>p.inventory.instances.filter(i=>i.baseId===base&&i.isNew);
-while(copies('wayfarer_blade').length<9||copies('crown_of_thorns').length<2){
+while(copies(starter.id).length<9||copies('crown_of_thorns').length<2){
   assert(++seeds<50000,'Fixture loot target not reached');
-  if(copies('wayfarer_blade').length<9)rollLoot(p,content,'greenfields_farm',40,seeds,{source:'c3-qa-configured-loot'});
+  if(copies(starter.id).length<9)rollLoot(p,content,'greenfields_farm',40,seeds,{source:'c3-qa-configured-loot'});
   else rollLoot(p,content,'darkwood_cache',40,seeds,{source:'c3-qa-configured-loot'});
 }
-const weapon=copies('wayfarer_blade'),effect=copies('crown_of_thorns')[0],effectPeer=copies('crown_of_thorns')[1];
+const weapon=copies(starter.id),effect=copies('crown_of_thorns')[0],effectPeer=copies('crown_of_thorns')[1];
+createInstance(p,'wayfarer_blade',{isNew:true}); // A sword carried over from an older build.
 assert(effect&&content.item(effect.baseId).effect);
 assert(applyCommand(p,content,{type:'startFarm',zoneId:'greenfields'},{contentTimeMs:0}).ok);
 while(p.adventure.run.phase!=='fight')advanceAdventure(p,content,100,{offline:false,contentTimeMs:0});
@@ -75,19 +77,20 @@ try{
   await expect(sheet.getByLabel('Search inventory',{exact:true})).toHaveValue(content.item(effect.baseId).effect.name);
   await expect(effectCard).toContainText('1 NEW matching');
   await expect(sheet.getByRole('region',{name:'Manage inventory copies'})).toHaveCount(0);
-  await sheet.getByRole('button',{name:'Clear filters',exact:true}).click();await manage(sheet,'wayfarer_blade');
+  await sheet.getByRole('button',{name:'Clear filters',exact:true}).click();await manage(sheet,starter.id);
   const locked=weapon[0].id;await lock(sheet,locked,true);const lockedState=await snapshot('locked');assert.equal(lockedState.schema,3);assert(lockedState.inventory.instances.find(i=>i.id===locked).isNew);
   for(const id of [initial.equipment.weapon,locked])await expect(sheet.getByRole('checkbox',{name:`Select for salvage copy #${id}`,exact:true})).toBeDisabled();
   await manage(sheet,effect.baseId);await expect(sheet.getByRole('checkbox',{name:`Select for salvage copy #${effect.id}`,exact:true})).toBeDisabled();
   await sheet.getByRole('button',{name:'Close inventory',exact:true}).click();
   await page.getByRole('button',{name:'Forge',exact:true}).click();const forgeSheet=page.getByRole('dialog',{name:'Forge',exact:true});
   const materials=eligibleForgeIds(lockedState,content,'weapon','common').slice(0,5);assert.equal(materials.length,5);assert(!materials.includes(locked));
-  for(let n=0;n<5;n++)await forgeSheet.getByRole('button',{name:'Add Wayfarer Blade',exact:true}).click();
+  for(let n=0;n<5;n++)await forgeSheet.getByRole('button',{name:`Add ${starter.name}`,exact:true}).click();
   const beforeForge=await profile(),forgeBytes=await storage();await forgeSheet.getByTestId('forge-review').click();
   for(const id of materials)await expect(forgeSheet.locator('.forge-materials')).toContainText(`#${id}`);
   await forgeSheet.getByRole('button',{name:'Change materials',exact:true}).click();assert.deepEqual(state(await profile()),state(beforeForge));assert.deepEqual(await storage(),forgeBytes);
   await forgeSheet.getByTestId('forge-review').click();await forgeSheet.getByTestId('forge-submit').click();await forgeSheet.getByTestId('forge-result').waitFor();
   const forged=await snapshot('forged'),receipt=forged.forge.lastReceipt;assert.deepEqual(receipt.consumedIds,materials);assert.equal(forged.gold,beforeForge.gold-100);assert.equal(receipt.outputInstanceId,beforeForge.inventory.nextInstanceId);assert(forged.inventory.instances.find(i=>i.id===receipt.outputInstanceId).isNew);assert.deepEqual(forged.pending,beforeForge.pending);assert.deepEqual(forged.itemLocks,beforeForge.itemLocks);
+  assert.equal(content.item(receipt.outputBaseId).classId,p.character.activeClassId);
   const input={transactionId:receipt.transactionId,configVersion:receipt.configVersion,slot:receipt.slot,rarity:receipt.rarity,instanceIds:materials,mode:'configured'};
   const replay=structuredClone(forged);assert(fuse(replay,content,FORGE_V1,input).repeated);assert.deepEqual(replay,forged);
   report.cases.push({step:'lock/Forge/Cancel/receipt/retry',lockedId:locked,materials,receipt});
@@ -100,7 +103,7 @@ try{
   await expect(sheet.getByRole('status').filter({hasText:`Copy #${receipt.outputInstanceId} salvaged for ${reward} Gold and saved.`})).toBeVisible();const single=await snapshot('single');removed(beforeSingle,single,[receipt.outputInstanceId],reward);
   const singleRetry=structuredClone(single);assert(!salvageItem(singleRetry,content,{instanceId:receipt.outputInstanceId,rulesVersion:singleQuote.salvage.rulesVersion,expectedGold:reward}).ok);assert.deepEqual(singleRetry,single);assert(fuse(singleRetry,content,FORGE_V1,input).repeated);assert.deepEqual(singleRetry,single);
   report.cases.push({step:'Forge-output/NEW/lock/unlock/single',output:receipt.outputInstanceId,reward,receiptPreservedAfterConsumption:true});
-  await manage(sheet,'wayfarer_blade');const ids=weapon.slice(-2).map(i=>i.id);
+  await manage(sheet,starter.id);const ids=weapon.slice(-2).map(i=>i.id);
   for(const id of ids)await sheet.getByRole('checkbox',{name:`Select for salvage copy #${id}`,exact:true}).check();
   await lock(sheet,ids[1],true);await sheet.getByLabel('Salvage eligibility',{exact:true}).selectOption('eligible');
   const staleBytes=await storage(),stale=await profile();await sheet.getByRole('button',{name:'Review selected salvage',exact:true}).click();await expect(sheet.getByRole('alert')).toContainText('Locked copies');assert.deepEqual(await storage(),staleBytes);assert.deepEqual(state(await profile()),state(stale));
@@ -114,5 +117,11 @@ try{
   const q=previewBulkSalvage(beforeBatch,content,ids);assert(q.ok);const retry=structuredClone(recovered);assert(!salvageItems(retry,content,{rulesVersion:q.bulkSalvage.rulesVersion,copies:q.bulkSalvage.copies,expectedGold:10}).ok);assert.deepEqual(retry,recovered);
   await page.reload();await page.locator('.header').waitFor();const restored=await snapshot('restored');assert.deepEqual(state(restored),state(recovered));
   report.cases.push({step:'hidden-selection/all-or-nothing/readback-fault/recovery/reload',ids,reward:10,noFalseSuccess:true,noAutomaticRemovalOrReplacement:true,wholeAfterState:true,retryNoReward:true});
+  sheet=await inventory();const sword=sheet.locator('[data-base-id="wayfarer_blade"]');
+  await expect(sword).toContainText('Warrior only');
+  await sword.getByRole('button',{name:'Compare Wayfarer Blade',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Requires Warrior',exact:true})).toBeDisabled();
+  assert.equal((await profile()).equipment.weapon,restored.equipment.weapon);
+  report.cases.push({step:'class gear',legacySwordDisabled:true,forgeClass:content.item(receipt.outputBaseId).classId});
   assert.deepEqual(report.errors,[]);report.pass=true;console.log(JSON.stringify(report));
 }catch(e){report.failure={message:String(e),stack:e.stack};throw e;}finally{writeFileSync(join(out,'report.json'),JSON.stringify(report,null,2)+'\n');await ctx.close();await browser.close();server.close();}

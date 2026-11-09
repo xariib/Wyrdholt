@@ -1,22 +1,22 @@
 import type { ItemDef, ItemInstance } from "@emberbound/shared-types";
 import type { ContentIndex } from "../content";
-import { createInstance } from "../items/inventory";
+import { canUseItem, createInstance } from "../items/inventory";
 import { BP, mulDivFloor } from "../math/fixed";
 import { Prng } from "../math/prng";
 import type { Profile } from "../profile/types";
 
 const eligibleCache = new WeakMap<ContentIndex, Map<string, ItemDef[]>>();
 
-function eligibleItems(content: ContentIndex, rarityId: string, encounterLevel: number): ItemDef[] {
+function eligibleItems(content: ContentIndex, rarityId: string, encounterLevel: number, classId: string): ItemDef[] {
   let byKey = eligibleCache.get(content);
   if (!byKey) {
     byKey = new Map();
     eligibleCache.set(content, byKey);
   }
-  const key = `${rarityId}|${encounterLevel}`;
+  const key = `${rarityId}|${encounterLevel}|${classId}`;
   let list = byKey.get(key);
   if (!list) {
-    list = content.snapshot.items.filter((i) => i.rarity === rarityId && i.minEncounterLevel <= encounterLevel);
+    list = content.snapshot.items.filter(i => i.rarity === rarityId && i.minEncounterLevel <= encounterLevel && canUseItem(i, classId));
     byKey.set(key, list);
   }
   return list;
@@ -35,6 +35,7 @@ export function rollLoot(
   provenance: NonNullable<ItemInstance["provenance"]>,
   /** Share of the table's drop chance (basis points, default 100%). */
   chanceScaleBp: number = BP,
+  classId = profile.character.activeClassId,
 ): ItemInstance | null {
   const table = content.lootTable(tableId);
   const rng = new Prng(seed);
@@ -47,7 +48,7 @@ export function rollLoot(
   for (; index >= 0; index -= 1) {
     const rarity = rarities[index];
     if (!rarity) continue;
-    const candidates = eligibleItems(content, rarity.id, encounterLevel);
+    const candidates = eligibleItems(content, rarity.id, encounterLevel, classId);
     if (candidates.length === 0) continue;
     const item = candidates[rng.nextInt(candidates.length)];
     if (!item) continue;

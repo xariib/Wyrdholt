@@ -38,7 +38,7 @@
   --radius-l: 14px;
   --gap: 10px;
   --touch: 48px;
-  --nav-height: 64px;
+  --nav-height: 72px;
 
   /* Safe areas: Capacitor injects --safe-area-inset-* on Android; env() elsewhere. */
   --sat: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
@@ -147,13 +147,6 @@ h3 {
 
 .screen[hidden] {
   display: none;
-}
-
-.app-update-bar {
-  flex: none;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg-raised);
 }
 
 .center-screen {
@@ -770,52 +763,84 @@ h3 {
 /* Bottom navigation */
 .nav {
   position: fixed;
-  left: 0;
-  right: 0;
+  left: max(6px, var(--sal));
+  right: max(6px, var(--sar));
   bottom: 0;
   z-index: 30;
   height: calc(var(--nav-height) + var(--sab));
-  padding: 0 var(--sar) var(--sab) var(--sal);
+  padding: 4px 2px var(--sab);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  background: linear-gradient(180deg, rgba(14, 19, 31, 0.97), #0a0e17);
-  border-top: 1px solid var(--line);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border: 1px solid #504633;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(180deg, #1c2b2d, #101b1e 74%);
+  box-shadow: 0 -5px 20px #0008, inset 0 1px #f5cf8a24;
 }
 .nav-btn {
   border: 0;
+  border-radius: 10px 10px 4px 4px;
   background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  color: var(--text-faint);
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 12.5px;
+  gap: 4px;
+  color: var(--text-dim);
+  font-family: var(--font-body);
+  font-weight: 650;
+  font-size: clamp(10px, 2.8vw, 12px);
+  line-height: 1.1;
+  padding: 0;
   position: relative;
 }
-.nav-btn svg {
-  width: 26px;
-  height: 26px;
+.nav-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 30px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+.nav-icon svg {
+  width: 23px;
+  height: 23px;
+}
+.nav-label {
+  white-space: nowrap;
 }
 .nav-btn.active {
   color: var(--gold);
 }
-.nav-btn.active::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 18%;
-  right: 18%;
-  height: 3px;
-  border-radius: 0 0 3px 3px;
-  background: var(--gold);
+.nav-btn.active .nav-icon {
+  background: linear-gradient(180deg, #423623, #2a2920);
+  border-color: #776044;
+}
+.nav-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -3px;
+}
+.nav-adventure .nav-icon {
+  width: 47px;
+  height: 47px;
+  border-radius: 50%;
+  border-color: #9a784b;
+  margin-top: -16px;
+  background: radial-gradient(circle at 48% 35%, #394442, #172729 74%);
+  box-shadow: 0 3px 9px #0009, inset 0 0 0 3px #1d2b2b;
+}
+.nav-adventure.active .nav-icon {
+  border-color: var(--gold);
+  background: radial-gradient(circle at 48% 35%, #6a4e2d, #33291c 74%);
+  box-shadow: 0 3px 10px #0009, inset 0 0 0 3px #392c20;
+}
+.nav-adventure .nav-icon svg {
+  width: 27px;
+  height: 27px;
 }
 .nav-badge {
   position: absolute;
-  top: 7px;
-  left: calc(50% + 8px);
+  top: 5px;
+  left: calc(50% + 9px);
   min-width: 17px;
   height: 17px;
   padding: 0 4px;
@@ -828,6 +853,37 @@ h3 {
   display: grid;
   place-items: center;
 }
+
+.menu-encyclopedia {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+.menu-encyclopedia span { display: grid; gap: 3px; }
+.menu-encyclopedia small { color: var(--text-dim); }
+.menu-encyclopedia svg, .encyclopedia-title svg { width: 24px; height: 24px; flex: none; color: var(--gold); }
+.menu-details { border-top: 1px solid var(--line); }
+.menu-details summary { display: list-item; min-height: 44px; padding: 11px 0; cursor: pointer; color: var(--gold); }
+.save-tools .text-input { width: 100%; min-width: 0; }
+.save-tools input[type="file"] { font-size: 12px; }
+.save-confirm { border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.restart-button { color: var(--w-danger, #ff9a90); }
+
+.encyclopedia-title { flex-wrap: wrap; }
+.encyclopedia-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.encyclopedia-filters .btn { min-height: 44px; padding-inline: 4px; font-size: 13px; }
+.encyclopedia-filters .btn[aria-pressed="true"] { color: var(--gold); border-color: #8c714d; background: #362e22; }
+.encyclopedia-entry { border: 1px solid var(--line); border-radius: 9px; background: var(--bg-raised); }
+.encyclopedia-entry summary { display: flex; align-items: center; gap: 9px; padding: 10px; min-height: 51px; list-style: none; cursor: pointer; }
+.encyclopedia-entry summary::-webkit-details-marker { display: none; }
+.encyclopedia-entry summary::after { content: "+"; color: var(--gold); margin-left: auto; }
+.encyclopedia-entry[open] summary::after { content: "−"; }
+.entry-art { width: 38px; height: 38px; flex: none; display: grid; place-items: center; }
+.entry-art img { max-width: 38px; max-height: 38px; object-fit: contain; }
+.entry-heading { display: grid; gap: 2px; }
+.entry-heading small { color: var(--text-dim); }
+.entry-body { border-top: 1px solid var(--line); padding: 10px; }
 
 /* Character */
 .class-card {
@@ -1023,36 +1079,4 @@ h3 {
     animation: none !important;
     transition: none !important;
   }
-}
-
-/* C2: class codex (functional; final styling is Codex's job) */
-.codex-entry {
-  border-top: 1px solid var(--line, rgba(255, 255, 255, 0.08));
-  padding-top: 8px;
-}
-.codex-entry > summary {
-  list-style: none;
-  cursor: pointer;
-  gap: 10px;
-  align-items: center;
-  min-height: 44px;
-}
-.codex-entry > summary::-webkit-details-marker {
-  display: none;
-}
-.codex-entry[open] > summary {
-  margin-bottom: 6px;
-}
-.class-art.small-art {
-  width: 40px;
-  height: 44px;
-  flex: none;
-  overflow: hidden;
-}
-.class-art.small-art img {
-  width: 28px;
-  height: 32px;
-}
-.codex-entry > .small {
-  margin: 4px 0;
 }

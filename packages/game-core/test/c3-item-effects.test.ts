@@ -12,7 +12,7 @@ import C2_CONTENT from "./fixtures/c2-content.json";
 import C2_GOLDEN from "./fixtures/c2-golden.json";
 import { content, newProfile, setLevel, setMastery } from "./helpers";
 
-const added = CONTENT.items.filter(item => item.effect && !(C2_CONTENT.items.find(old => old.id === item.id)?.effect));
+const added = CONTENT.items.filter(item => item.effect && C2_CONTENT.items.some(old => old.id === item.id && !old.effect));
 const classes = ["monk", "mage", "warrior", "ranger"];
 function equipped(cls: string, ids: string[]) {
   const p = newProfile(6006, cls, cls === "monk" ? "mage" : "monk");
@@ -36,10 +36,11 @@ describe("C3 item effects", () => {
     expect(added).toHaveLength(10);
     expect(CONTENT.items.filter(i => ["epic", "legendary"].includes(i.rarity)).every(i => i.effect?.mechanics.length)).toBe(true);
     const { contentVersion: _old, items: oldItems, ...oldRest } = C2_CONTENT;
-    const { contentVersion: _new, items: newItems, soloBosses: _c4, longTerm: _c5, social: _coop, ...newRest } = CONTENT;
-    expect(newRest).toEqual(oldRest);
+    const { contentVersion: _new, items: newItems, soloBosses: _c4, longTerm: _c5, social: _coop, starterWeapons, ...newRest } = CONTENT;
+    expect([starterWeapons?.warrior, ...newRest.starterItems]).toEqual(oldRest.starterItems);
+    expect({ ...newRest, starterItems: oldRest.starterItems }).toEqual(oldRest);
     for (const old of oldItems) {
-      const item = newItems.find(i => i.id === old.id)!;
+      const { classId: _class, ...item } = newItems.find(i => i.id === old.id)!;
       expect({ ...item, effect: old.effect, tags: old.tags }).toEqual({ ...old, effect: old.effect });
       if (old.effect) expect(item.effect).toEqual(old.effect);
     }
@@ -130,7 +131,7 @@ describe("C3 item effects", () => {
   });
 
   it("offline chunking and replay use the same full Legendary build", () => {
-    const p = equipped("mage", CONTENT.items.filter(i => i.rarity === "legendary").map(i => i.id));
+    const p = equipped("mage", CONTENT.items.filter(i => i.rarity === "legendary" && (!i.classId || i.classId === "mage")).map(i => i.id));
     startRun(p, content, "greenfields", "farm", 0);
     const live = prepareFight(p, content, p.adventure.run!, { contentTimeMs: 0, recordEvents: true });
     expect(replayFight(content, live.record).summary).toEqual(live.summary);

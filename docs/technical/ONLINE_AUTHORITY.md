@@ -10,15 +10,15 @@
 | `WYRDHOLT_AUTHORITY_ORIGINS` | Comma-separated browser or Capacitor origins allowed by CORS. |
 | `WYRDHOLT_LIVE_CONFIG` | Path to an optional versioned JSON rotation manifest. |
 
-An online command includes the expected profile revision and a request ID. The server settles elapsed time using its own clock and applies the same deterministic game core as the device. The database commits the new revision and journal entry together. A duplicate current command returns its receipt. A stale revision refuses the action. Journal entries contain input, content identity and before and after hashes so the server can replay them against a trusted prior profile. The public leaderboard accepts a season and revision. It derives the rank from verified server progress.
+An online command includes the expected profile revision and a request ID. The server settles elapsed time using its own clock and applies the same deterministic game core as the device. The database commits the new revision and journal entry together. A duplicate current command returns its receipt. A stale revision refuses the action. Journal entries contain input, content identity and before and after hashes so the server can replay them against a trusted prior profile. New online Forge actions also record a server-generated seed so material selection cannot predict the roll. The public leaderboard accepts a season and revision. It derives the rank from verified server progress.
 
 ## Friends, dungeons and raids
 
-Players share their character codes to form mutual friendships or join an invited guild. A player can opt in to let those friends and guildmates borrow their build. An attempt captures the three distinct characters' current revisions and equipped gear. Each character attacks, uses mechanics and takes damage independently in game-core. The party starts each wave at full HP. The stored snapshots and content hash reproduce the fight after equipment or membership changes.
+Players share their character codes to form mutual friendships or join an invited guild. A player can opt in to let those friends and guildmates borrow their build. An attempt captures the three distinct characters' current revisions and equipped gear. Each character attacks, uses mechanics and takes damage independently in game-core. The party starts each wave at full HP. The stored snapshots, server-generated fight seeds and content hash reproduce the fight after equipment or membership changes.
 
 Briar Vault opens after Greenfields. A character can lead one dungeon per UTC day. Victories grant up to three Gold rewards per participant per day, including borrowed characters. A victory also grants 20 marks to the leader's guild. The database commits all eligible rewards with the attempt receipt.
 
-The guild leader spends 60 marks on the Expedition Table, which unlocks Cinder Breach. Each raid lasts three days and has three shared phases. Boss damage and defeated adds contribute separately, capped at the phase goals. Each member can lead one attempt per UTC day with two consenting guildmates. Members who took part in a positive contribution can claim the completion reward once. Existing reward entitlements survive guild departure.
+The guild leader spends 60 marks on the Expedition Table, which unlocks Cinder Breach. Each raid lasts three days and has three shared phases. Boss damage and defeated adds contribute separately, capped at the phase goals. Each member can lead one attempt per UTC day with two consenting guildmates. This limit follows the character across guilds. Members who took part in a positive contribution can claim the completion reward once. Existing reward entitlements survive guild departure.
 
 ## Scheduled rotations
 

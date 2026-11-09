@@ -65,7 +65,7 @@ export function SpriteImage({ name, className, portrait = false }: { name: strin
   return <img className={`pixelated ${className ?? ""}`} src={src} alt="" draggable={false} />;
 }
 
-export function NavIcon({ name }: { name: "adventure" | "character" | "gear" | "challenges" }) {
+export function NavIcon({ name }: { name: "adventure" | "character" | "gear" | "challenges" | "menu" | "book" }) {
   switch (name) {
     case "adventure":
       return (
@@ -94,6 +94,15 @@ export function NavIcon({ name }: { name: "adventure" | "character" | "gear" | "
           <rect x="5" y="19" width="14" height="2" rx="1" />
         </svg>
       );
+    case "menu":
+      return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+        <path d="M9 6h11M9 12h11M9 18h11" />
+        <path fill="currentColor" stroke="none" d="m5 4-2 2 2 2 2-2zm0 6-2 2 2 2 2-2zm0 6-2 2 2 2 2-2z" />
+      </svg>;
+    case "book":
+      return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 6c-3-2-6-2.5-10-1v14c4-1.5 7-1 10 1 3-2 6-2.5 10-1V5c-4-1.5-7-1-10 1zm0 0v14M5 9l4 1m6 0 4-1" />
+      </svg>;
   }
 }
 

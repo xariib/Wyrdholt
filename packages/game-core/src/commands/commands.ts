@@ -11,7 +11,7 @@ import { activeBossAttempt } from "../boss/progress";
 import type { ContentIndex } from "../content";
 import { advanceGame, type AdvanceGameOptions } from "../game";
 import { fuse, forgeState } from "../items/forge";
-import { createInstance, findInstance, reservedInstanceIds } from "../items/inventory";
+import { canUseItem, createInstance, discardIncompatiblePendingGear, findInstance, reconcileEquipment, reservedInstanceIds, upgradeClassGear } from "../items/inventory";
 import { isItemLocked, setItemLock } from "../items/locks";
 import { salvageItems, type BulkSalvageInput, type BulkSalvageReceipt } from "../items/bulkSalvage";
 import { salvageItem, type SalvageInput, type SalvageReceipt } from "../items/salvage";
@@ -49,7 +49,7 @@ export function applyCommand(
   profile: Profile,
   content: ContentIndex,
   command: Command,
-  options: Omit<AdvanceGameOptions, "offline"> & { offline?: boolean; forgeConfig?: ForgeConfig; allowDevForge?: boolean },
+  options: Omit<AdvanceGameOptions, "offline"> & { offline?: boolean; forgeConfig?: ForgeConfig; allowDevForge?: boolean; authorityForgeSeed?: number },
 ): CommandResult {
   switch (command.type) {
     case "bulkSalvage":
@@ -61,11 +61,12 @@ export function applyCommand(
       return error ? { ok: false, error } : OK;
     }
     case "forge":
-      return options.forgeConfig ? fuse(profile, content, options.forgeConfig, command.input, options.allowDevForge) : { ok: false, error: "Forge configuration unavailable." };
+      return options.forgeConfig ? fuse(profile, content, options.forgeConfig, command.input, options.allowDevForge, options.authorityForgeSeed) : { ok: false, error: "Forge configuration unavailable." };
     case "devForge": {
       if (!options.allowDevForge || !options.forgeConfig) return { ok: false, error: "Forge DEV tools are disabled." };
       if (command.action === "gold" && !Number.isSafeInteger(profile.gold + 50000)) return { ok: false, error: "Gold counter exhausted." };
-      const pool = command.action === "grant" ? content.snapshot.items.filter(i => i.slot === command.slot && i.rarity === command.rarity) : [];
+      const pool = command.action === "grant" ? content.snapshot.items.filter(i =>
+        i.slot === command.slot && i.rarity === command.rarity && canUseItem(i, profile.character.activeClassId)) : [];
       const count = command.count ?? options.forgeConfig.recipes[command.rarity ?? ""]?.count ?? 1;
       if (command.action === "grant" && (!pool.length || !Number.isSafeInteger(count) || count < 1 || count > 2000
         || (profile.forge?.devItemIds?.length ?? 0) + count > 10000
@@ -99,7 +100,7 @@ export function applyCommand(
     case "equip":
       return equip(profile, content, command.slot, command.instanceId);
     case "setActiveClass":
-      return setActiveClass(profile, command.classId);
+      return setActiveClass(profile, content, command.classId);
     case "cancelPending":
       profile.pending = null;
       return OK;
@@ -142,7 +143,7 @@ function startActivity(profile: Profile, content: ContentIndex, zoneId: string, 
 
   // An explicit activity change ends the old attempt cleanly, then applies queued changes.
   leaveCurrentRun(profile);
-  applyPendingBuild(profile);
+  applyPendingBuild(profile, content);
   const cfg = content.snapshot.config;
   if (kind === "push") startRun(profile, content, zoneId, "push", cfg.restMs);
   else startRun(profile, content, zoneId, zp.cleared ? "farm" : "trail", cfg.restMs);
@@ -155,8 +156,11 @@ function equip(profile: Profile, content: ContentIndex, slot: SlotId, instanceId
   if (!instance) return { ok: false, error: "You do not own that item." };
   const item = content.item(instance.baseId);
   if (item.slot !== slot) return { ok: false, error: `${item.name} does not fit the ${slot} slot.` };
+  const fighting = isFightActive(profile);
+  const classId = (fighting ? profile.pending?.activeClassId : undefined) ?? profile.character.activeClassId;
+  if (!canUseItem(item, classId)) return { ok: false, error: `${item.name} requires ${content.classDef(item.classId!).name}.` };
   instance.isNew = false;
-  if (isFightActive(profile)) {
+  if (fighting) {
     // Build snapshot rule: the running fight keeps its build.
     const pending = profile.pending ?? {};
     const equipment = { ...(pending.equipment ?? {}) };
@@ -171,7 +175,7 @@ function equip(profile: Profile, content: ContentIndex, slot: SlotId, instanceId
   return OK;
 }
 
-function setActiveClass(profile: Profile, classId: string): CommandResult {
+function setActiveClass(profile: Profile, content: ContentIndex, classId: string): CommandResult {
   const c = profile.character;
   if (classId !== c.activeClassId && classId !== c.alternateClassId) {
     return { ok: false, error: "That class is not learned." };
@@ -181,12 +185,16 @@ function setActiveClass(profile: Profile, classId: string): CommandResult {
     if (classId === c.activeClassId) delete pending.activeClassId;
     else pending.activeClassId = classId;
     profile.pending = pending;
+    discardIncompatiblePendingGear(profile, content, classId);
     return QUEUED;
   }
+  upgradeClassGear(profile, content);
   if (classId !== c.activeClassId) {
     c.alternateClassId = c.activeClassId;
     c.activeClassId = classId;
+    reconcileEquipment(profile, content);
   }
   if (profile.pending) delete profile.pending.activeClassId;
+  discardIncompatiblePendingGear(profile, content, classId);
   return OK;
 }

@@ -19,7 +19,7 @@ import { chromium } from "playwright";
 const args = process.argv.slice(2);
 const baseline = args.includes("--baseline");
 const dist = args.find((a) => !a.startsWith("--")) ?? fileURLToPath(new URL("../../apps/mobile/dist/", import.meta.url));
-const out = fileURLToPath(new URL("./out/", import.meta.url));
+const out = process.env.OFFLINE_MASTERY_REPORT_DIR ?? fileURLToPath(new URL("./out/", import.meta.url));
 mkdirSync(out, { recursive: true });
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".woff2": "font/woff2", ".json": "application/json", ".svg": "image/svg+xml" };
 const PORT = 4177;
@@ -54,6 +54,7 @@ await context.addInitScript(() => {
   };
 });
 const page = await context.newPage();
+const changeZone = () => page.getByRole("button", { name: "Change Zone", exact: true }).tap();
 const errors = [];
 page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 page.on("pageerror", (e) => errors.push(String(e)));
@@ -78,7 +79,7 @@ const readOffline = async () => {
     await d.locator("summary").tap();
     details = (await d.innerText()).replace(/\s+/g, " ");
   }
-  await page.screenshot({ path: `${out}offline-mastery-${Date.now()}.png` });
+  await page.screenshot({ path: join(out, `offline-mastery-${Date.now()}.png`) });
   await page.getByRole("button", { name: "Continue" }).tap();
   const m = masteryText.match(/\+([\d,]+)/);
   return { shown: true, text, mastery: m ? Number(m[1].replace(/,/g, "")) : null, masteryText, details };
@@ -100,12 +101,13 @@ const h1 = await header();
 await page.getByRole("button", { name: "Developer tools" }).tap();
 await page.getByText("Unlock all zones").tap();
 await page.getByRole("button", { name: "Close" }).first().tap();
+await changeZone();
 await page.locator('.zone-row[data-zone="ashen_mountains"] button').tap();
 const defeated = await page.getByText("Defeated").waitFor({ timeout: 90_000 }).then(() => true).catch(() => false);
 await page.waitForTimeout(500);
 const resultText = defeated ? (await page.locator(".modal, [role=dialog]").filter({ hasText: "Defeated" }).first().innerText().catch(() => "")).replace(/\s+/g, " ") : "";
 const modeTag = (await page.locator(".zone-card .tag").first().innerText().catch(() => "")).trim();
-await page.screenshot({ path: `${out}offline-mastery-defeat.png` });
+await page.screenshot({ path: join(out, "offline-mastery-defeat.png") });
 const h2 = await header();
 await away(1 * HOUR);
 const second = await readOffline();
@@ -114,9 +116,11 @@ const h3 = await header();
 // 4. With Greenfields cleared, the Farm button in an uncleared zone farms Greenfields (not the trail).
 const keep = page.getByRole("button", { name: /Keep farming/ });
 if (await keep.count()) await keep.tap();
+await changeZone();
 await page.locator('.zone-row[data-zone="greenfields"] button').tap();
 await away(30 * 60_000);
 const third = await readOffline();
+await changeZone();
 await page.locator('.zone-row[data-zone="darkwood"] button').tap();
 await page.waitForTimeout(500);
 const farmLabel = (await page.locator('[data-testid="farm-button"]').innerText().catch(() => "")).replace(/\s+/g, " ");
@@ -136,11 +140,11 @@ const checks = {
   defeatKeepsFarming: defeated && /Farming/.test(modeTag) && /Keep farming/.test(resultText),
   closedOnResultScreenStillProgresses: second.shown && (second.mastery ?? 0) > 0,
   greenfieldsClearedOffline: third.shown && /Greenfields cleared/.test(third.text),
-  farmButtonPicksClearedZone: /Stop Push & farm Greenfields/.test(farmLabel) && afterFarm.zone === "Greenfields" && /^Farming$/.test(afterFarm.tag),
+  farmButtonPicksClearedZone: /Stop Push · Greenfields/.test(farmLabel) && afterFarm.zone === "Greenfields" && /^Farming$/.test(afterFarm.tag),
   offlinePushFailureExplained: /Push failed at Greenfields · stage \d+\/10/.test(first.text) && /Safe farming switched to Greenfields/.test(first.text) && /Items/.test(first.text),
   resultShowsAttempts: /Your attempts:/.test(resultText),
   noConsoleErrors: errors.length === 0,
 };
-writeFileSync(`${out}offline-mastery-report.json`, JSON.stringify({ ...report, checks }, null, 2));
+writeFileSync(join(out, "offline-mastery-report.json"), JSON.stringify({ ...report, checks }, null, 2));
 console.log(JSON.stringify({ ...report, checks }, null, 2));
 process.exit(baseline || Object.values(checks).every(Boolean) ? 0 : 1);

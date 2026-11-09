@@ -11,7 +11,7 @@ const COMBAT_CUES: Record<string, string> = {
   ranger: "In combat: green marks show Poison. Split Arrow links targets; green pulses show Venom Burst.",
 };
 
-export function CharacterScreen({ profile, onChallenges }: { profile: Profile; onChallenges: () => void }) {
+export function CharacterScreen({ profile }: { profile: Profile }) {
   const c = profile.character;
   const queuedClass = profile.pending?.activeClassId;
   const crown = ashenCrownAt(profile.ashenKing?.highestClearedTier ?? 0);
@@ -31,46 +31,11 @@ export function CharacterScreen({ profile, onChallenges }: { profile: Profile; o
           <div className="small muted">+{pct(crown.attackBp)} Attack for both classes.</div>
         </section>
       )}
-      <ClassCodex learned={[c.activeClassId, c.alternateClassId]} />
-      <section className="panel stack">
-        <div className="panel-title">Class advancement</div>
-        <div className="small muted">Each learned class can earn a permanent promotion through its trial.</div>
-        <button className="btn block" onClick={onChallenges}>View promotion trials</button>
-      </section>
     </>
   );
 }
 
-/** Every base class and its full technique path, including classes this character has not learned. */
-function ClassCodex({ learned }: { learned: string[] }) {
-  const content = session.content;
-  const others = content.snapshot.classes.filter((cls) => cls.tier === 1 && cls.implemented && !learned.includes(cls.id));
-  if (others.length === 0) return null;
-  return (
-    <section className="panel stack">
-      <div className="panel-title">Other classes</div>
-      <div className="small muted">Classes are chosen when a character is created. Their Mastery paths are listed here for reference.</div>
-      {others.map((cls) => (
-        <details key={cls.id} className="codex-entry" data-class={cls.id}>
-          <summary className="row">
-            <span className="class-art small-art">
-              <SpriteImage name={cls.sprite} />
-            </span>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <b>{cls.name}</b>
-              <span className="small muted"> · {cls.identity.join(" · ")}</span>
-            </span>
-            <span className="tag">Not learned</span>
-          </summary>
-          <div className="small muted">{cls.tagline}</div>
-          <TechniqueList classId={cls.id} rank={0} nextId={null} />
-        </details>
-      ))}
-    </section>
-  );
-}
-
-function TechniqueList({ classId, rank, nextId }: { classId: string; rank: number; nextId: string | null }) {
+export function TechniqueList({ classId, rank, nextId }: { classId: string; rank: number; nextId: string | null }) {
   const techniques = techniqueStatuses(session.content, classId, rank);
   return (
     <div>

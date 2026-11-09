@@ -48,6 +48,7 @@ describe("SAVE-001 parser boundaries and compatibility", () => {
     // These frozen SAVE-001 hashes pin the old content label as well as the
     // encoder contract. New gameplay content must not recapture their bytes.
     profile.contentVersion = "emberbound-content/0.4.0-c2";
+    profile.inventory.instances[0]!.baseId = "wayfarer_blade";
     const text = serializeSave(profile, 123);
     expect(sha256Hex(text)).toBe(expectedHash);
     const parsed = parseSave(text);

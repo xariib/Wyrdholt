@@ -6,7 +6,7 @@ import { applyCommand } from "../commands/commands";
 import type { ContentIndex } from "../content";
 import { canonicalJson } from "../hash/canonical";
 import { sha256Hex } from "../hash/sha256";
-import { createInstance } from "../items/inventory";
+import { canUseItem, createInstance } from "../items/inventory";
 import { simulateOffline } from "../offline/offline";
 import { createProfile } from "../profile/create";
 import type { Profile, RunState } from "../profile/types";
@@ -149,7 +149,7 @@ export const SELF_TEST_CASES: readonly SelfTestCase[] = [
         setLevel(content, p, 12);
         setMastery(content, p, classId, 15);
         equipNew(content, p, ["venom_grips"]);
-        return partySnapshot(classId, 7, p);
+        return partySnapshot(content, classId, 7, p);
       };
       const dungeon = runPartyDungeon(content, "briar_vault", [member("warrior", 1), member("mage", 2), member("ranger", 3)], 7_001);
       return { hash: sha256Hex(canonicalJson(dungeon.fights.map(fight => fight.hash))), detail: `${dungeon.fights.length} waves, ${dungeon.won ? "victory" : "failed"}` };
@@ -173,7 +173,7 @@ export const SELF_TEST_CASES: readonly SelfTestCase[] = [
       const p = baseProfile(content, 4_105, "warrior", "ranger");
       setLevel(content, p, 30);
       setMastery(content, p, "warrior", 20);
-      equipNew(content, p, content.snapshot.items.filter(item => item.rarity === "legendary").map(item => item.id));
+      equipNew(content, p, content.snapshot.items.filter(item => item.rarity === "legendary" && canUseItem(item, "warrior")).map(item => item.id));
       Object.assign(zoneProgress(p, "ashen_mountains"), { unlocked: true, cleared: true, bestStage: 10, completions: 1 });
       const start = applyCommand(p, content, { type: "startBoss", tier: 1, autoPush: true }, { contentTimeMs: 0 });
       const active = p.ashenKing?.active;
@@ -195,7 +195,7 @@ export const SELF_TEST_CASES: readonly SelfTestCase[] = [
         const p = baseProfile(content, 6_006, classId, classId === "monk" ? "mage" : "monk");
         setLevel(content, p, 18);
         setMastery(content, p, classId, 15);
-        equipNew(content, p, content.snapshot.items.filter((item) => item.rarity === rarity).map((item) => item.id));
+        equipNew(content, p, content.snapshot.items.filter(item => item.rarity === rarity && canUseItem(item, classId)).map(item => item.id));
         return replayCase(content, fightRecordFor(content, p, "ashen_mountains", 9, 18_000, 6));
       },
     })),
@@ -221,12 +221,12 @@ export const SELF_TEST_CASES: readonly SelfTestCase[] = [
   },
   {
     id: "fight-monk-m20-l7-elite",
-    description: "Monk M20 (Flow, combos), level 7, Flowing Wraps + Bloodletter, stage 5 Elite",
+    description: "Monk M20 (Flow, combos), level 7, Rare weapon + Flowing Wraps, stage 5 Elite",
     run(content) {
       const p = baseProfile(content, 202, "monk", "mage");
       setLevel(content, p, 7);
       setMastery(content, p, "monk", 20);
-      equipNew(content, p, ["bloodletter", "flowing_wraps", "seers_circlet"]);
+      equipNew(content, p, [content.snapshot.starterWeapons ? "iron_palm_wraps" : "bloodletter", "flowing_wraps", "seers_circlet"]);
       return replayCase(content, fightRecordFor(content, p, "greenfields", 4, null, 3));
     },
   },
@@ -237,7 +237,7 @@ export const SELF_TEST_CASES: readonly SelfTestCase[] = [
       const p = baseProfile(content, 303, "monk", "mage");
       setLevel(content, p, 6);
       setMastery(content, p, "monk", 15);
-      equipNew(content, p, ["venom_grips", "briar_edge"]);
+      equipNew(content, p, ["venom_grips", content.snapshot.starterWeapons ? "reedweave_wraps" : "briar_edge"]);
       return replayCase(content, fightRecordFor(content, p, "greenfields", 6, 9_000, 7));
     },
   },
@@ -349,7 +349,7 @@ export const SELF_TEST_CASES: readonly SelfTestCase[] = [
       const p = baseProfile(content, 1_004, "ranger", "mage");
       setLevel(content, p, 14);
       setMastery(content, p, "ranger", 20);
-      equipNew(content, p, ["venom_grips", "stormcaller", "cinderweave"]);
+      equipNew(content, p, ["venom_grips", content.snapshot.starterWeapons ? "gale_bow" : "stormcaller", "cinderweave"]);
       return replayCase(content, fightRecordFor(content, p, "darkwood", 6, null, 15));
     },
   },
@@ -360,7 +360,7 @@ export const SELF_TEST_CASES: readonly SelfTestCase[] = [
       const p = baseProfile(content, 1_006, "mage", "monk");
       setLevel(content, p, 10);
       setMastery(content, p, "mage", 7);
-      equipNew(content, p, ["bloodletter", "seers_circlet", "ironbark_mantle", "flowing_wraps", "huntsmans_stride", "ember_seal"]);
+      equipNew(content, p, [content.snapshot.starterWeapons ? "coalheart_staff" : "bloodletter", "seers_circlet", "ironbark_mantle", "flowing_wraps", "huntsmans_stride", "ember_seal"]);
       return replayCase(content, fightRecordFor(content, p, "darkwood", 9, null, 16));
     },
   },
@@ -427,18 +427,19 @@ export const SELF_TEST_CASES: readonly SelfTestCase[] = [
     description: "Gear and class changes during a fight are queued and do not alter that fight",
     run(content) {
       const p = baseProfile(content, 5_151, "monk", "mage");
-      const extra = createInstance(p, "briar_edge", { isNew: true });
+      const extra = createInstance(p, content.snapshot.starterWeapons ? "willow_focus" : "briar_edge", { isNew: true });
       startRun(p, content, "greenfields", "push", 0);
       applyCommand(p, content, { type: "advance", ms: 1 }, { contentTimeMs: 0 });
       const before = prepareFight(p, content, p.adventure.run!, { contentTimeMs: 0, recordEvents: false });
-      const eq = applyCommand(p, content, { type: "equip", slot: "weapon", instanceId: extra.id }, { contentTimeMs: 0 });
       const cls = applyCommand(p, content, { type: "setActiveClass", classId: "mage" }, { contentTimeMs: 0 });
+      const eq = applyCommand(p, content, { type: "equip", slot: "weapon", instanceId: extra.id }, { contentTimeMs: 0 });
       const during = prepareFight(p, content, p.adventure.run!, { contentTimeMs: 0, recordEvents: false });
       if (!eq.ok || !eq.queued || !cls.ok || !cls.queued) throw new Error("changes were not queued");
       if (before.summary !== during.summary && canonicalJson(before.summary) !== canonicalJson(during.summary)) {
         throw new Error("fight changed after a queued build change");
       }
       applyCommand(p, content, { type: "advance", ms: 60_000 }, { contentTimeMs: 0 });
+      if (p.character.activeClassId !== "mage" || p.equipment.weapon !== extra.id) throw new Error("changes did not apply at the boundary");
       return {
         hash: profileHash(p, { fight: before.summary }),
         detail: `queued ok; after boundary class=${p.character.activeClassId}, weapon=${String(p.equipment.weapon)}`,

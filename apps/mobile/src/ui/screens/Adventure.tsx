@@ -1,14 +1,25 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ASHEN_KING_ID, activeBossAttempt, type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { safeFarmZone, zoneViews, type ZoneView } from "../adventureModel";
 import { CombatView } from "../components/CombatView";
-
-import { FarmIcon, PushIcon } from "../components/icons";
+import { Sheet } from "../components/Common";
 import { number } from "../format";
 
-export function AdventureScreen({ profile, active, nextAttempt, onChallenges }: { profile: Profile; active: boolean; nextAttempt: ReactNode; onChallenges: () => void }) {
+export function AdventureScreen({ profile, active, retryZoneId, nextAttempt, onChallenges }: {
+  profile: Profile;
+  active: boolean;
+  retryZoneId?: string;
+  nextAttempt: ReactNode;
+  onChallenges: () => void;
+}) {
+  const [zonesOpen, setZonesOpen] = useState(false);
   const boss = activeBossAttempt(profile);
+  const canShowZones = active && !boss;
+  useEffect(() => {
+    if (!canShowZones) setZonesOpen(false);
+  }, [canShowZones]);
+
   if (boss) {
     const name = session.content.soloBosses.get(boss.record.encounter.bossId)?.name ?? "Challenge";
     return (
@@ -39,31 +50,38 @@ export function AdventureScreen({ profile, active, nextAttempt, onChallenges }: 
         : run?.mode === "trail"
           ? "Farming the trail"
           : "Farming";
-  // "Begin" appears for unlocked, uncleared zones after the current one; entering is always a choice.
-  const nextZones = zone.unlocks
-    .map((id) => content.zone(id))
-    .filter((z) => adv.zones[z.id]?.unlocked && !adv.zones[z.id]?.cleared && z.id !== adv.zoneId);
   const zones = zoneViews(profile, content);
+  const nextZone = zones.find((view) => view.status === "open" && zone.unlocks.includes(view.zone.id))?.zone;
+  const pushZone = retryZoneId ? content.zone(retryZoneId) : cleared ? nextZone : zone;
   // Farming an uncleared zone repeats its first stage (the "trail"): no Elite, Boss or cache,
   // slow fights for its level. From the A40 playtest save, the Darkwood trail paid 56% of the
   // Character XP and 41% of the Mastery XP per hour of a Greenfields Farm. So once any zone is
   // cleared, Farm means the strongest cleared zone; the trail is only the very first fallback.
   const farmZone = cleared ? zone : safeFarmZone(profile, content);
+  const farmName = `${farmZone.name}${adv.zones[farmZone.id]?.cleared ? "" : " trail"}`;
   const pending = profile.pending;
   const showHpHint = profile.stats.runsStarted <= 2;
+  const stageRole = adv.activity === "idle" ? "" : stage.role === "boss" ? "Boss" : stage.role === "elite" ? "Elite" : "";
 
   return (
     <>
       <section className="adventure-world">
-        <div className="combat-frame">
-          <CombatView active={active} heroSprite={heroSprite} background={zone.background} />
-          <div className="zone-card world-zone">
-            <div className="row spread"><h2 className="zone-name">{zone.name}</h2><div className="zone-context"><span className="tag">{modeLabel}</span><span>Stage {stageIndex + 1} / {zone.stages.length}</span></div></div>
-            <StageDots total={zone.stages.length} current={stageIndex} roles={zone.stages.map((s) => s.role)} trail={run?.mode === "trail"} />
+        <div className="zone-card world-zone zone-context">
+          <div className="row spread">
+            <h2 className="zone-name">{zone.name}</h2>
+            <span className="tag">{modeLabel}</span>
           </div>
-          <div className={`combat-banner ${stage.role === "boss" ? "boss" : ""}`}>{adv.activity === "idle" ? "" : stage.role === "boss" ? "ZONE BOSS" : stage.role === "elite" ? "ELITE" : ""}</div>
+          <div className="row spread">
+            <StageDots total={zone.stages.length} current={stageIndex} roles={zone.stages.map((s) => s.role)} trail={run?.mode === "trail"} />
+            <span className="zone-stage">Stage {stageIndex + 1} / {zone.stages.length}{stageRole && <b> · {stageRole}</b>}</span>
+          </div>
         </div>
-        <div className="combat-names"><span className="hero-name">{profile.character.name}</span><span title={enemyNames.join(" · ")}>{adv.activity === "idle" ? "" : enemyNames.length === 1 ? enemyNames[0] : `${enemyNames.length} enemies`}</span></div>
+        <div className="combat-frame" data-background={zone.background}>
+          <CombatView active={active} heroSprite={heroSprite} background={zone.background} />
+          {adv.activity !== "idle" && (
+            <div className="combat-names"><span title={enemyNames.join(" · ")}>{enemyNames.length === 1 ? enemyNames[0] : `${enemyNames.length} enemies`}</span></div>
+          )}
+        </div>
       </section>
 
       <section className="run-readout stack">
@@ -82,10 +100,10 @@ export function AdventureScreen({ profile, active, nextAttempt, onChallenges }: 
           </span>
           <span className="muted">Best {zp?.bestStage ?? 0}/{zone.stages.length}</span>
         </div>
-        {showHpHint && <div className="small faint">HP carries between stages, with a little recovery after each win.</div>}
+        {showHpHint && !pending && <div className="small faint">HP carries over and recovers after wins.</div>}
         {pending && (
           <div className="row spread">
-            <span className="tag queued">Build change queued — applies after this fight</span>
+            <span className="tag queued">Build change queued for after this fight</span>
             <button className="btn small ghost" onClick={() => session.dispatch({ type: "cancelPending" })}>
               Cancel
             </button>
@@ -93,74 +111,61 @@ export function AdventureScreen({ profile, active, nextAttempt, onChallenges }: 
         )}
       </section>
 
-      <section className="activity">
-        <button
-          className={`activity-btn ${adv.activity === "push" ? "active" : ""}`}
-          disabled={cleared}
-          onClick={() => session.dispatch({ type: "startPush", zoneId: zone.id })}
-        >
-          <PushIcon />
-          <span>
-            <div className="title">Push</div>
-            <div className="sub">{cleared ? "Zone cleared" : "Clear the zone"}</div>
-          </span>
-        </button>
+      {showAshenKing && (
+        <section aria-label={`${ashenKing.name} unlocked`}>
+          <button className="btn small block" onClick={onChallenges}>View {ashenKing.name} challenge</button>
+        </section>
+      )}
+
+      <section className="activity" aria-label="Adventure actions">
         <button
           className={`activity-btn ${adv.activity === "farm" && run?.zoneId === farmZone.id ? "active" : ""}`}
           data-testid="farm-button"
           onClick={() => session.dispatch({ type: "startFarm", zoneId: farmZone.id })}
         >
-          <FarmIcon />
           <span>
-            {/* The label always names what will actually be farmed. */}
-            <div className="title">{adv.activity === "push" ? `Stop Push & farm ${farmZone.name}${!adv.zones[farmZone.id]?.cleared ? " trail" : ""}` : cleared ? `Farm ${zone.name}` : farmZone.id !== zone.id ? `Safe farm · ${farmZone.name}` : "Farm the trail"}</div>
-            <div className="sub">
-              {cleared ? "Repeat the whole zone" : farmZone.id !== zone.id ? "Best XP and Mastery for you now" : `Repeat ${zone.name} stage 1 safely`}
-            </div>
+            <span className="title">Farm</span>
+            <span className="sub">{adv.activity === "push" ? `Stop Push · ${farmName}` : farmName}</span>
           </span>
+        </button>
+        <button
+          className={`activity-btn ${adv.activity === "push" ? "active" : ""}`}
+          disabled={!pushZone}
+          onClick={() => {
+            if (pushZone) session.dispatch({ type: "startPush", zoneId: pushZone.id });
+          }}
+        >
+          <span>
+            <span className="title">Push</span>
+            <span className="sub">{pushZone ? `${retryZoneId ? "Retry · " : ""}${pushZone.name}` : "Zone cleared"}</span>
+          </span>
+        </button>
+        <button className="activity-btn" aria-haspopup="dialog" onClick={() => setZonesOpen(true)}>
+          <span className="title">Change Zone</span>
         </button>
       </section>
 
-      {showAshenKing && (
-        <section className="panel stack" aria-label={`${ashenKing.name} unlocked`}>
-          <div className="panel-title">{ashenKing.name} unlocked</div>
-          <p className="small muted">Take on the solo boss ladder to earn the Ashen Crown.</p>
-          <button className="btn block" onClick={onChallenges}>View {ashenKing.name} challenge</button>
-        </section>
-      )}
-      {nextAttempt}
-      {nextZones.map((z) => (
-        <section key={z.id} className="panel row spread">
-          <div>
-            <div className="panel-title">{z.name} unlocked</div>
-            <div className="small muted">{z.implemented ? z.description : "Not playable in this test build."}</div>
+      {canShowZones && zonesOpen && (
+        <Sheet label="Change Zone" onClose={() => setZonesOpen(false)}>
+          <div className="row spread">
+            <h2>Change Zone</h2>
+            <button className="btn small ghost sheet-close" aria-label="Close zone picker" onClick={() => setZonesOpen(false)}>×</button>
           </div>
-          <button
-            className="btn small gold"
-            disabled={!z.implemented}
-            onClick={() => session.dispatch({ type: "startPush", zoneId: z.id })}
-          >
-            Begin {z.name}
-          </button>
-        </section>
-      ))}
-
-      <section className="zone-directory stack">
-        <div className="row spread">
-          <span className="panel-title">Zones</span>
-          <span className="small muted">Level {profile.character.level}</span>
-        </div>
-        <div className="list">
-          {zones.map((v) => (
-            <ZoneRow key={v.zone.id} view={v} activity={v.isCurrent ? adv.activity : "idle"} />
-          ))}
-        </div>
-      </section>
+          <div className="list">
+            {zones.map((v) => (
+              <ZoneRow key={v.zone.id} view={v} activity={v.isCurrent ? adv.activity : "idle"} onStart={(type) => {
+                if (session.dispatch({ type, zoneId: v.zone.id }).ok) setZonesOpen(false);
+              }} />
+            ))}
+          </div>
+          {nextAttempt}
+        </Sheet>
+      )}
     </>
   );
 }
 
-function ZoneRow({ view, activity }: { view: ZoneView; activity: string }) {
+function ZoneRow({ view, activity, onStart }: { view: ZoneView; activity: Profile["adventure"]["activity"]; onStart: (type: "startPush" | "startFarm") => void }) {
   const { zone, status } = view;
   const stages = zone.stages.length;
   const detail =
@@ -190,7 +195,7 @@ function ZoneRow({ view, activity }: { view: ZoneView; activity: string }) {
         <button
           className={`btn small ${action === "push" ? "primary" : ""}`}
           disabled={running}
-          onClick={() => session.dispatch({ type: action === "push" ? "startPush" : "startFarm", zoneId: zone.id })}
+          onClick={() => onStart(action === "push" ? "startPush" : "startFarm")}
         >
           {running ? (action === "push" ? "Pushing" : "Farming") : action === "push" ? "Push" : "Farm"}
         </button>

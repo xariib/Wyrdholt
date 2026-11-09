@@ -3,6 +3,8 @@ import { session } from "../../game/session";
 import { useUi } from "../hooks";
 import { SpriteImage } from "../components/icons";
 import { actionFailureText } from "./SaveRecovery";
+import { Sheet } from "../components/Common";
+import { SaveTools } from "./SaveTools";
 
 export function CreateCharacterScreen({ onOnline }: { onOnline?: () => void }) {
   const content = session.content;
@@ -13,6 +15,7 @@ export function CreateCharacterScreen({ onOnline }: { onOnline?: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const ui = useUi(), notice = ui.notice;
   const [pending, setPending] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
   const working = useRef(false), mounted = useRef(true), status = useRef<HTMLDivElement>(null);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => { if (error || pending) status.current?.focus(); }, [error, pending]);
@@ -95,6 +98,11 @@ export function CreateCharacterScreen({ onOnline }: { onOnline?: () => void }) {
         Begin in Greenfields
       </button>
       {onOnline && <button className="btn block" disabled={pending} onClick={onOnline}>Open online adventure</button>}
+      {ui.save.gate.canImport && <button className="btn block" disabled={pending} onClick={() => setRestoreOpen(true)}>Restore a backup</button>}
+      {restoreOpen && <Sheet label="Restore a backup" onClose={() => setRestoreOpen(false)}>
+        <div className="row spread"><h2>Restore a backup</h2><button className="btn small" onClick={() => setRestoreOpen(false)}>Close</button></div>
+        <SaveTools restoreOnly onChanged={() => setRestoreOpen(false)} />
+      </Sheet>}
     </div>
   );
 }

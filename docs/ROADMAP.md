@@ -1,6 +1,6 @@
 # Wyrdholt development roadmap
 
-The milestone order comes from the original `docs/ROADMAP.md` in the Wyrdholt Mobile source archive. The integrated test build is on `feature/roadmap-c5-c9`, based on `main` in [xariib/Wyrdholt](https://github.com/xariib/Wyrdholt). Android `0.4.0-roadmap.1` is the current public playtest release and is available through **Character → App updates**. [Release notes](https://github.com/xariib/Wyrdholt/releases/tag/android-v0.4.0-roadmap.1-4)
+The milestone order comes from the original `docs/ROADMAP.md` in the Wyrdholt Mobile source archive. The integrated test build is on `feature/roadmap-c5-c9`, based on `main` in [xariib/Wyrdholt](https://github.com/xariib/Wyrdholt). Update the Android playtest from **Menu → App updates**. [Latest release notes](https://github.com/xariib/Wyrdholt/releases/latest)
 
 | Milestone | Scope | Status |
 | --- | --- | --- |

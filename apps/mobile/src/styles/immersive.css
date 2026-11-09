@@ -73,14 +73,6 @@
   padding-right:0}
 .immersive .tag.new{
   color:var(--gold)}
-.immersive .nav{
-  background:#0b1922;
-  border-color:var(--line)}
-.immersive .nav-btn{
-  font-family:var(--font-body);
-  font-size:12px}
-.immersive .nav-btn.active{
-  color:var(--gold)}
 .immersive .small{
   font-size:13px}
 .immersive .btn.small{
@@ -92,13 +84,18 @@
   color:#17232a;
   border-color:var(--gold)}
 
-/* The arena is a full-width world surface;
-   the title and route sit over its sky. */
+/* The zone route and combat HUD frame the arena. */
 .immersive .adventure-screen{
-  padding:0 12px calc(var(--nav-height) + var(--sab) + 14px);
+  overflow:hidden;
+  padding:0 12px calc(var(--nav-height) + var(--sab) + 8px);
   gap:8px}
 .adventure-world{
   margin:0 -12px}
+.adventure-screen .adventure-world{
+  display:flex;
+  flex:1;
+  flex-direction:column;
+  min-height:0}
 .immersive .combat-frame{
   position:relative;
   height:clamp(280px,53vh,570px);
@@ -108,34 +105,49 @@
   border-radius:0;
   background:#0c1b26;
   overflow:hidden}
+.immersive .adventure-screen .combat-frame{
+  --canvas-floor:66px;
+  display:grid;
+  flex:1;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-rows:minmax(0,1fr) auto;
+  height:auto;
+  min-height:0;
+  background:#0a1824}
+.immersive .adventure-screen .combat-frame[data-background="darkwood"]{
+  --canvas-floor:100px}
 .immersive .combat-host{
   height:100%;
   width:100%}
-.world-zone{
-  display:block;
+.adventure-screen .combat-host{
+  position:relative;
+  grid-column:1 / -1;
+  overflow:hidden}
+/* The 340px minimum canvas includes ground below the actors. Crop that ground to leave room for poses. */
+.adventure-screen .combat-canvas{
+  --floor-space:clamp(16px,calc(100% - 146px),30px);
   position:absolute;
-  z-index:2;
-  top:0;
-  left:0;
-  right:0;
-  padding:14px 16px 26px;
-  background:linear-gradient(#091720ee,#091720a8,transparent);
-  pointer-events:none}
+  bottom:clamp(calc(var(--floor-space) - var(--canvas-floor)),calc(100% - 340px),0px)}
+.world-zone{
+  display:grid;
+  flex:none;
+  gap:3px;
+  padding:7px 12px;
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(#10232d,#0c1b26);
+  color:var(--text-dim);
+  font-size:12px}
 .world-zone .zone-name{
-  font-size:28px;
+  color:var(--text);
+  font-size:clamp(17px,5.5vw,26px);
   line-height:1.15}
-.zone-context{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  font-size:12px;
-  color:var(--text-dim)}
-.zone-context .tag{
+.world-zone .tag,.zone-stage{
+  white-space:nowrap}
+.world-zone .tag,.zone-stage b{
   color:var(--gold);
   font-size:12px}
 .world-zone .stage-dots{
-  margin-top:12px;
-  gap:10px}
+  gap:clamp(4px,1.7vw,8px)}
 .world-zone .stage-dot{
   display:inline-flex;
   align-items:center;
@@ -149,8 +161,8 @@
 .world-zone .stage-dot.elite{
   transform:none}
 .world-zone .stage-dot.boss,.world-zone .stage-dot.elite{
-  width:18px;
-  height:18px;
+  width:14px;
+  height:14px;
   border:0;
   background:none}
 .world-zone .stage-dot.done{
@@ -167,6 +179,14 @@
   padding:5px 16px;
   font-size:12px;
   color:var(--text-dim)}
+.immersive .adventure-screen .combat-names{
+  display:block;
+  align-self:center;
+  max-width:clamp(96px,34vw,160px);
+  padding:5px 12px 5px 2px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap}
 .combat-vitals{
   position:absolute;
   bottom:0;
@@ -179,6 +199,11 @@
   gap:10px;
   font:12px var(--font-body);
   z-index:2}
+.adventure-screen .combat-vitals{
+  position:static;
+  min-width:0;
+  padding:5px 12px;
+  background:none}
 .vitals-track{
   height:7px;
   flex:1;
@@ -194,40 +219,51 @@
 .vitals-ward[hidden]{
   display:none}
 .run-readout{
-  padding:0 2px 4px}
+  gap:4px;
+  padding:0 2px}
 .run-readout .row.small{
   font-size:12px;
+  flex-wrap:wrap;
   gap:6px}
 .run-readout .faint{
   font-size:11px}
 .immersive .activity{
-  display:flex;
+  flex:none;
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:8px}
 .immersive .activity-btn{
   min-height:48px;
-  padding:8px 10px;
+  padding:6px 4px;
   border-radius:3px;
-  background:none;
+  background:var(--panel);
   border:1px solid var(--line);
-  gap:6px}
-.immersive .activity-btn svg{
-  display:none}
+  justify-content:center;
+  text-align:center}
 .immersive .activity-btn .title{
+  display:block;
   font:13px var(--font-body);
   font-weight:600}
 .immersive .activity-btn .sub{
+  display:block;
   font-size:11px}
 .immersive .activity-btn.active{
   border-color:#547567;
   background:#192e2c}
-.zone-directory{
-  padding-top:14px;
-  border-top:1px solid var(--line)}
-.zone-directory .panel-title{
-  font-size:18px}
+.adventure-screen .sheet{
+  max-width:480px;
+  margin-inline:auto}
+.adventure-screen:not([hidden]) ~ .toast{
+  bottom:calc(var(--nav-height) + var(--sab) + 78px)}
 .immersive .toast.loot{
   border-color:var(--rarity-rare);
   background:#112936}
+
+@media(max-height:700px){
+  .immersive.adventure-active .header{
+    padding-block:4px}
+  .adventure-active .header-brand{
+    display:none}
+}
 
 /* Equipment belongs around a hero, not in a long slot list. */
 .hero-loadout{
@@ -443,8 +479,6 @@
   border-bottom:1px solid var(--line)}
 
 @media(max-width:375px){
-  .world-zone .zone-name{
-  font-size:24px}
 .immersive .header-brand{
   font-size:9px}
 .immersive .gold-chip{
@@ -453,8 +487,6 @@
   font-size:12px}
 .immersive .run-readout .row.small{
   font-size:11px}
-.immersive .activity-btn .sub{
-  display:none}
 }
 
 

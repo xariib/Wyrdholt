@@ -45,6 +45,7 @@ export { ASHEN_CROWN, ashenCrownAt } from "./boss/artifact";
 export { prepareBossFight, type BossFightCache, type PreparedBossFight } from "./boss/ladder";
 export { advanceGame, type AdvanceGameOptions } from "./game";
 export {
+  canUseItem,
   findInstance,
   createInstance,
   reservedInstanceIds,
@@ -62,6 +63,7 @@ export {
   leaveCurrentRun,
   applyPendingBuild,
   isFightActive,
+  upgradeClassGearIfSafe,
   zoneProgress,
   offlineFallback,
   fightSeed,
