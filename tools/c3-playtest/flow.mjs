@@ -78,7 +78,7 @@ try{
   await expect(effectCard).toContainText('1 NEW matching');
   await expect(sheet.getByRole('region',{name:'Manage inventory copies'})).toHaveCount(0);
   await sheet.getByRole('button',{name:'Clear filters',exact:true}).click();await manage(sheet,starter.id);
-  const locked=weapon[0].id;await lock(sheet,locked,true);const lockedState=await snapshot('locked');assert.equal(lockedState.schema,3);assert(lockedState.inventory.instances.find(i=>i.id===locked).isNew);
+  const locked=weapon[0].id;await lock(sheet,locked,true);const lockedState=await snapshot('locked');assert.equal(lockedState.schema,6);assert.equal(lockedState.hunts.version,1);assert(lockedState.inventory.instances.find(i=>i.id===locked).isNew);
   for(const id of [initial.equipment.weapon,locked])await expect(sheet.getByRole('checkbox',{name:`Select for salvage copy #${id}`,exact:true})).toBeDisabled();
   await manage(sheet,effect.baseId);await expect(sheet.getByRole('checkbox',{name:`Select for salvage copy #${effect.id}`,exact:true})).toBeDisabled();
   await sheet.getByRole('button',{name:'Close inventory',exact:true}).click();

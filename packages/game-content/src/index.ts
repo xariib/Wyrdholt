@@ -1,5 +1,6 @@
 import type { ContentConfig, ContentSnapshot, RarityDef, RuleDef } from "@emberbound/shared-types";
 import { SOLO_BOSSES } from "./bosses";
+import { HUNTS } from "./hunts";
 import { CLASSES, mageTrack, monkTrack, rangerTrack, warriorTrack } from "./classes";
 import { ENEMIES } from "./enemies";
 import { ITEMS, STARTER_ITEMS, STARTER_WEAPONS } from "./items";
@@ -73,6 +74,7 @@ const rules: RuleDef[] = [
 ];
 
 export const CONTENT: ContentSnapshot = {
+  hunts: HUNTS,
   contentVersion: CONTENT_VERSION,
   config,
   rarities,

@@ -1,4 +1,6 @@
-import type { ForgeConfig, ForgeInput, SlotId } from "@emberbound/shared-types";
+import type { ForgeConfig, ForgeInput, HuntRoute, SlotId } from "@emberbound/shared-types";
+import { startHunt } from "../hunts/hunts";
+import { activeHuntAttempt } from "../hunts/discovery";
 import {
   applyPendingBuild,
   isFightActive,
@@ -22,6 +24,7 @@ import type { Profile } from "../profile/types";
  * so a future server can validate a command log by replaying it.
  */
 export type Command =
+  | { type: "startHunt"; discoveryId: number; slot?: SlotId; route?: HuntRoute }
   | { type: "bulkSalvage"; input: BulkSalvageInput }
   | { type: "salvage"; input: SalvageInput }
   | { type: "setItemLock"; instanceId: number; locked: boolean }
@@ -52,6 +55,10 @@ export function applyCommand(
   options: Omit<AdvanceGameOptions, "offline"> & { offline?: boolean; forgeConfig?: ForgeConfig; allowDevForge?: boolean; authorityForgeSeed?: number },
 ): CommandResult {
   switch (command.type) {
+    case "startHunt": {
+      const error = startHunt(profile, content, command.discoveryId, command.slot, command.route);
+      return error ? { ok: false, error } : OK;
+    }
     case "bulkSalvage":
       return salvageItems(profile, content, command.input);
     case "salvage":
@@ -125,7 +132,7 @@ export function applyCommand(
 }
 
 function startActivity(profile: Profile, content: ContentIndex, zoneId: string, kind: "push" | "farm"): CommandResult {
-  if (activeBossAttempt(profile)) return { ok: false, error: "Adventure resumes when the challenge attempt ends." };
+  if (activeBossAttempt(profile) || activeHuntAttempt(profile)) return { ok: false, error: "Adventure resumes when the challenge attempt ends." };
   const zone = content.zones.get(zoneId);
   if (!zone || zone.hidden) return { ok: false, error: "Unknown zone." };
   if (!zone.implemented) return { ok: false, error: `${zone.name} is not playable in this build.` };

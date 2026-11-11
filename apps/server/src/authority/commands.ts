@@ -1,5 +1,5 @@
 import { FORGE_V1 } from "@emberbound/game-content";
-import { applyCommand, canonicalJson, cloneProfile, settleOffline, sha256Hex, upgradeClassGearIfSafe, type Command, type CommandResult, type ContentIndex, type Profile } from "@emberbound/game-core";
+import { applyCommand, canonicalJson, cloneProfile, settleOffline, sha256Hex, upgradeClassGearIfSafe, ContentIndex, type Command, type CommandResult, type Profile } from "@emberbound/game-core";
 import { SLOT_ORDER } from "@emberbound/shared-types";
 
 export type PlayerCommand = Exclude<Command, { type: `dev${string}` | "advance" }>;
@@ -16,6 +16,8 @@ export function isPlayerCommand(value: unknown): value is PlayerCommand {
   if (!record(value)) return false;
   const input = value.input;
   switch (value.type) {
+    case "startHunt": return positive(value.discoveryId) && (value.slot === undefined || slot(value.slot))
+      && (value.route === undefined || ["direct", "raid", "weakness"].includes(value.route as string));
     case "startPush":
     case "startFarm": return id(value.zoneId);
     case "startBoss": return positive(value.tier) && typeof value.autoPush === "boolean" && (value.bossId === undefined || id(value.bossId));
@@ -72,7 +74,7 @@ export function executeAuthorityCommand(content: ContentIndex, before: Profile, 
     : applyCommand(profile, content, request.command, { contentTimeMs: atMs, forgeConfig: FORGE_V1, authorityForgeSeed: forgeSeed });
   if (!result.ok) return result;
   const entry: CommandJournalEntry = {
-    request, atMs, contentHash: content.longTermHash,
+    request, atMs, contentHash: content.authorityHash,
     beforeHash: sha256Hex(canonicalJson(before)), afterHash: sha256Hex(canonicalJson(profile)), result,
     ...(forgeSeed === undefined ? {} : { forgeSeed }),
   };
@@ -82,7 +84,11 @@ export function executeAuthorityCommand(content: ContentIndex, before: Profile, 
 /** Recompute the result and state from a trusted prior profile and the journal. */
 export function verifyAuthorityReplay(content: ContentIndex, before: Profile, entry: CommandJournalEntry): Profile | null {
   const request = parseCommandEnvelope(entry.request);
-  if (!request || entry.contentHash !== content.longTermHash || !Number.isSafeInteger(entry.atMs)
+  if (entry.contentHash === content.longTermHash && !before.hunts) {
+    const { hunts: _hunts, ...legacy } = content.snapshot;
+    content = new ContentIndex(legacy);
+  }
+  if (!request || entry.contentHash !== content.authorityHash || !Number.isSafeInteger(entry.atMs)
     || entry.atMs < before.clock.lastSettledWallMs || entry.beforeHash !== sha256Hex(canonicalJson(before))) return null;
   const { forgeSeed } = entry;
   if (forgeSeed !== undefined && (request.command?.type !== "forge" || !Number.isInteger(forgeSeed)

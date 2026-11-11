@@ -14,6 +14,7 @@ import { executeRecord } from "../replay/replay";
 import { resolveActiveRuleIds } from "../rules/modifiers";
 import { LONG_TERM_RULES_VERSION, RULES_VERSION } from "../rules/version";
 import { activeBossAttempt } from "../boss/progress";
+import { activeHuntAttempt, discoverHunts } from "../hunts/discovery";
 
 // ---------------------------------------------------------------------------
 // Seeds
@@ -239,7 +240,7 @@ export function leaveCurrentRun(profile: Profile): void {
 
 export function isFightActive(profile: Profile): boolean {
   const adv = profile.adventure;
-  return Boolean(activeBossAttempt(profile)) || (adv.activity !== "idle" && adv.run !== null && adv.run.phase === "fight");
+  return Boolean(activeBossAttempt(profile) || activeHuntAttempt(profile)) || (adv.activity !== "idle" && adv.run !== null && adv.run.phase === "fight");
 }
 
 export function upgradeClassGearIfSafe(profile: Profile, content: ContentIndex): void {
@@ -342,11 +343,11 @@ export function advanceAdventure(
     if (run.phase === "rest") {
       const need = run.restMs - run.elapsedMs;
       if (remaining < need) {
-        consume(profile, run, remaining, options);
+        consume(profile, content, run, remaining, options);
         remaining = 0;
         break;
       }
-      consume(profile, run, need, options);
+      consume(profile, content, run, need, options);
       remaining -= need;
       // Fight boundary: queued build changes apply before the fight starts.
       if (applyPendingBuild(profile, content)) {
@@ -365,21 +366,22 @@ export function advanceAdventure(
     });
     const need = fight.summary.durationMs - run.elapsedMs;
     if (remaining < need) {
-      consume(profile, run, remaining, options);
+      consume(profile, content, run, remaining, options);
       remaining = 0;
       break;
     }
-    consume(profile, run, need, options);
+    consume(profile, content, run, need, options);
     remaining -= need;
     settleFight(profile, content, run, fight, options);
   }
 }
 
-function consume(profile: Profile, run: RunState, ms: number, options: AdvanceOptions): void {
+function consume(profile: Profile, content: ContentIndex, run: RunState, ms: number, options: AdvanceOptions): void {
   if (ms <= 0) return;
   run.elapsedMs += ms;
   run.runElapsedMs += ms;
   profile.clock.simulatedMs += ms;
+  if (run.mode === "farm") discoverHunts(profile, content, run.zoneId, ms);
   options.onTime?.(run.mode, run.zoneId, ms);
 }
 

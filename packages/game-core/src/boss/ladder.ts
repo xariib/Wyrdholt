@@ -9,6 +9,7 @@ import type { BossAttempt, BossProgress, BossResult, Profile } from "../profile/
 import { checkRecordCompatibility, executeRecord, ReplayMismatchError, type ExecutedFight } from "../replay/replay";
 import { BOSS_SAVE_SCHEMA_VERSION, LONG_TERM_SAVE_SCHEMA_VERSION } from "../rules/version";
 import { createBossFightRecord } from "./attempt";
+import { activeHuntAttempt } from "../hunts/discovery";
 import { ASHEN_KING_ID, activeBossAttempt, bossProgress, seasonTierOpenAt } from "./progress";
 
 export interface PreparedBossFight extends ExecutedFight<BossEncounterSetup> {
@@ -43,7 +44,7 @@ export function startBossAttempt(profile: Profile, content: ContentIndex, tier: 
   if (!boss || (bossId !== ASHEN_KING_ID && !bossId.startsWith("trial_") && !content.seasons.has(bossId))) return "Unknown challenge.";
   const progress = bossProgress(profile, bossId);
   if (!profile.adventure.zones[boss.unlockZoneId]?.cleared) return `Clear ${content.zone(boss.unlockZoneId).name} to challenge ${boss.name}.`;
-  if (activeBossAttempt(profile)) return "A challenge attempt is already in progress.";
+  if (activeBossAttempt(profile) || activeHuntAttempt(profile)) return "A challenge attempt is already in progress.";
   const nextTier = (progress?.highestClearedTier ?? 0) + 1;
   if (nextTier > boss.tiers.length) return `You have cleared ${boss.name}.`;
   if (tier !== nextTier || typeof autoPush !== "boolean" || (autoPush && bossId !== ASHEN_KING_ID)) return "Choose the next available challenge tier.";
@@ -72,7 +73,7 @@ export function startBossAttempt(profile: Profile, content: ContentIndex, tier: 
   } else {
     const longTerm = profile.longTerm ??= { version: 1, ladders: {} };
     longTerm.ladders[bossId] = state;
-    profile.schema = LONG_TERM_SAVE_SCHEMA_VERSION;
+    profile.schema = Math.max(profile.schema, LONG_TERM_SAVE_SCHEMA_VERSION);
   }
   beginAttempt(profile, content, state, bossId, tier, autoPush);
   return null;

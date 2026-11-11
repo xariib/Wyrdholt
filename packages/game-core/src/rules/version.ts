@@ -11,3 +11,5 @@ export const LONG_TERM_RULES_VERSION = "emberbound-rules/0.4.0-c5";
 export const SAVE_SCHEMA_VERSION = 1;
 export const BOSS_SAVE_SCHEMA_VERSION = 4;
 export const LONG_TERM_SAVE_SCHEMA_VERSION = 5;
+export const HUNT_SAVE_SCHEMA_VERSION = 6;
+export const HUNT_RULES_VERSION = "emberbound-rules/0.5.0-hunts";

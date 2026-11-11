@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ASHEN_CROWN, ASHEN_KING_ID, activeBossAttempt, ashenCrownAt, type Profile } from "@emberbound/game-core";
+import { ASHEN_CROWN, ASHEN_KING_ID, activeBossAttempt, activeHuntAttempt, ashenCrownAt, type Profile } from "@emberbound/game-core";
+import { Hunts } from "./Hunts";
 import { session } from "../../game/session";
 import { Bar } from "../components/Common";
 import { CombatView } from "../components/CombatView";
@@ -35,6 +36,7 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
 
   return (
     <>
+      <Hunts profile={profile} active={active} onReviewGear={onReviewGear} />
       {currentAttempt && currentAttempt !== attempt && <LongTermCombat profile={profile} active={active} attempt={currentAttempt} />}
       <section className="panel stack" aria-label="Ashen King ladder">
         <div className="row spread">
@@ -77,7 +79,7 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
         </section>
       )}
 
-      {unlocked && !currentAttempt && !complete && (
+      {unlocked && !currentAttempt && !activeHuntAttempt(profile) && !complete && (
         <section className="panel stack" aria-label="Start Ashen King attempt">
           <p className="small muted">Start at full HP with your current build. Adventure farming resumes after your attempt.</p>
           {nextTier < boss.tiers.length && (

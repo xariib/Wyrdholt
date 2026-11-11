@@ -2,7 +2,7 @@
   "rulesVersion": "emberbound-rules/0.3.0",
   "contentVersion": "emberbound-content/0.6.0-class-gear",
   "contentHash": "68bb986b69e0f2702f9604dfd90b9dc955df49f3b042f6f4a612617623fd1dc3",
-  "generatedBy": "node v24.20.0",
+  "generatedBy": "node v24.22.1",
   "cases": {
     "fight-c5-season-tier-1": "c243ec8f9b5df228d1c20f77bd02f0529c4707464fc26d6ec93b567e9902bf37",
     "fight-c7-briar-vault-party": "d2ba31b7f0200f12aece4fc1281a1e1f612ab66760bb6b862fdeb3a7107697b2",
@@ -34,6 +34,9 @@
     "adventure-ranger-warrior-offline": "51ab4fbb63314dc784205c817f7eef4dd7b19714e114cf13860436e0d2f8dcb8",
     "adventure-push-12min-chunked": "ad653518481cf15f7013442619e2a9a0dd4056cec6e410aab7d363334a25e9c9",
     "offline-2h-push-fallback": "b0e6f14852cd2379a814315acc1f2af25d5b725f1cc432a3471b2e9f925ada70",
-    "build-snapshot-rule": "56a0a068fdbd81501c8695f1aad361e6120a727b3c5116ca27a929f7a3d29b5e"
+    "build-snapshot-rule": "56a0a068fdbd81501c8695f1aad361e6120a727b3c5116ca27a929f7a3d29b5e",
+    "hunt-direct-offline": "5f2aa4e9d00069f13abf9e4097e704a424aa4c5a6e1aa6c2ef35b06728d9ece8",
+    "hunt-raid-offline": "7e806ae9f32f1638767f88ecf03243aa12a624811dd86fc0f7aa05d702331723",
+    "hunt-weakness-offline": "20eaabd636cd996c044d4723c3ba5701de3804d512d9160e6669a974200d39c1"
   }
 }

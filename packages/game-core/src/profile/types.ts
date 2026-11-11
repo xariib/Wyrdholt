@@ -123,6 +123,7 @@ export interface BossProgress {
  * the previous state must clone it first (cloneProfile or a save round-trip).
  */
 export interface Profile {
+  hunts?: import("../hunts/types").HuntState;
   /** Permanent Ashen King ladder. Present from the first attempt (schema 4). */
   ashenKing?: BossProgress;
   longTerm?: { version: 1; ladders: Record<string, BossProgress> };

@@ -8,6 +8,8 @@ import { sha256Hex } from "../hash/sha256";
 import { combineRuleEffects } from "../rules/modifiers";
 import { ASHEN_KING_ID } from "../boss/progress";
 import { LONG_TERM_RULES_VERSION, RULES_VERSION } from "../rules/version";
+import { HUNT_RULES_VERSION } from "../rules/version";
+import { buildHuntEncounter } from "../hunts/encounter";
 
 export class ReplayMismatchError extends Error {}
 
@@ -42,6 +44,7 @@ export function executeRecord(
   const effects = combineRuleEffects(content, record.activeRuleIds);
   const setup = record.format === "emberbound-boss-fight-record/1"
     ? buildBossEncounter(content, record.encounter, effects)
+    : record.format === "emberbound-fight-record/4" ? buildHuntEncounter(content, record, effects)
     : buildEncounter(content, record.encounter.zoneId, record.encounter.stageIndex, effects);
   const sink = options.recordEvents ? new ArraySink() : NULL_SINK;
   const summary = simulateFight(
@@ -72,6 +75,22 @@ export interface ReplayResult<RecordType extends CombatRecord = FightRecord> {
 
 export function checkRecordCompatibility(content: ContentIndex, record: CombatRecord): void {
   const format = record.format;
+  if (format === "emberbound-fight-record/4") {
+    const ref = record.hunt;
+    const hunt = ref && content.hunts.get(ref.huntId);
+    if (!hunt || !ref || !Number.isSafeInteger(ref.discoveryId) || ref.discoveryId < 1
+      || ![0, 1, 2].includes(ref.step) || record.encounter.zoneId !== hunt.zoneId || record.encounter.stageIndex !== ref.step
+      || (ref.step === 0 ? ref.route !== null : !["direct", "raid", "weakness"].includes(ref.route ?? ""))
+      || ref.step === 1 && ref.route === "direct" || record.activeRuleIds.length !== 0
+      || record.build.seasonRelicAttackBp !== undefined || record.rulesVersion !== HUNT_RULES_VERSION
+      || record.contentVersion !== content.snapshot.contentVersion || record.contentHash !== content.huntHash
+      || record.build.promoted !== undefined && (record.build.promoted !== true || !content.promotions.has(record.build.classId))
+      || record.build.artifactAttackBp !== undefined && (!Number.isSafeInteger(record.build.artifactAttackBp) || record.build.artifactAttackBp <= 0 || record.build.artifactAttackBp > 10_000)) {
+      throw new ReplayMismatchError("Hunt record or content mismatch");
+    }
+    return;
+  }
+  if (record.hunt !== undefined) throw new ReplayMismatchError("Unexpected Hunt metadata");
   if (format !== "emberbound-fight-record/1" && format !== "emberbound-fight-record/2" && format !== "emberbound-fight-record/3" && format !== "emberbound-boss-fight-record/1") {
     throw new ReplayMismatchError(`Unsupported record format ${String(format)}`);
   }

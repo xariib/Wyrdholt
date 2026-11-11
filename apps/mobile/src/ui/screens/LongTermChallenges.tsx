@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { activeBossAttempt, bossProgress, currentSeason, masteryRank, seasonTierOpenAt, type BossResult, type Profile } from "@emberbound/game-core";
+import { activeBossAttempt, activeHuntAttempt, bossProgress, currentSeason, masteryRank, seasonTierOpenAt, type BossResult, type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { bossResultLabel, hp, pct } from "../format";
 
@@ -34,7 +34,7 @@ export function LongTermChallenges({ profile, active }: { profile: Profile; acti
   const seasonProgress = season && bossProgress(profile, season.boss.id);
   const rank = seasonProgress?.highestClearedTier ?? 0;
   const nextTier = rank + 1;
-  const busy = starting !== null || Boolean(activeBossAttempt(profile));
+  const busy = starting !== null || Boolean(activeBossAttempt(profile) || activeHuntAttempt(profile));
   const isCleared = (zoneId: string) => profile.adventure.zones[zoneId]?.cleared === true;
 
   async function start(id: string, tier: number): Promise<void> {

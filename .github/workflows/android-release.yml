@@ -1,6 +1,9 @@
 name: Build signed Android APK
 
 on:
+  push:
+    branches: [main]
+    paths: [.github/android-release.json]
   workflow_dispatch:
     inputs:
       version_name:
@@ -31,6 +34,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       WYRDHOLT_VERSION_NAME: ${{ inputs.version_name }}
       WYRDHOLT_VERSION_CODE: ${{ inputs.version_code }}
+      WYRDHOLT_PUBLISH_RELEASE: ${{ inputs.publish_release }}
       WYRDHOLT_RELEASE: "1"
       EMBERBOUND_DEV_TOOLS: "false"
     steps:
@@ -47,6 +51,21 @@ jobs:
         with:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
+
+      - name: Read committed release request
+        if: github.event_name == 'push'
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, appendFileSync } from 'node:fs';
+          const request = JSON.parse(readFileSync('.github/android-release.json', 'utf8'));
+          if (!/^\d+\.\d+\.\d+$/.test(request.versionName) ||
+              !Number.isSafeInteger(request.versionCode) || request.versionCode < 1 ||
+              request.versionCode > 2100000000 || typeof request.publishRelease !== 'boolean') {
+            throw new Error('Invalid Android release request');
+          }
+          appendFileSync(process.env.GITHUB_ENV,
+            `WYRDHOLT_VERSION_NAME=${request.versionName}\nWYRDHOLT_VERSION_CODE=${request.versionCode}\nWYRDHOLT_PUBLISH_RELEASE=${request.publishRelease}\n`);
+          NODE
 
       - name: Validate release version
         run: |
@@ -107,14 +126,14 @@ jobs:
       - name: Upload signed APK for installation
         uses: actions/upload-artifact@v4
         with:
-          name: Wyrdholt-Idle-${{ inputs.version_name }}-${{ inputs.version_code }}
+          name: Wyrdholt-Idle-${{ env.WYRDHOLT_VERSION_NAME }}-${{ env.WYRDHOLT_VERSION_CODE }}
           path: |
             Wyrdholt-Idle.apk
             Wyrdholt-Idle.apk.sha256
           if-no-files-found: error
 
       - name: Publish for the in-game updater
-        if: inputs.publish_release
+        if: env.WYRDHOLT_PUBLISH_RELEASE == 'true'
         run: |
           set -euo pipefail
           tag="android-v$WYRDHOLT_VERSION_NAME-$WYRDHOLT_VERSION_CODE"

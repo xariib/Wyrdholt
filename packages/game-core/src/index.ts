@@ -7,7 +7,10 @@
  * this package with `lib: ["ES2022"]` and no ambient types.
  */
 
-export { RULES_VERSION, LONG_TERM_RULES_VERSION, SAVE_SCHEMA_VERSION, BOSS_SAVE_SCHEMA_VERSION, LONG_TERM_SAVE_SCHEMA_VERSION } from "./rules/version";
+export { RULES_VERSION, LONG_TERM_RULES_VERSION, SAVE_SCHEMA_VERSION, BOSS_SAVE_SCHEMA_VERSION, LONG_TERM_SAVE_SCHEMA_VERSION, HUNT_SAVE_SCHEMA_VERSION, HUNT_RULES_VERSION } from "./rules/version";
+export { activeHuntAttempt, discoverHunts } from "./hunts/discovery";
+export { startHunt, prepareHuntFight, huntSeed, type HuntFightCache } from "./hunts/hunts";
+export type { HuntState, HuntDiscovery, HuntAttempt, HuntResult } from "./hunts/types";
 export { activeBossAttempt, bossProgress, currentSeason, promotionCleared, seasonTierOpenAt } from "./boss/progress";
 export { partySnapshot, replayPartyFight, runPartyDungeon } from "./replay/party";
 export { BP, HP_SCALE, mulDivRound, mulDivFloor, applyBp, geometricCurveTotals, stepTotals } from "./math/fixed";

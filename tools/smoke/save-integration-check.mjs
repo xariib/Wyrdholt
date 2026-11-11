@@ -149,7 +149,7 @@ try {
   report.browser = browser.version(); report.playwright = JSON.parse(readFileSync(join(root, "node_modules/playwright/package.json"))).version;
   const valid = fixture();
   const cases = [
-    { name: "unsupported-main", slots: { main: changed(valid, (p, e) => { p.schema = 6; e.schema = 6; }), backup: valid }, reason: "A saved adventure uses a version this build cannot open." },
+    { name: "unsupported-main", slots: { main: changed(valid, (p, e) => { p.schema = 7; e.schema = 7; }), backup: valid }, reason: "A saved adventure uses a version this build cannot open." },
     { name: "corrupt-sidefile", slots: { main: valid, temp: "not a save", backup: valid }, reason: "A saved adventure could not be read as a valid save." },
     { name: "malformed-profile", slots: { main: changed(valid, p => { delete p.clock; }), backup: valid }, reason: "A saved adventure could not be read as a valid save." },
     { name: "legacy-schema1-rules", slots: { main: legacySave, backup: valid }, reason: "A saved adventure belongs to a different game version." },
