@@ -280,6 +280,8 @@ export interface ItemDef {
   slot: SlotId;
   /** Omitted for gear shared by all classes. */
   classId?: Id;
+  /** Archived shared definition, retained for old fight snapshots and save migration only. */
+  classVariants?: Record<Id, Id>;
   rarity: Id;
   stats: StatBlock;
   effect?: ItemEffectDef;

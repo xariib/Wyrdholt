@@ -1,14 +1,14 @@
 import type { ItemDef } from "@emberbound/shared-types";
 
 /**
- * Shared gear and class gear across five rarities and six slots.
+ * Class gear across five rarities and six slots; archived shared definitions retain old IDs.
  * Stats are provisional.
  *
  * Eligibility by encounter level: Rare 5+, Epic 9+, Legendary 13+.
  * C3 adds the ten previously missing Epic/Legendary effects. Their values are
  * provisional playtest tuning (ITEM-EFFECTS-006); existing stats/effects are kept.
  */
-export const ITEMS: ItemDef[] = [
+const DEFINITIONS: ItemDef[] = [
   // ---------------------------------------------------------------- Common
   { id: "wayfarer_blade", name: "Wayfarer Blade", slot: "weapon", classId: "warrior", rarity: "common", stats: { attack: 3 }, minEncounterLevel: 1, tags: [], icon: "blade" },
   { id: "linen_hood", name: "Linen Hood", slot: "head", rarity: "common", stats: { hp: 8 }, minEncounterLevel: 1, tags: [], icon: "hood" },
@@ -294,6 +294,17 @@ export const ITEMS: ItemDef[] = [
   { id: "thorntrail_boots", name: "Thorntrail Boots", slot: "boots", classId: "ranger", rarity: "rare", stats: { hp: 8, attackRateMilli: 80, critBp: 400 }, minEncounterLevel: 5, tags: ["CRIT"], icon: "boots" },
 ];
 
+// Each former shared item has one mechanically identical version for every class.
+// Keep archived definitions for pinned fights; they never enter new loot/Forge pools.
+const classNames = { monk: "Monk", mage: "Mage", warrior: "Warrior", ranger: "Ranger" };
+export const ITEMS: ItemDef[] = DEFINITIONS.flatMap(item => {
+  if (item.classId) return [item];
+  const variants = Object.entries(classNames).map(([classId, label]): ItemDef => ({
+    ...item, id: `${item.id}_${classId}`, name: `${label}'s ${item.name}`, classId,
+  }));
+  return [{ ...item, classVariants: Object.fromEntries(variants.map(v => [v.classId!, v.id])) }, ...variants];
+});
+
 export const STARTER_ITEMS = ["linen_hood", "trail_tunic", "worn_grips", "road_boots", "copper_band"];
 
 export const STARTER_WEAPONS = {
@@ -304,7 +315,7 @@ export const STARTER_WEAPONS = {
 };
 
 /** Items the developer "grant sample gear" action adds, for Gear UX evaluation. */
-export const DEV_SAMPLE_ITEMS: readonly string[] = [
+const DEV_SAMPLE_BASES: readonly string[] = [
   "briar_edge",
   "reedweave_wraps",
   "willow_focus",
@@ -323,3 +334,7 @@ export const DEV_SAMPLE_ITEMS: readonly string[] = [
   "ironbark_mantle",
   "seers_circlet",
 ];
+export const DEV_SAMPLE_ITEMS: readonly string[] = DEV_SAMPLE_BASES.flatMap(id => {
+  const item = ITEMS.find(item => item.id === id)!;
+  return item.classVariants ? Object.values(item.classVariants) : [id];
+});

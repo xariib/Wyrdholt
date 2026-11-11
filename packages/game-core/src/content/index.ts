@@ -185,6 +185,19 @@ export class ContentIndex {
     for (const i of this.snapshot.items) {
       this.rarity(i.rarity);
       if (i.classId !== undefined) this.classDef(i.classId);
+      if (i.classVariants) {
+        if (i.classId !== undefined) throw new Error(`Class variant template ${i.id} cannot be wearable`);
+        for (const cls of this.classes.values()) {
+          if (!cls.implemented || cls.tier !== 1) continue;
+          const variant = this.item(i.classVariants[cls.id] ?? "");
+          if (variant.classId !== cls.id || variant.slot !== i.slot || variant.rarity !== i.rarity || variant.classVariants) {
+            throw new Error(`Invalid class variant for ${i.id}/${cls.id}`);
+          }
+          if (canonicalJson(variant.effect ?? null) !== canonicalJson(i.effect ?? null)) {
+            throw new Error(`Class variant ${variant.id} must preserve its source effect`);
+          }
+        }
+      }
     }
     for (const s of this.snapshot.starterItems) {
       const item = this.item(s);

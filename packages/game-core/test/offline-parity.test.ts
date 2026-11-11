@@ -31,6 +31,7 @@ const RARE_SET = ["bloodletter", "seers_circlet", "ironbark_mantle", "flowing_wr
 const EPIC_SET = ["stormcaller", "crown_of_thorns", "cinderweave", "venom_grips", "pilgrims_pace", "moonlit_loop"];
 
 function hero(opts: { seed: number; cls: string; alt: string; level: number; mastery: number; gear: string[]; cleared: string[] }): Profile {
+  opts = { ...opts, gear: opts.gear.map(id => content.item(id).classVariants?.[opts.cls] ?? id) };
   const p = createProfile(content, { name: "Tester", activeClassId: opts.cls, alternateClassId: opts.alt, masterSeed: opts.seed, nowWallMs: 0 });
   p.character.xp = content.levelTotals[opts.level - 1]!;
   p.character.level = opts.level;

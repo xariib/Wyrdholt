@@ -81,8 +81,9 @@ function setMastery(content: ContentIndex, profile: Profile, classId: string, ra
 
 function equipNew(content: ContentIndex, profile: Profile, baseIds: readonly string[]): void {
   for (const baseId of baseIds) {
-    const item = content.item(baseId);
-    const instance = createInstance(profile, baseId, { isNew: false });
+    const template = content.item(baseId);
+    const item = content.item(template.classVariants?.[profile.character.activeClassId] ?? baseId);
+    const instance = createInstance(profile, item.id, { isNew: false });
     profile.equipment[item.slot as SlotId] = instance.id;
   }
 }

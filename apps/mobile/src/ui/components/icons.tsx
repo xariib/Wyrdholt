@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { spriteDataUrl, spriteCanvas } from "../../render/pixelArt";
 
 
@@ -59,10 +59,52 @@ export function SpriteImage({ name, className, portrait = false }: { name: strin
   const fallback = useMemo(() => spriteUrl(name, 4), [name]);
   const src = useArt(actorId(name), fallback);
   if (portrait && actorPack[name]) {
-    const clip = actorPack[name]!.animations.idle;
-    return <span className="production-portrait" data-actor={name} data-logical-height="48" data-visual-height={clip.frame[1]}><img className="pixelated" src={productionUrl(clip.frames[0]!.file)} onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = src; }} alt={name} draggable={false} style={{ width: clip.frame[0]! * 3, height: clip.frame[1]! * 3 }}/></span>;
+    return <AnimatedPortrait key={name} name={name} fallback={src} />;
   }
   return <img className={`pixelated ${className ?? ""}`} src={src} alt="" draggable={false} />;
+}
+
+/** One atlas, no React frame loop; pause hidden portraits and respect reduced motion. */
+function AnimatedPortrait({ name, fallback }: { name: string; fallback: string }) {
+  const clip = actorPack[name]!.animations.idle;
+  const image = useRef<HTMLImageElement>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    const node = image.current;
+    if (!node || failed) return;
+    const total = clip.ms.reduce((sum, ms) => sum + ms, 0);
+    let elapsed = 0;
+    const frames = clip.ms.map((ms, i) => {
+      const keyframe = { transform: `translateX(${-i * clip.frame[0]! * 3}px)`, offset: elapsed / total, easing: "steps(1, end)" };
+      elapsed += ms;
+      return keyframe;
+    });
+    frames.push({ ...frames[frames.length - 1]!, offset: 1 });
+    const animation = node.animate(frames, { duration: total, iterations: Infinity });
+    const preference = matchMedia("(prefers-reduced-motion: reduce)");
+    let visible = false;
+    const sync = () => {
+      if (preference.matches) { animation.pause(); animation.currentTime = 0; }
+      else if (visible && !document.hidden) animation.play();
+      else animation.pause();
+    };
+    const observer = new IntersectionObserver(entries => { visible = entries[0]?.isIntersecting ?? false; sync(); });
+    observer.observe(node.parentElement!);
+    preference.addEventListener("change", sync);
+    document.addEventListener("visibilitychange", sync);
+    sync();
+    return () => {
+      observer.disconnect(); animation.cancel();
+      preference.removeEventListener("change", sync);
+      document.removeEventListener("visibilitychange", sync);
+    };
+  }, [clip, failed]);
+  return <span className="production-portrait" data-actor={name} data-logical-height="48" data-visual-height={clip.frame[1]}>
+    <span className="portrait-window" style={{ width: clip.frame[0]! * 3, height: clip.frame[1]! * 3 }}>
+      <img ref={image} className="pixelated" src={failed ? fallback : productionUrl(clip.sprite_strip)} onError={() => setFailed(true)} alt={name} draggable={false}
+        style={{ width: clip.frame[0]! * 3 * (failed ? 1 : clip.ms.length), height: clip.frame[1]! * 3 }} />
+    </span>
+  </span>;
 }
 
 export function NavIcon({ name }: { name: "adventure" | "character" | "gear" | "challenges" | "menu" | "book" }) {

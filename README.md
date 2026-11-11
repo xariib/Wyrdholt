@@ -49,6 +49,10 @@ The tests serve the built game locally and use disposable browser contexts. They
 
 Run `node --import tsx tools/smoke/online-check.mjs` against a build made with `VITE_WYRDHOLT_ONLINE_PLAY=true` to check the local authority flow.
 
+## Character animation checks
+
+After building, run `node --import tsx tools/visual/character-animation-check.mjs` to check attack movement, steady health labels, animated portraits, reduced-motion support, and class-specific starter gear in all six slots. Evidence stays under ignored `tools/smoke/out`. Browser checks do not replace physical-device or human playtesting.
+
 ## Project guide
 
 - [Development roadmap and milestone gates](docs/ROADMAP.md)

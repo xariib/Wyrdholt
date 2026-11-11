@@ -43,10 +43,12 @@ export function EncyclopediaScreen({ onBack }: { onBack: () => void }) {
       break;
     case "Gear":
       entries = content.snapshot.items.flatMap(item => {
+        if (item.classVariants) return [];
         const rarity = content.rarity(item.rarity);
         const slot = SLOT_LABELS[item.slot] ?? item.slot;
-        if (!matches(item.name, rarity.name, slot, item.effect?.name ?? "", item.effect?.description ?? "", ...item.tags)) return [];
-        return <Entry key={item.id} name={item.name} detail={`${rarity.name} · ${slot}`} art={<ItemIcon icon={item.icon} rarityColor={rarityColor(content, item.rarity)} size={34} />}>
+        const className = item.classId ? content.classDef(item.classId).name : "";
+        if (!matches(item.name, className, rarity.name, slot, item.effect?.name ?? "", item.effect?.description ?? "", ...item.tags)) return [];
+        return <Entry key={item.id} name={item.name} detail={`${rarity.name} · ${slot}${className ? ` · ${className} only` : ""}`} art={<ItemIcon icon={item.icon} rarityColor={rarityColor(content, item.rarity)} size={34} />}>
           <div className="chips">{statRows(null, item, { pct, rate }).map(stat => <span className="tag" key={stat.key}>{stat.format(stat.candidate)} {stat.label}</span>)}</div>
           {item.effect && <p><b>{item.effect.name}</b> · {item.effect.description}</p>}
           <p className="small muted">Minimum encounter level {item.minEncounterLevel}</p>

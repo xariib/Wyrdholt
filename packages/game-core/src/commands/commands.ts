@@ -158,6 +158,7 @@ function equip(profile: Profile, content: ContentIndex, slot: SlotId, instanceId
   if (item.slot !== slot) return { ok: false, error: `${item.name} does not fit the ${slot} slot.` };
   const fighting = isFightActive(profile);
   const classId = (fighting ? profile.pending?.activeClassId : undefined) ?? profile.character.activeClassId;
+  if (item.classVariants) return { ok: false, error: "This legacy item adapts to your class after the current fight." };
   if (!canUseItem(item, classId)) return { ok: false, error: `${item.name} requires ${content.classDef(item.classId!).name}.` };
   instance.isNew = false;
   if (fighting) {

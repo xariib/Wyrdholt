@@ -59,7 +59,7 @@ describe("combined inventory view", () => {
   for (const slot of SLOT_ORDER) for (const rarity of ["common", "uncommon", "rare", "epic", "legendary"]) {
     it(`intersects name/effect, NEW and eligibility for ${slot}/${rarity}`, () => {
       const { p } = fixture(); const groups = inventoryGroups(p, content);
-      const item = content.snapshot.items.find(i => i.slot === slot && i.rarity === rarity);
+      const item = content.snapshot.items.find(i => i.slot === slot && i.rarity === rarity && i.classId === "monk");
       const search = `  ${item.name.toUpperCase()} ${item.effect?.name ?? ""}  `;
       for (const salvage of ["", "eligible", "protected"]) {
         const filtered = filterInventoryGroups(groups, { search, slot, rarityId: rarity, newOnly: true, salvage });

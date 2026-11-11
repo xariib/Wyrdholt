@@ -49,6 +49,7 @@ describe("SAVE-001 parser boundaries and compatibility", () => {
     // encoder contract. New gameplay content must not recapture their bytes.
     profile.contentVersion = "emberbound-content/0.4.0-c2";
     profile.inventory.instances[0]!.baseId = "wayfarer_blade";
+    for (const instance of profile.inventory.instances.slice(1)) instance.baseId = instance.baseId.replace(/_monk$/, "");
     const text = serializeSave(profile, 123);
     expect(sha256Hex(text)).toBe(expectedHash);
     const parsed = parseSave(text);

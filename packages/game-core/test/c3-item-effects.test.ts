@@ -40,7 +40,7 @@ describe("C3 item effects", () => {
     expect([starterWeapons?.warrior, ...newRest.starterItems]).toEqual(oldRest.starterItems);
     expect({ ...newRest, starterItems: oldRest.starterItems }).toEqual(oldRest);
     for (const old of oldItems) {
-      const { classId: _class, ...item } = newItems.find(i => i.id === old.id)!;
+      const { classId: _class, classVariants: _variants, ...item } = newItems.find(i => i.id === old.id)!;
       expect({ ...item, effect: old.effect, tags: old.tags }).toEqual({ ...old, effect: old.effect });
       if (old.effect) expect(item.effect).toEqual(old.effect);
     }

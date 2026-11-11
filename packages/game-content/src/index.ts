@@ -24,7 +24,7 @@ export { DEV_SAMPLE_ITEMS } from "./items";
  * - Pacing (XP/mastery tables, budgets, drop chances): C1 design, docs/design/C1_ADVENTURE.md
  */
 
-export const CONTENT_VERSION = "emberbound-content/0.6.0-class-gear";
+export const CONTENT_VERSION = "emberbound-content/0.7.0-all-class-gear";
 
 const config: ContentConfig = {
   recoveryBp: 1_800, // 18% of max HP after non-final victories (ADVENTURE_MILESTONE)

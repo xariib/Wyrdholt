@@ -581,3 +581,5 @@
   border: 1px solid var(--line);
   border-radius: 6px;
 }
+
+.portrait-window{display:block;overflow:hidden}

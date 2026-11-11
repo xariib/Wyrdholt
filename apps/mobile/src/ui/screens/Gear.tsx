@@ -316,7 +316,7 @@ function Compare({ profile, slot, current, candidate, onDone }: { profile: Profi
           if (result.ok) onDone();
         }}
       >
-        {candidate.queuedHere ? "Queued for next fight" : canEquip ? `Equip ${candidate.item.name}` : `Requires ${session.content.classDef(candidate.item.classId!).name}`}
+        {candidate.queuedHere ? "Queued for next fight" : canEquip ? `Equip ${candidate.item.name}` : candidate.item.classVariants ? "Adapts after this fight" : `Requires ${session.content.classDef(candidate.item.classId!).name}`}
       </button>
       {inFight && <div className="small faint">A fight is in progress: the change applies when it ends.</div>}
     </div>

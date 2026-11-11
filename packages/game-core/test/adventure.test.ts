@@ -184,7 +184,7 @@ describe("build snapshot rule", () => {
 
   it("caps carried HP when a new build lowers max HP, and never refills it", () => {
     const p = newProfile(22, "mage", "monk");
-    run(p, { type: "devGrant", baseIds: ["ironbark_mantle"] });
+    run(p, { type: "devGrant", baseIds: ["ironbark_mantle_mage"] });
     const mantle = p.inventory.instances[p.inventory.instances.length - 1]!;
     run(p, { type: "equip", slot: "chest", instanceId: mantle.id });
     const bigMax = heroStatsFor(p, content).maxHp100;
@@ -194,7 +194,7 @@ describe("build snapshot rule", () => {
     p.adventure.run!.hp100 = bigMax - 100;
     // Queue a lower-HP chest while "in a fight"
     p.adventure.run!.phase = "fight";
-    const tunic = p.inventory.instances.find((i) => i.baseId === "trail_tunic")!;
+    const tunic = p.inventory.instances.find((i) => i.baseId === "trail_tunic_mage")!;
     expect(run(p, { type: "equip", slot: "chest", instanceId: tunic.id })).toEqual({ ok: true, queued: true });
     p.adventure.run!.phase = "rest";
     advanceAdventure(p, content, 1_000, { offline: false, contentTimeMs: 0 });

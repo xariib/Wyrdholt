@@ -27,16 +27,25 @@ Closing or suspending is not death. Checkpoints reconstruct the run; offline use
 Six slots: Weapon, Head, Chest, Gloves, Boots, Ring. Fixed named definitions and uniquely identified owned copies; UI groups duplicates. NEW status persists and comparison marks that group's copies reviewed. Loadout opens a slot-filtered item list, followed by in-place comparison; equip may be queued. Build summary describes stats/effects, not a universal rating. No Equip Best.
 
 Monks wield wraps, Mages wield staves, Warriors wield swords, and Rangers wield
-bows. Each class has a weapon at every rarity and two pieces of class-specific
-armor. The rest of the armor and all rings are shared. Adventure drops and clear
+bows. All six slots, including rings, have class-specific gear at every rarity.
+Formerly shared armor and rings have one version per class with identical stats
+and effects. Adventure drops and clear
 caches use the class that fought. Forge results use the active class. Encounter
 level gates and zone rarity ceilings still apply. [Effect contract](C3_ITEM_EFFECTS.md).
 
 Gear includes name and effect search, rarity filters, and a NEW filter. A class
-switch keeps shared equipment on and returns incompatible gear to inventory. It
-equips the first compatible owned weapon by acquisition order if the weapon slot
-is empty. In an older save, an incompatible equipped weapon gets a same-rarity
-replacement at a fight boundary. The original copy stays in inventory.
+switch returns incompatible gear to inventory and fills empty slots with the
+first compatible owned copy by acquisition order. In an older save, shared copies
+become versions for the active class at a safe fight boundary; an unequipped copy
+queued for the alternate class becomes that class's version. IDs, locks, bonuses,
+and review state are preserved. An incompatible old equipped weapon gets a
+same-rarity replacement, retaining the original copy in inventory. Archived shared
+definitions remain available to replay old fights but cannot drop or be forged.
+
+Combat presentation uses animated poses with idle motion, anticipation, attack
+steps and hit recoil. Health bars remain steady; damage and contact effects still
+follow the deterministic event log. Large character portraits play their idle
+animation and pause when hidden or when reduced motion is requested.
 
 ## INTEGRATED FOR WEB TESTING / HUMAN VALIDATION OPEN — Forge V1
 

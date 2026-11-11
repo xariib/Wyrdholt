@@ -14,6 +14,7 @@ const HOUR = 3_600_000;
 const RARE_SET = ["bloodletter", "seers_circlet", "ironbark_mantle", "flowing_wraps", "huntsmans_stride", "ember_seal"];
 
 function hero(level: number, cleared: string[], gear: string[] = RARE_SET): Profile {
+  gear = gear.map(id => content.item(id).classVariants?.monk ?? id);
   const p = createProfile(content, { name: "Tester", activeClassId: "monk", alternateClassId: "mage", masterSeed: 7, nowWallMs: 0 });
   p.character.xp = content.levelTotals[level - 1]!;
   p.character.level = level;

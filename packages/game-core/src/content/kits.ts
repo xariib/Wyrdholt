@@ -9,13 +9,21 @@ import { BP } from "../math/fixed";
  */
 export function validateKits(content: ContentIndex): void {
   const snapshot = content.snapshot;
+  const families = new Map<string, string>();
+  for (const item of snapshot.items) {
+    for (const variant of Object.values(item.classVariants ?? {})) {
+      if (families.has(variant)) throw new Error(`item ${variant}: multiple class variant templates`);
+      families.set(variant, item.id);
+    }
+  }
   const itemMechanicIds = new Map<string, string>();
   for (const item of snapshot.items) {
+    const family = families.get(item.id) ?? item.id;
     for (const m of item.effect?.mechanics ?? []) {
       checkMechanic(m, `item ${item.id}`);
       const other = itemMechanicIds.get(m.id);
-      if (other !== undefined && other !== item.id) throw new Error(`item ${item.id}: mechanic id ${m.id} already used by item ${other}`);
-      itemMechanicIds.set(m.id, item.id);
+      if (other !== undefined && other !== family) throw new Error(`item ${item.id}: mechanic id ${m.id} already used by item ${other}`);
+      itemMechanicIds.set(m.id, family);
     }
   }
 

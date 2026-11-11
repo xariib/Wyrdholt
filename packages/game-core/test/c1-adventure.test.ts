@@ -30,6 +30,7 @@ const EPIC_SET = ["stormcaller", "crown_of_thorns", "cinderweave", "venom_grips"
 
 /** A Monk at the given level and mastery wearing `gear`, with `cleared` zones cleared. */
 function hero(c: ContentIndex, seed: number, level: number, mastery: number, gear: string[], cleared: string[] = []): Profile {
+  gear = gear.map(id => c.item(id).classVariants?.monk ?? id);
   const p = createProfile(c, { name: "Tester", activeClassId: "monk", alternateClassId: "mage", masterSeed: seed, nowWallMs: 0 });
   p.character.xp = c.levelTotals[level - 1]!;
   p.character.level = level;

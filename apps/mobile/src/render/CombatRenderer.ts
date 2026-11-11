@@ -6,6 +6,7 @@ import type { CombatEvent } from "@emberbound/shared-types";
 import type { CombatFrame } from "../game/session";
 import { actorPack, attackDurations, fxPack, productionActorId, sequenceIndex } from "../art/darkwood";
 import { ProductionMotion } from "./productionMotion";
+import { characterOffset } from "./characterMotion";
 import { EnvironmentArt } from "./environmentArt";
 import { drawBackground, groundY } from "./background";
 import { GLYPHS, glyphCanvas } from "./pixelArt";
@@ -71,6 +72,8 @@ interface ActorView {
   pips: Graphics;
   tex: SpriteTextures;
   baseX: number;
+  minX: number;
+  maxX: number;
   displayScale: number;
   hp100: number;
   max100: number;
@@ -365,11 +368,14 @@ export class CombatRenderer {
       for (const fx of effects) this.sprites.optional(`vfx/${fx}`);
     }
     const production = actorPack[spriteName];
+    let minX = leftWidth + 2;
+    let maxX = this.W - 2 - (tex.width * displayScale - leftWidth);
     if (production) {
       const clips = Object.values(production.animations);
       const left = Math.max(...clips.map(c => c.anchor[0]!));
       const right = Math.max(...clips.map(c => c.frame[0]! - c.anchor[0]!));
-      x = Math.round(Math.max(left + 2, Math.min(this.W - right - 2, x)));
+      minX = left + 2; maxX = this.W - right - 2;
+      x = Math.round(Math.max(minX, Math.min(maxX, x)));
     }
     const root = new Container();
     const body = new Sprite(tex.normal);
@@ -400,6 +406,8 @@ export class CombatRenderer {
       pips,
       tex,
       baseX: x,
+      minX,
+      maxX,
       displayScale,
       hp100,
       max100,
@@ -657,10 +665,11 @@ export class CombatRenderer {
     for (const a of this.actors.values()) {
       if (a.motion) {
         this.animateProduction(a, now);
-        a.root.position.set(a.baseX, ground + a.groundOffset);
         a.root.zIndex = a.groundOffset;
-        a.hud.position.copyFrom(a.root.position);
-        a.root.alpha = 1; a.body.tint = 0xffffff; a.aura.alpha = 0;
+        // Keep health/status labels steady while the character steps into an attack.
+        a.hud.position.set(a.baseX, ground + a.groundOffset);
+        a.root.alpha = a.alive && a.spawnAt > 0 ? Math.max(0, Math.min(1, (now - a.spawnAt) / 250)) : 1;
+        a.body.tint = 0xffffff; a.aura.alpha = 0;
         a.shownHp100 = a.hp100; this.drawBar(a);
         continue;
       }
@@ -972,6 +981,11 @@ export class CombatRenderer {
   private animateProduction(a: ActorView, now: number): void {
     const motion = a.motion!;
     const sample = motion.sample(now);
+    const [step, lift] = characterOffset(a.spriteName, sample.pose, sample.index, now - motion.start, a.phase);
+    a.root.position.set(
+      Math.round(Math.max(a.minX, Math.min(a.maxX, a.baseX + step * (a.isHero ? 1 : -1)))),
+      this.ground() + a.groundOffset + lift,
+    );
     const id = productionActorId(a.spriteName);
     const tex = sample.pose === "idle" ? this.sprites.get(a.spriteName) : this.sprites.optional(`${id}/${sample.pose}`);
     if (tex?.asset) {

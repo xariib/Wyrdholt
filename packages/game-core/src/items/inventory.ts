@@ -43,7 +43,7 @@ export function createInstance(
 }
 
 export function canUseItem(item: ItemDef, classId: string): boolean {
-  return item.classId === undefined || item.classId === classId;
+  return !item.classVariants && (item.classId === undefined || item.classId === classId);
 }
 
 export function discardIncompatiblePendingGear(profile: Profile, content: ContentIndex, classId: string): void {
@@ -79,13 +79,14 @@ export function reconcileEquipment(profile: Profile, content: ContentIndex, upgr
       }
     }
   }
-  if (profile.equipment.weapon === undefined && content.snapshot.starterWeapons) {
-    const weapon = profile.inventory.instances.find(i => {
+  for (const slot of SLOT_ORDER) {
+    if (profile.equipment[slot] !== undefined || !content.snapshot.starterWeapons) continue;
+    const replacement = profile.inventory.instances.find(i => {
       const item = content.item(i.baseId);
-      return item.slot === "weapon" && canUseItem(item, classId);
+      return item.slot === slot && canUseItem(item, classId);
     });
-    if (weapon) {
-      profile.equipment.weapon = weapon.id;
+    if (replacement) {
+      profile.equipment[slot] = replacement.id;
       changed = true;
     }
   }
@@ -95,7 +96,15 @@ export function reconcileEquipment(profile: Profile, content: ContentIndex, upgr
 /** Apply the catalog upgrade once at a safe fight boundary. */
 export function upgradeClassGear(profile: Profile, content: ContentIndex): boolean {
   if (!content.snapshot.starterWeapons || profile.contentVersion === content.snapshot.contentVersion) return false;
-  const changed = reconcileEquipment(profile, content, true);
+  let migrated = false;
+  for (const instance of profile.inventory.instances) {
+    const item = content.item(instance.baseId);
+    const queued = profile.pending?.equipment?.[item.slot] === instance.id && profile.equipment[item.slot] !== instance.id;
+    const classId = (queued ? profile.pending?.activeClassId : undefined) ?? profile.character.activeClassId;
+    const replacement = item.classVariants?.[classId];
+    if (replacement) { instance.baseId = replacement; migrated = true; }
+  }
+  const changed = reconcileEquipment(profile, content, true) || migrated;
   discardIncompatiblePendingGear(profile, content, profile.pending?.activeClassId ?? profile.character.activeClassId);
   profile.contentVersion = content.snapshot.contentVersion;
   return changed;

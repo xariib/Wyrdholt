@@ -159,7 +159,7 @@ describe("session lifecycle races and persistence", () => {
   it("persists pending equipment and class changes when immediately backgrounded", async () => {
     const s = await fresh(); for(let i=0;i<100 && !isFightActive(s.profile!);i++) advanceAdventure(s.profile!, s.content, 100, {offline: false, contentTimeMs: Date.now()});
     expect(isFightActive(s.profile!)).toBe(true);
-    const item = s.content.snapshot.items.find(i => i.slot === "head" && i.rarity === "rare")!;
+    const item = s.content.snapshot.items.find(i => i.slot === "head" && i.rarity === "rare" && i.classId === "monk")!;
     s.dispatch({type: "devGrant", baseIds: [item.id]});
     const inst = s.profile!.inventory.instances.find(i => i.baseId === item.id)!;
     const equip = s.dispatch({type: "equip", slot: "head", instanceId: inst.id});
