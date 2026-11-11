@@ -277,7 +277,7 @@ export function parseSave(text: string): ParseResult {
       : retired.ashenKing !== undefined ? BOSS_SAVE_SCHEMA_VERSION
       : retired.itemLocks !== undefined ? ITEM_LOCK_SAVE_SCHEMA_VERSION
       : retired.forge !== undefined ? FORGE_SAVE_SCHEMA_VERSION : SAVE_SCHEMA_VERSION;
-    const payload = canonicalJson(retired);
+    const payload = JSON.stringify(retired);
     // Re-enter the ordinary parser so every surviving domain is still validated.
     return parseSave(JSON.stringify({ ...envelope, schema: retired.schema,
       payload, checksum: sha256Hex(payload) }));

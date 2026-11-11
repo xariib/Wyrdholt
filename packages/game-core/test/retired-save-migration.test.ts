@@ -45,6 +45,7 @@ describe("retired Android 0.5.0 save compatibility", () => {
   it("keeps malformed surviving state, bad checksums and unknown future schemas rejected", () => {
     const p = newProfile();
     expect(parseSave(oldSave(p, data => { delete data.clock; })).ok).toBe(false);
+    expect(parseSave(oldSave(p, data => { data.gold = 0.5; })).ok).toBe(false);
     expect(parseSave(oldSave(p, data => { data.inventory.full = "broken"; })).ok).toBe(false);
     expect(parseSave(oldSave(p, data => { delete data.hunts; }))).toMatchObject({ ok: false, reason: "newer-schema" });
     const raw = JSON.parse(oldSave(p)); raw.checksum = "bad";
