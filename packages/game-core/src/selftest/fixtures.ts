@@ -3,10 +3,7 @@ import { prepareFight, startRun, zoneProgress } from "../adventure/run";
 import { createBossFightRecord } from "../boss/attempt";
 import { prepareBossFight } from "../boss/ladder";
 import { applyCommand } from "../commands/commands";
-import { ContentIndex } from "../content";
-import { discoverHunts } from "../hunts/discovery";
-import { startHunt, prepareHuntFight } from "../hunts/hunts";
-import { advanceGame } from "../game";
+import type { ContentIndex } from "../content";
 import { canonicalJson } from "../hash/canonical";
 import { sha256Hex } from "../hash/sha256";
 import { canUseItem, createInstance } from "../items/inventory";
@@ -449,31 +446,6 @@ export const SELF_TEST_CASES: readonly SelfTestCase[] = [
       };
     },
   },
-  ...["direct", "raid", "weakness"].map((route): SelfTestCase => ({
-  id: `hunt-${route}-offline`,
-  description: `Hunt ${route} route, pinned fights, rewards and offline farming`,
-  run(content) {
-    const p = baseProfile(content, 7_501, "ranger", "mage");
-    setLevel(content, p, 30); setMastery(content, p, "ranger", 20);
-    equipNew(content, p, content.snapshot.items.filter(i => i.rarity === "legendary" && canUseItem(i, "ranger")).map(i => i.id));
-    Object.assign(zoneProgress(p, "darkwood"), { unlocked: true, cleared: true, bestStage: 10, completions: 1 });
-    discoverHunts(p, content, "darkwood", 1);
-    if (startHunt(p, content, 1, "weapon")) throw new Error("Hunt did not start");
-    const fights: string[] = [];
-    while (p.hunts?.active) {
-      const fight = prepareHuntFight(content, p.hunts.active, false)!;
-      fights.push(replayCase(content, fight.record).hash);
-      advanceGame(p, content, fight.summary.durationMs, { offline: true, contentTimeMs: 0 });
-      if (p.hunts.lastResult?.outcome !== "victory") throw new Error("Hunt fixture lost");
-      if (p.hunts.queue.length) {
-        const error = startHunt(p, content, 1, undefined, p.hunts.queue[0]!.route === null ? route as "direct" | "raid" | "weakness" : undefined);
-        if (error) throw new Error(error);
-      }
-    }
-    const summary = simulateOffline(p, content, 4 * 60 * 60_000, 0);
-    return { hash: profileHash(p, { fights, summary }), detail: `${fights.length} encounters, ${p.hunts!.completed} Hunt cleared, ${p.hunts!.queue.length} discovery waiting` };
-  },
-})),
 ];
 
 export function runSelfTest(
@@ -483,16 +455,12 @@ export function runSelfTest(
   only?: readonly string[],
 ): SelfTestResult[] {
   const results: SelfTestResult[] = [];
-  // Historical scenarios pin their pre-Hunt domain. New cases exercise the added
-  // discovery/save flow without replacing any existing combat or profile golden.
-  const { hunts: _hunts, ...legacySnapshot } = content.snapshot;
-  const legacyContent = new ContentIndex(legacySnapshot);
   for (const c of SELF_TEST_CASES) {
     if (only && !only.includes(c.id)) continue;
     const started = now();
     const expected = golden?.cases[c.id] ?? null;
     try {
-      const out = c.run(c.id.startsWith("hunt-") ? content : legacyContent);
+      const out = c.run(content);
       results.push({
         id: c.id,
         description: c.description,

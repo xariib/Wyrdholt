@@ -105,11 +105,6 @@ export function OfflineOverlay({
           <AttemptTrail profile={data.profileAfter} zoneId={s.push.zoneId} />
         </div>
       )}
-      {(s.huntsDiscovered || s.huntResult) && <div className="panel small stack">
-        {!!s.huntsDiscovered && <b>{s.huntsDiscovered} Hunt{s.huntsDiscovered === 1 ? "" : "s"} discovered while farming.</b>}
-        {s.huntResult && <span>Hunt encounter {s.huntResult.outcome === "victory" ? "cleared" : "ended"}. Your rewards are kept and the next decision waits for you.</span>}
-        {data.kept && <button className="btn block" onClick={onChallenges}>View Hunts</button>}
-      </div>}
       {s.boss && (
         <div className="panel small stack">
           <b>{content.soloBosses.get(s.boss.bossId ?? ASHEN_KING_ID)?.name ?? "Challenge"} · {s.boss.result ? bossResultLabel(s.boss.result) : `Tier ${s.boss.tier} still in progress`}</b>

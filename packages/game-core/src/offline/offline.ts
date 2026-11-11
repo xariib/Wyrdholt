@@ -4,12 +4,8 @@ import { ASHEN_KING_ID, activeBossAttempt } from "../boss/progress";
 import { advanceGame } from "../game";
 import { findInstance } from "../items/inventory";
 import type { Activity, BossResult, Profile, RunMode } from "../profile/types";
-import { activeHuntAttempt } from "../hunts/discovery";
-import type { HuntResult } from "../hunts/types";
 
 export interface OfflineSummary {
-  huntsDiscovered?: number;
-  huntResult?: HuntResult;
   requestedMs: number;
   simulatedMs: number;
   capped: boolean;
@@ -76,7 +72,6 @@ export function simulateOffline(
     stoppedReason: null,
   };
   const found: number[] = [];
-  const discoveriesBefore = profile.hunts?.nextDiscoveryId ?? 1;
 
   const onEvent = (event: AdventureEvent): void => {
     hooks?.onEvent?.(event);
@@ -130,7 +125,7 @@ export function simulateOffline(
   const goldBefore = profile.gold;
   const masteryBefore = sumValues(profile.character.masteryXp);
   const activeBoss = activeBossAttempt(profile);
-  if (simulatedMs > 0 && (activeBoss || activeHuntAttempt(profile) || adv.activity !== "idle")) {
+  if (simulatedMs > 0 && (activeBoss || adv.activity !== "idle")) {
     const bossId = activeBoss?.record.encounter.bossId;
     const boss = activeBoss ? {
       ...(bossId && bossId !== ASHEN_KING_ID ? { bossId } : {}),
@@ -143,14 +138,6 @@ export function simulateOffline(
       reuseFights: false,
       onEvent,
       onTime,
-      onHuntResult: result => {
-        summary.huntResult = result;
-        found.push(...result.itemIds);
-        if (result.outcome !== "interrupted") {
-          summary.fights++;
-          if (result.outcome === "victory") summary.victories++; else summary.defeats++;
-        }
-      },
       onBossResult: (result) => {
         if (boss) boss.result = result;
         if (result.outcome === "interrupted") return;
@@ -168,8 +155,6 @@ export function simulateOffline(
   summary.gold = profile.gold - goldBefore;
   summary.mastery = sumValues(profile.character.masteryXp) - masteryBefore;
   summary.levelAfter = profile.character.level;
-  const discoveries = (profile.hunts?.nextDiscoveryId ?? 1) - discoveriesBefore;
-  if (discoveries > 0) summary.huntsDiscovered = discoveries;
   summary.itemsFound = found.length;
   summary.notableInstanceIds = pickNotable(profile, content, found);
   summary.otherItems = found.length - summary.notableInstanceIds.length;

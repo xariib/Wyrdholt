@@ -36,7 +36,7 @@ describe("C3 item effects", () => {
     expect(added).toHaveLength(10);
     expect(CONTENT.items.filter(i => ["epic", "legendary"].includes(i.rarity)).every(i => i.effect?.mechanics.length)).toBe(true);
     const { contentVersion: _old, items: oldItems, ...oldRest } = C2_CONTENT;
-    const { contentVersion: _new, items: newItems, soloBosses: _c4, longTerm: _c5, social: _coop, hunts: _hunts, starterWeapons, ...newRest } = CONTENT;
+    const { contentVersion: _new, items: newItems, soloBosses: _c4, longTerm: _c5, social: _coop, starterWeapons, ...newRest } = CONTENT;
     expect([starterWeapons?.warrior, ...newRest.starterItems]).toEqual(oldRest.starterItems);
     expect({ ...newRest, starterItems: oldRest.starterItems }).toEqual(oldRest);
     for (const old of oldItems) {

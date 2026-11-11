@@ -3,7 +3,6 @@ import type {
   ContentSnapshot,
   DungeonDef,
   EnemyArchetypeDef,
-  HuntDef,
   ItemDef,
   LootTableDef,
   MasteryTrackDef,
@@ -36,9 +35,6 @@ export class ContentIndex {
   readonly promotionHash: string;
   readonly longTermHash: string;
   readonly socialHash: string;
-  readonly huntHash: string;
-  readonly authorityHash: string;
-  readonly hunts = new Map<string, HuntDef>();
   readonly promotions = new Map<string, PromotionDef>();
   readonly seasons = new Map<string, SeasonDef>();
   readonly seasonHashes = new Map<string, string>();
@@ -61,15 +57,12 @@ export class ContentIndex {
   constructor(snapshot: ContentSnapshot) {
     this.snapshot = snapshot;
     // canonicalJson also enforces "integers only" across all content.
-    const { soloBosses = [], longTerm, social, hunts, ...adventure } = snapshot;
+    const { soloBosses = [], longTerm, social, ...adventure } = snapshot;
     this.hash = sha256Hex(canonicalJson(adventure));
     this.bossHash = sha256Hex(canonicalJson({ adventureHash: this.hash, soloBosses }));
     this.promotionHash = sha256Hex(canonicalJson({ bossHash: this.bossHash, promotions: longTerm?.promotions ?? [] }));
     this.longTermHash = sha256Hex(canonicalJson({ bossHash: this.bossHash, longTerm: longTerm ?? null }));
     this.socialHash = sha256Hex(canonicalJson({ promotionHash: this.promotionHash, social: social ?? null }));
-    this.huntHash = sha256Hex(canonicalJson({ promotionHash: this.promotionHash, hunts: hunts ?? null }));
-    this.authorityHash = hunts ? sha256Hex(canonicalJson({ longTermHash: this.longTermHash, huntHash: this.huntHash })) : this.longTermHash;
-    for (const hunt of hunts?.definitions ?? []) addUnique(this.hunts, hunt.id, hunt, "hunt");
     for (const c of snapshot.classes) addUnique(this.classes, c.id, c, "class");
     for (const t of snapshot.masteryTracks) addUnique(this.tracks, t.id, t, "mastery track");
     for (const i of snapshot.items) addUnique(this.items, i.id, i, "item");
@@ -135,18 +128,6 @@ export class ContentIndex {
   }
 
   private validate(): void {
-    const hunts = this.snapshot.hunts;
-    if (hunts && (!Number.isSafeInteger(hunts.intervalMs) || hunts.intervalMs < 1
-      || !Number.isSafeInteger(hunts.capacity) || hunts.capacity < 1 || hunts.capacity > 3 || !hunts.definitions.length)) throw new Error("Invalid Hunt cadence");
-    for (const hunt of this.hunts.values()) {
-      const zone = this.zone(hunt.zoneId);
-      if (!zone.implemented || zone.hidden || hunt.weakenedDamageBp <= 0 || hunt.weakenedDamageBp > 10_000) throw new Error("Invalid Hunt");
-      for (const [index, stage] of [hunt.approach, hunt.detour, hunt.boss].entries()) {
-        if (stage.index !== index || stage.hpBudget <= 0 || stage.dpsBudget100 <= 0 || stage.level < 1
-          || !stage.enemies.length || stage.enemies.length > 3) throw new Error("Invalid Hunt encounter");
-        for (const enemy of stage.enemies) this.enemy(enemy);
-      }
-    }
     for (const dungeon of this.dungeons.values()) {
       if (!this.zone(dungeon.unlockZoneId).implemented || !dungeon.waves.length || dungeon.rewardGold < 1 || dungeon.guildMarks < 0) {
         throw new Error(`Invalid dungeon ${dungeon.id}`);

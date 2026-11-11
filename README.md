@@ -49,10 +49,6 @@ The tests serve the built game locally and use disposable browser contexts. They
 
 Run `node --import tsx tools/smoke/online-check.mjs` against a build made with `VITE_WYRDHOLT_ONLINE_PLAY=true` to check the local authority flow.
 
-## Hunts playtest
-
-After building, run `node --import tsx tools/smoke/hunts-check.mjs` for the three-route browser flow, or `node --import tsx tools/sim/hunts-report.ts` for class balance simulations. [Hunt rules and playtest](docs/design/HUNTS.md).
-
 ## Project guide
 
 - [Development roadmap and milestone gates](docs/ROADMAP.md)

@@ -5,9 +5,6 @@ import {
   RULES_VERSION,
   ASHEN_KING_ID,
   activeBossAttempt,
-  activeHuntAttempt,
-  prepareHuntFight,
-  type HuntFightCache,
   advanceGame,
   applyCommand,
   bossProgress,
@@ -132,7 +129,6 @@ export class GameSession {
   private initRequest = 0;
   private readonly cache = new FightCache(6);
   private readonly bossCache: BossFightCache = new WeakMap();
-  private readonly huntCache: HuntFightCache = new WeakMap();
   private ui: UiState = {
     version: 0,
     phase: "loading",
@@ -418,7 +414,7 @@ export class GameSession {
         ? `${failed.mode} ${this.content.zone(failed.zoneId).name} failed at stage ${failed.stage}; started ${resumed.mode} ${this.content.zone(resumed.zoneId).name}`
         : null;
     const resumedRetry = resumed && failed?.mode === "push" ? { zoneId: failed.zoneId, stage: failed.stage } : null;
-    if (elapsed === 0 || !activeBossAttempt(working) && !activeHuntAttempt(working) && (elapsed < 1_000 || working.adventure.activity === "idle")) {
+    if (elapsed === 0 || !activeBossAttempt(working) && (elapsed < 1_000 || working.adventure.activity === "idle")) {
       if (resumedRetry) setRetryTarget(working, resumedRetry);
       working.clock.lastSettledWallMs = Math.max(profile.clock.lastSettledWallMs, nowWallMs);
       this.bump({ profile: working, phase: "playing" });
@@ -467,7 +463,7 @@ export class GameSession {
           buildState(profile, this.content),
         );
       }
-      const show = elapsed >= SHOW_OFFLINE_SUMMARY_MS || result.summary.push.status !== "none" || Boolean(result.summary.boss?.result || result.summary.huntResult || result.summary.huntsDiscovered);
+      const show = elapsed >= SHOW_OFFLINE_SUMMARY_MS || result.summary.push.status !== "none" || Boolean(result.summary.boss?.result);
       this.bump({
         profile: result.profile,
         phase: "playing",
@@ -534,14 +530,6 @@ export class GameSession {
     const events: AdventureEvent[] = [];
     const wallNow = Date.now();
     if (step > 0) {
-      const hunt = activeHuntAttempt(profile);
-      if (hunt) {
-        const fight = prepareHuntFight(this.content, hunt, true, this.huntCache);
-        if (!fight || hunt.elapsedMs + step >= fight.summary.durationMs) {
-          this.saveHuntBoundary(step, wallNow);
-          return;
-        }
-      }
       const attempt = activeBossAttempt(profile);
       if (attempt) {
         const fight = prepareBossFight(this.content, attempt, true, this.bossCache);
@@ -567,23 +555,9 @@ export class GameSession {
       recordEvents: true,
       cache: this.cache,
       bossCache: this.bossCache,
-      huntCache: this.huntCache,
       onEvent: (e) => events.push(e),
     });
     profile.clock.lastSettledWallMs = Math.max(profile.clock.lastSettledWallMs, wallNow);
-  }
-
-  private saveHuntBoundary(step: number, wallNow: number): void {
-    const events: AdventureEvent[] = [];
-    void this.saveProfileAction({
-      name: "Hunt result", busy: "Saving Hunt result…", preserveLiveTime: true,
-      apply: candidate => { this.advanceLive(candidate, step, wallNow, events); return { ok: true, queued: false }; },
-      onSaved: () => {
-        // The persistent result and next decision are already visible. Keep the
-        // small-screen route buttons clear of a redundant toast.
-        if (events.length) this.handleEvents(events);
-      },
-    });
   }
 
   private saveBossBoundary(step: number, wallNow: number, bossId: string): void {
@@ -613,11 +587,8 @@ export class GameSession {
     if (!profile || this.frameListeners.size === 0) return;
     const run = profile.adventure.run;
     const attempt = activeBossAttempt(profile);
-    const hunt = activeHuntAttempt(profile);
     let fight: CombatFrame["fight"] = null;
-    if (hunt) {
-      fight = prepareHuntFight(this.content, hunt, true, this.huntCache);
-    } else if (attempt) {
+    if (attempt) {
       fight = prepareBossFight(this.content, attempt, true, this.bossCache);
     } else if (run && run.phase === "fight" && profile.adventure.activity !== "idle") {
       fight = prepareFight(profile, this.content, run, { contentTimeMs: wallNow, recordEvents: true, cache: this.cache });
@@ -628,7 +599,7 @@ export class GameSession {
       run,
       fight,
       lastFight: this.lastFight,
-      elapsedMs: hunt?.elapsedMs ?? attempt?.elapsedMs ?? run?.elapsedMs ?? 0,
+      elapsedMs: attempt?.elapsedMs ?? run?.elapsedMs ?? 0,
       heroMaxHp100: heroStatsFor(profile, this.content, this.cache).maxHp100,
       carriedHp100: run?.hp100 ?? null,
       frameId: (this.frameId += 1),
@@ -730,20 +701,6 @@ export class GameSession {
     return this.saveItemCommand({ type: "bulkSalvage", input: input && { ...input, copies: Array.isArray(input.copies) ? input.copies.map(c => c && { ...c }) : input.copies } });
   }
 
-  startHunt(command: Extract<Command, { type: "startHunt" }>): Promise<CommandResult> {
-    const input = { ...command };
-    return this.saveProfileAction({
-      name: "Hunt entry", busy: "Preparing Hunt…", preserveLiveTime: false,
-      apply: candidate => {
-        const now = Date.now();
-        const result = applyCommand(candidate, this.content, input, { contentTimeMs: now });
-        if (result.ok) candidate.clock.lastSettledWallMs = Math.max(candidate.clock.lastSettledWallMs, now);
-        return result;
-      },
-      onSaved: () => { this.lastFight = null; this.currentFightKey = ""; this.bump({ runResult: null }); },
-    });
-  }
-
   startBoss(tier: number, autoPush: boolean, bossId = ASHEN_KING_ID): Promise<CommandResult> {
     const bossName = this.content.soloBosses.get(bossId)?.name ?? "Challenge";
     return this.saveProfileAction({
@@ -824,7 +781,6 @@ export class GameSession {
   }
 
   dispatch(command: Command): CommandResult {
-    if (command.type === "startHunt") return { ok: false, error: "Use the saved Hunt entry flow." };
     if (command.type === "forge") return { ok: false, error: "Use the saved Forge confirmation flow." };
     if (command.type === "salvage" || command.type === "bulkSalvage") return { ok: false, error: "Use the saved salvage confirmation flow." };
     if (command.type === "setItemLock") return { ok: false, error: "Use the saved item lock flow." };
@@ -832,7 +788,7 @@ export class GameSession {
     if (!this.canPlay() || this.catchingUp) return { ok: false, error: "Save access or settlement is paused; no command was applied." };
     const profile = this.profile;
     if (!profile) return { ok: false, error: "No character." };
-    if (command.type === "advance" && (activeBossAttempt(profile) || activeHuntAttempt(profile))) return { ok: false, error: "The session clock advances challenge attempts." };
+    if (command.type === "advance" && activeBossAttempt(profile)) return { ok: false, error: "The session clock advances challenge attempts." };
     const result = applyCommand(profile, this.content, command, { contentTimeMs: Date.now(), forgeConfig: FORGE_V1, allowDevForge: DEV_TOOLS });
     const patch: Partial<UiState> = {};
     if (!result.ok) {
@@ -962,7 +918,7 @@ export class GameSession {
 
   currentFightRecord(): CombatRecord | null {
     const profile = this.profile;
-    const attempt = profile && (activeHuntAttempt(profile) || activeBossAttempt(profile));
+    const attempt = profile && activeBossAttempt(profile);
     if (attempt) return attempt.record;
     const run = profile?.adventure.run;
     if (!profile || !run) return this.lastFight?.record ?? null;

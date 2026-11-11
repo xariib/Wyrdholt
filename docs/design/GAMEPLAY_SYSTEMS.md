@@ -69,16 +69,6 @@ The Ashen King unlocks after the first Ashen Mountains clear and has five perman
 
 The Ashen Crown grants both classes a permanent Attack bonus that upgrades at tiers 1, 3, and 5. The first attempt creates a schema 4 save. [C4 rules and validation](C4_SOLO_BOSSES.md)
 
-## IMPLEMENTED / HUMAN PLAYTEST OPEN — Hunts
-
-Cleared-zone farming discovers short, manually entered Hunts. The first discovery
-is immediate; later discoveries take four hours of farming, with three waiting
-and no expiry. Choose a gear slot, clear the approach, then choose a direct boss
-route, an extra-loot detour, or a detour that weakens the boss. Combat is automatic;
-earned rewards survive defeat, retries are free, and safe farming resumes at each
-decision. Offline simulation finishes only the active encounter. First discovery
-adds save schema 6. [Rules, tuning, compatibility and playtest](HUNTS.md).
-
 ## OPEN — balance
 
 The next C1 pacing playtest is on the REDMAGIC 11 Pro. Short-fight drop scaling awaits a decision. Do not translate an old Godot feature into an IMPLEMENTED claim for TypeScript.

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { ASHEN_KING_ID, activeBossAttempt, activeHuntAttempt, type Profile } from "@emberbound/game-core";
+import { ASHEN_KING_ID, activeBossAttempt, type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { safeFarmZone, zoneViews, type ZoneView } from "../adventureModel";
 import { CombatView } from "../components/CombatView";
@@ -15,13 +15,11 @@ export function AdventureScreen({ profile, active, retryZoneId, nextAttempt, onC
 }) {
   const [zonesOpen, setZonesOpen] = useState(false);
   const boss = activeBossAttempt(profile);
-  const hunt = activeHuntAttempt(profile);
-  const canShowZones = active && !boss && !hunt;
+  const canShowZones = active && !boss;
   useEffect(() => {
     if (!canShowZones) setZonesOpen(false);
   }, [canShowZones]);
 
-  if (hunt) return <section className="panel stack"><h2>Hunt in progress</h2><p className="small muted">Safe farming resumes after this encounter.</p><button className="btn primary block" onClick={onChallenges}>Watch Hunt in Challenges</button></section>;
   if (boss) {
     const name = session.content.soloBosses.get(boss.record.encounter.bossId)?.name ?? "Challenge";
     return (
@@ -67,7 +65,6 @@ export function AdventureScreen({ profile, active, retryZoneId, nextAttempt, onC
 
   return (
     <>
-      {!!profile.hunts?.queue.length && <section className="panel stack small" aria-label="Hunts ready"><b>{profile.hunts.queue.length} Hunt{profile.hunts.queue.length === 1 ? "" : "s"} waiting</b><span className="muted">Choose a route and earn gear for the slot you need.</span><button className="btn block" onClick={onChallenges}>View Hunts</button></section>}
       <section className="adventure-world">
         <div className="zone-card world-zone zone-context">
           <div className="row spread">

@@ -39,7 +39,6 @@ export function createAuthorityHttp(store: SqliteAuthorityStore, config: ReturnT
   const profiles = new ProfileAuthority(config.content, store, now);
   const social = new SocialAuthority(config.content, store, now);
   store.archiveContent(config.content.longTermHash, config.content.snapshot);
-  store.archiveContent(config.content.authorityHash, config.content.snapshot);
   store.archiveContent(config.content.socialHash, config.content.snapshot);
   store.archiveContent(config.content.promotionHash, config.content.snapshot);
   for (const hash of config.content.seasonHashes.values()) store.archiveContent(hash, config.content.snapshot);

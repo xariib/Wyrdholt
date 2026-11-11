@@ -346,19 +346,6 @@ export interface PartyWaveDef extends SoloBossTierDef {
   ruleIds?: Id[];
 }
 
-export type HuntRoute = "direct" | "raid" | "weakness";
-export interface HuntDef {
-  id: Id;
-  name: string;
-  zoneId: Id;
-  description: string;
-  trait: string;
-  approach: StageDef;
-  detour: StageDef;
-  boss: StageDef;
-  weakenedDamageBp: Bp;
-}
-
 export interface DungeonDef {
   id: Id;
   name: string;
@@ -498,7 +485,6 @@ export interface ContentConfig {
 }
 
 export interface ContentSnapshot {
-  hunts?: { intervalMs: number; capacity: number; definitions: HuntDef[] };
   contentVersion: string;
   config: ContentConfig;
   rarities: RarityDef[];
@@ -569,9 +555,7 @@ export interface EncounterRef {
 /** Everything needed to reproduce one fight exactly. */
 export interface FightRecord {
   /** Version 2 adds a snapshotted Artifact bonus. */
-  format: "emberbound-fight-record/1" | "emberbound-fight-record/2" | "emberbound-fight-record/3" | "emberbound-fight-record/4";
-  /** Present only in format 4. A Hunt pins its own content and seed stream. */
-  hunt?: { huntId: Id; discoveryId: number; step: number; route: HuntRoute | null };
+  format: "emberbound-fight-record/1" | "emberbound-fight-record/2" | "emberbound-fight-record/3";
   rulesVersion: string;
   contentVersion: string;
   contentHash: string;
