@@ -34,7 +34,10 @@ caches use the class that fought. Forge results use the active class. Encounter
 level gates and zone rarity ceilings still apply. [Effect contract](C3_ITEM_EFFECTS.md).
 
 Gear includes name and effect search, rarity filters, and a NEW filter. A class
-switch returns incompatible gear to inventory and fills empty slots with the
+only sees compatible gear in Loadout, Inventory, Forge and the gear encyclopedia;
+copy counts and NEW badges follow the same active-class view. Other classes' copies
+and review state stay saved and become visible when that class becomes active.
+A class switch returns incompatible gear to inventory and fills empty slots with the
 first compatible owned copy by acquisition order. In an older save, shared copies
 become versions for the active class at a safe fight boundary; an unequipped copy
 queued for the alternate class becomes that class's version. IDs, locks, bonuses,
@@ -59,6 +62,9 @@ contact effects for every class. Equipping a weapon switches the attack pose,
 wind-up and effects to wraps, sword, staff or bow at the same safe build boundary.
 Weaponless attacks do not launch arrows or staff bolts; class mechanics and logged
 damage timing remain authoritative.
+Bare-handed movement uses a longer approach, visible contact and continuous return
+through both recovery poses. Incoming hit reactions wait for that return; health
+and damage effects still update at their logged times.
 
 ## INTEGRATED FOR WEB TESTING / HUMAN VALIDATION OPEN — Forge V1
 

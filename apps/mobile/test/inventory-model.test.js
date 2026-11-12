@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { SLOT_ORDER } from "@emberbound/shared-types";
 import { CONTENT } from "@emberbound/game-content";
-import { ContentIndex, createInstance, createProfile, previewSalvage, setItemLock } from "@emberbound/game-core";
-import { gearDifferences } from "../src/ui/gearModel";
+import { ContentIndex, canUseItem, createInstance, createProfile, previewSalvage, setItemLock } from "@emberbound/game-core";
+import { classInventory, gearDifferences, groupsForSlot, slotViews, totalNew } from "../src/ui/gearModel";
 import { EMPTY_INVENTORY_FILTERS, filterInventoryGroups, inventoryGroups, inventoryPage, inventorySelectionCounts } from "../src/ui/inventoryModel";
 
 const content = new ContentIndex(CONTENT);
@@ -10,7 +10,7 @@ function fixture() {
   const p = createProfile(content, { name: "Inventory", activeClassId: "monk", alternateClassId: "mage", masterSeed: 1042, nowWallMs: 0 });
   p.inventory.instances = []; p.equipment = {};
   const ids = [];
-  for (const item of content.snapshot.items) {
+  for (const item of content.snapshot.items.filter(i => canUseItem(i, p.character.activeClassId))) {
     ids.push(createInstance(p, item.id, { isNew: true }).id);
     ids.push(createInstance(p, item.id, { isNew: false }).id);
   }
@@ -43,6 +43,28 @@ describe("new gear differences", () => {
 });
 
 describe("combined inventory view", () => {
+  it("shows only the active class across slots, inventory and badges until a switch settles", () => {
+    const { p } = fixture();
+    for (const item of content.snapshot.items.filter(i => !canUseItem(i, "monk"))) createInstance(p, item.id, { isNew: true });
+    const savedItems = structuredClone(p.inventory);
+    for (const classId of ["warrior", "mage", "ranger", "monk"]) {
+      p.character.activeClassId = classId;
+      p.pending = { activeClassId: classId === "mage" ? "warrior" : "mage", equipment: {} };
+      const expected = p.inventory.instances.filter(i => canUseItem(content.item(i.baseId), classId));
+      const ids = inventoryGroups(p, content).flatMap(g => g.ids).sort((a, b) => a - b);
+      expect(ids).toEqual(expected.map(i => i.id));
+      expect(classInventory(p, content)).toEqual(expected);
+      expect(totalNew(p, content)).toBe(expected.filter(i => i.isNew).length);
+      for (const slot of SLOT_ORDER) {
+        expect(groupsForSlot(p, content, slot).flatMap(g => g.ids).sort((a, b) => a - b))
+          .toEqual(expected.filter(i => content.item(i.baseId).slot === slot).map(i => i.id));
+        const view = slotViews(p, content).find(v => v.slot === slot);
+        expect(view.newCount).toBe(expected.filter(i => i.isNew && content.item(i.baseId).slot === slot).length);
+        if (view.equipped) expect(canUseItem(view.equipped.item, classId)).toBe(true);
+      }
+    }
+    expect(p.inventory).toEqual(savedItems);
+  });
   it("groups every owned copy once in all six slots with correct protections", () => {
     const { p, ids } = fixture(), before = structuredClone(p);
     const groups = inventoryGroups(p, content);
@@ -117,7 +139,8 @@ describe("combined inventory view", () => {
   it("6000 copies stay complete through pagination and intersected filters", () => {
     const { p } = fixture();
     p.inventory.instances = []; p.equipment = {}; delete p.pending; delete p.itemLocks;
-    for (let n = 0; n < 6000; n++) createInstance(p, content.snapshot.items[n % content.snapshot.items.length].id, { isNew: n % 2 === 0 });
+    const items = content.snapshot.items.filter(i => canUseItem(i, p.character.activeClassId));
+    for (let n = 0; n < 6000; n++) createInstance(p, items[n % items.length].id, { isNew: n % 2 === 0 });
     const groups = inventoryGroups(p, content), selected = new Set(p.inventory.instances.filter((_, n) => n % 100 === 0).map(i => i.id));
     expect(groups.reduce((n, g) => n + g.totalCount, 0)).toBe(6000);
     const result = filterInventoryGroups(groups, { ...EMPTY_INVENTORY_FILTERS, slot: "ring", newOnly: true, salvage: "eligible" });

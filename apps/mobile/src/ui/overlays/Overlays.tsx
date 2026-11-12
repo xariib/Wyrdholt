@@ -7,7 +7,7 @@ import { DEV_TOOLS } from "../../platform/device";
 import { bossResultLabel, duration, hp, number, rarityColor } from "../format";
 import type { GearFocus } from "../screens/Gear";
 import { safeFarmZone } from "../adventureModel";
-import { isEquippedDuplicate, slotViews } from "../gearModel";
+import { classInventory, isEquippedDuplicate, slotViews } from "../gearModel";
 import { attemptHistory, attemptLabel, buildChanges, type Attempt } from "../../game/attempts";
 
 /**
@@ -239,7 +239,7 @@ export function RunResultOverlay({ result, profile, newCount, onReview, onRetry 
   const failedStage = zone.stages[Math.max(0, result.stage - 1)];
   const rank = heroStatsFor(profile, content).masteryRank;
   const equipped = new Map(slotViews(profile, content).map(slot => [slot.slot, slot.equipped?.instance]));
-  const hasBuildOption = profile.inventory.instances.some(item => {
+  const hasBuildOption = classInventory(profile, content).some(item => {
     const worn = equipped.get(content.item(item.baseId).slot);
     return item.id !== worn?.id && !isEquippedDuplicate(item, worn);
   });

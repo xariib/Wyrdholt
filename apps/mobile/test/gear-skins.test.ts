@@ -3,7 +3,8 @@ import { CONTENT } from "@emberbound/game-content";
 import { ContentIndex, createInstance, createProfile, serializeSave } from "@emberbound/game-core";
 import { equippedAppearance, GEAR_SLOTS, gearSkin, HERO_CLASSES, starterAppearance, heroAttackName } from "../src/art/gearSkins";
 import { attackStyle } from "../src/render/attackEffects";
-import { characterOffset, unarmedApproach } from "../src/render/characterMotion";
+import { characterOffset, unarmedApproach, UNARMED_ATTACK } from "../src/render/characterMotion";
+import { attackDurations } from "../src/art/darkwood";
 
 const content = new ContentIndex(CONTENT);
 const fixture = (classId = "warrior") => createProfile(content, { name: "Skins", activeClassId: classId,
@@ -27,27 +28,35 @@ describe("equipment-driven appearances", () => {
     expect(heroAttackName(equippedAppearance(p, content))).toBe("unarmed");
   });
   it("closes the distance during unarmed anticipation and returns after the strike", () => {
-    expect(unarmedApproach(100, 0, 0, 120)).toBe(-2);
-    expect(unarmedApproach(100, 0, 60, 120)).toBeGreaterThan(0);
-    expect(unarmedApproach(100, 1, 120, 120)).toBe(74);
-    expect(unarmedApproach(100, 3, 400, 120)).toBe(0);
-    expect(unarmedApproach(12, 1, 120, 120)).toBe(0);
+    expect(unarmedApproach(100, 0, UNARMED_ATTACK.ms)).toBe(0);
+    expect(unarmedApproach(100, 130, UNARMED_ATTACK.ms)).toBeGreaterThan(0);
+    expect(unarmedApproach(100, 260, UNARMED_ATTACK.ms)).toBe(74);
+    expect(unarmedApproach(100, 780, UNARMED_ATTACK.ms)).toBe(0);
+    expect(unarmedApproach(12, 260, UNARMED_ATTACK.ms)).toBe(0);
   });
   it.each(HERO_CLASSES)("keeps %s grounded at rest and reaches melee contact without overshooting", cls => {
     for (const time of [0, 125, 500, 1000]) expect(characterOffset(cls, "idle", 0, time)).toEqual([0, 0]);
     for (const distance of [12, 60, 180]) {
-      const contact = unarmedApproach(distance, 1, 120, 120, cls);
-      const samples = [0, 30, 60, 90, 120].map(t => unarmedApproach(distance, 0, t, 120, cls));
+      const contact = unarmedApproach(distance, 260, UNARMED_ATTACK.ms, cls);
+      const samples = [0, 65, 130, 195, 260].map(t => unarmedApproach(distance, t, UNARMED_ATTACK.ms, cls));
       expect(samples.at(-1)).toBe(contact);
       expect(samples).toEqual([...samples].sort((a, b) => a - b));
       expect(contact).toBeGreaterThanOrEqual(0);
       expect(contact).toBeLessThan(distance);
-      expect(unarmedApproach(distance, 3, 400, 120, cls)).toBe(0);
+      expect(unarmedApproach(distance, 780, UNARMED_ATTACK.ms, cls)).toBe(0);
+      for (const interval of [350, 520, 700, 1000]) {
+        const timing = attackDurations(UNARMED_ATTACK, interval);
+        const duration = timing.reduce((a, b) => a + b, 0);
+        const positions = Array.from({ length: duration + 1 }, (_, t) => unarmedApproach(distance, t, timing, cls));
+        expect(positions.at(-1)).toBe(0);
+        // No pose-boundary teleports, including the compressed high-speed recovery.
+        expect(Math.max(...positions.slice(1).map((x, i) => Math.abs(x - positions[i]!)))).toBeLessThan(4);
+      }
     }
   });
   it("retains class weight and posture when the attack style is unarmed", () => {
     const signatures = HERO_CLASSES.map(cls => [
-      unarmedApproach(100, 0, 60, 120, cls), unarmedApproach(100, 2, 250, 120, cls),
+      unarmedApproach(100, 130, UNARMED_ATTACK.ms, cls), unarmedApproach(100, 500, UNARMED_ATTACK.ms, cls),
       characterOffset(cls, "attack", 1, 120, 0, "unarmed"),
     ]);
     expect(new Set(signatures.map(s => JSON.stringify(s))).size).toBe(4);

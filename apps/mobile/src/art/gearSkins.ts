@@ -1,4 +1,4 @@
-import type { ContentIndex, Profile } from "@emberbound/game-core";
+import { canUseItem, type ContentIndex, type Profile } from "@emberbound/game-core";
 import type { ItemDef, SlotId } from "@emberbound/shared-types";
 
 /** Cosmetic data only: never stored in a save or used by the simulation. */
@@ -70,7 +70,7 @@ export function equippedAppearance(profile: Profile, content: ContentIndex,
   for (const slot of GEAR_SLOTS) {
     const instance = profile.inventory.instances.find(i => i.id === equipment[slot]);
     const item = instance && content.items.get(instance.baseId);
-    if (!item || item.slot !== slot || (item.classId && item.classId !== classId)) continue;
+    if (!item || item.slot !== slot || !canUseItem(item, classId)) continue;
     slots[slot] = gearSkin(item, hero);
   }
   return { classId: hero, slots, key: `${hero}:${GEAR_SLOTS.map(s => slots[s]?.id ?? "-").join("|")}` };

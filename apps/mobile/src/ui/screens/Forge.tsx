@@ -7,7 +7,7 @@ import { DEV_TOOLS } from "../../platform/device";
 import { Sheet } from "../components/Common";
 import { ItemIcon } from "../components/icons";
 import { SLOT_LABELS, rarityColor, pct, rate } from "../format";
-import { statRows } from "../gearModel";
+import { classInventory, statRows } from "../gearModel";
 
 function ItemDetails({ item }: { item: ItemDef }) {
   return <div className="stack small"><div className="forge-stats">{statRows(null, item, { pct, rate }).filter(r => r.candidate).map(r => <span key={r.key}>{r.label}: {r.format(r.candidate)}</span>)}</div>{item.effect && <div><strong>{item.effect.name}</strong><p>{item.effect.description}</p></div>}</div>;
@@ -20,12 +20,13 @@ export function ForgeSheet({ profile, onClose, onCompare }: { profile: Profile; 
   const [error, setError] = useState(""); const working = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const recipe = FORGE_V1.recipes[rarity], index = FORGE_V1.rarities.indexOf(rarity), cap = forgeCeiling(profile, FORGE_V1);
-  const eligible = eligibleForgeIds(profile, content, slot, rarity), valid = new Set(eligible);
+  const classItems = classInventory(profile, content), classIds = new Set(classItems.map(i => i.id));
+  const eligible = eligibleForgeIds(profile, content, slot, rarity).filter(id => classIds.has(id)), valid = new Set(eligible);
   const selected = ids.filter(id => valid.has(id));
-  const lockedCount = profile.inventory.instances.filter(i => isItemLocked(profile, i.id)
+  const lockedCount = classItems.filter(i => isItemLocked(profile, i.id)
     && content.item(i.baseId).slot === slot && content.item(i.baseId).rarity === rarity).length;
   const groups = new Map<string, number[]>();
-  for (const item of profile.inventory.instances) {
+  for (const item of classItems) {
     if (!valid.has(item.id)) continue;
     const group = groups.get(item.baseId) ?? []; group.push(item.id); groups.set(item.baseId, group);
   }

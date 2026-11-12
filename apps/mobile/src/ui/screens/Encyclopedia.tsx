@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { canUseItem } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { ItemIcon, NavIcon, SpriteImage } from "../components/icons";
 import { pct, rarityColor, rate, SLOT_LABELS } from "../format";
@@ -18,7 +19,7 @@ function Entry({ name, detail, art, children }: { name: string; detail: string; 
   </details>;
 }
 
-export function EncyclopediaScreen({ onBack }: { onBack: () => void }) {
+export function EncyclopediaScreen({ classId, onBack }: { classId: string; onBack: () => void }) {
   const [section, setSection] = useState<Section>("Classes");
   const [search, setSearch] = useState("");
   const content = session.content;
@@ -43,7 +44,7 @@ export function EncyclopediaScreen({ onBack }: { onBack: () => void }) {
       break;
     case "Gear":
       entries = content.snapshot.items.flatMap(item => {
-        if (item.classVariants) return [];
+        if (!canUseItem(item, classId)) return [];
         const rarity = content.rarity(item.rarity);
         const slot = SLOT_LABELS[item.slot] ?? item.slot;
         const className = item.classId ? content.classDef(item.classId).name : "";

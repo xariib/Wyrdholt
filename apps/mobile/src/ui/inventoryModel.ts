@@ -1,5 +1,5 @@
 import { SLOT_ORDER, type ItemDef, type SlotId } from "@emberbound/shared-types";
-import { findInstance, isItemLocked, previewSalvage, type ContentIndex, type Profile } from "@emberbound/game-core";
+import { canUseItem, findInstance, isItemLocked, previewSalvage, type ContentIndex, type Profile } from "@emberbound/game-core";
 import { filterGearGroups, isEquippedDuplicate, type GearFilters, type ItemGroup } from "./gearModel";
 
 export interface InventoryFilters extends GearFilters {
@@ -23,6 +23,7 @@ export function inventoryGroups(profile: Profile, content: ContentIndex): Invent
   const equipped = new Map(SLOT_ORDER.map(slot => [slot, findInstance(profile, profile.equipment[slot] ?? 0)]));
   for (const instance of profile.inventory.instances) {
     const item = content.item(instance.baseId);
+    if (!canUseItem(item, profile.character.activeClassId)) continue;
     let group = groups.get(item.id);
     if (!group) {
       const worn = equipped.get(item.slot);

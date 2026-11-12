@@ -92,7 +92,7 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
       {retryAction}
       <p className="small muted">{initiallyNewOnly
         ? "Compare new drops with what you’re wearing before your next Push."
-        : "All six slots. Find gear, manage its copies, or compare a specific copy before equipping."}</p>
+        : `All six slots for your ${content.classDef(profile.character.activeClassId).name}. Switch class to view its gear.`}</p>
       {initiallyNewOnly ? <details className="inventory-filters-disclosure" open={filtersOpen} onToggle={e => setFiltersOpen(e.currentTarget.open)}>
         <summary>Inventory filters</summary>
         {filterControls}
@@ -110,7 +110,7 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
         </div>
         {error && <p role="alert">{error}</p>}
       </section>}
-      <p className="small muted gear-result-count" role="status">{visible.length} of {groups.length} item types · {number(copyCount)} matching copies of {number(profile.inventory.instances.length)} owned</p>
+      <p className="small muted gear-result-count" role="status">{visible.length} of {groups.length} item types · {number(copyCount)} matching copies of {number(groups.reduce((sum, group) => sum + group.totalCount, 0))} owned</p>
       {managed && <section className="inventory-managed stack" aria-label="Manage inventory copies">
         <InventoryItem group={managed} />
         <button className="btn ghost" onClick={() => setManageBase(null)}>Back to inventory list</button>

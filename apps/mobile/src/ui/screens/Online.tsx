@@ -196,7 +196,10 @@ function OnlineAdventure({ profile, events, account, busy, command, mutate }: {
   const [rankingError, setRankingError] = useState("");
   const [slot, setSlot] = useState("weapon");
   const [copy, setCopy] = useState(0);
-  const available = profile.inventory.filter(item => content.items.get(item.baseId)?.slot === slot);
+  const available = profile.inventory.filter(copy => {
+    const item = content.items.get(copy.baseId);
+    return item?.slot === slot && canUseItem(item, char.activeClassId);
+  });
   const current = available.find(item => item.id === copy);
   const selectedItem = current ? content.item(current.baseId) : undefined;
   const canEquip = selectedItem && canUseItem(selectedItem, profile.pendingClassId ?? char.activeClassId);

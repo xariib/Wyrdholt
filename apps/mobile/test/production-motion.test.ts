@@ -1,9 +1,39 @@
 import { describe, it, expect } from "vitest";
 import { actorPack, darkwoodAssets, attackDurations, sequenceIndex } from "../src/art/darkwood";
 import { ProductionMotion } from "../src/render/productionMotion";
+import { UNARMED_ATTACK, unarmedApproach } from "../src/render/characterMotion";
 import { validateArt } from "../src/art/types";
 
 describe("approved Darkwood presentation", () => {
+  it.each([350, 500, 714])("finishes a critical unarmed recovery before the next %d ms attack", interval => {
+    const m = new ProductionMotion({ ...actorPack.monk!, animations: { ...actorPack.monk!.animations, attack: UNARMED_ATTACK } }, true);
+    m.scheduledAttack(0, interval);
+    const windup = m.windupMs;
+    m.sample(windup); m.crit();
+    expect(m.attackTiming.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(interval);
+    const frames = new Set([0]);
+    for (let t = windup; t < interval; t += 10) frames.add(m.sample(t).index);
+    expect([...frames]).toEqual([0, 1, 2, 3]);
+    expect(unarmedApproach(100, interval, m.attackTiming)).toBe(0);
+    expect(m.sample(interval).pose).toBe("idle");
+  });
+  it("finishes every bare-handed pose and a smooth return despite repeated incoming hits", () => {
+    const m = new ProductionMotion({ ...actorPack.monk!, animations: { ...actorPack.monk!.animations, attack: UNARMED_ATTACK } }, true);
+    m.scheduledAttack(1000, 1000);
+    const frames = new Set<number>(), positions: number[] = [];
+    for (let now = 1000; now < 1780; now += 20) {
+      if (now % 100 === 0) m.hit(now, false);
+      const sample = m.sample(now);
+      expect(sample.pose).toBe("attack");
+      frames.add(sample.index);
+      positions.push(unarmedApproach(100, now - m.start, m.attackTiming));
+    }
+    expect([...frames]).toEqual([0, 1, 2, 3]);
+    expect(positions.at(-1)).toBeLessThan(1);
+    expect(m.sample(1780).pose).toBe("hit");
+    m.death(1790);
+    expect(m.sample(1800).pose).toBe("death");
+  });
   it("adapts variable frames without cropping or anchor shifts", () => {
     expect(validateArt(darkwoodAssets)).toEqual([]);
     const warrior = actorPack.warrior!;

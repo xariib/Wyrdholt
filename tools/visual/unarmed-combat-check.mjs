@@ -43,7 +43,8 @@ try {
     await page.waitForFunction(() => window.__emberRenderer?.actors.get('hero')?.attackName === 'unarmed');
     await page.evaluate(() => {
       const r = window.__emberRenderer;
-      const probe = window.unarmedProbe = { hits: [], bursts: [], maxApproach: 0, hudMoved: false, clipped: false };
+      const probe = window.unarmedProbe = { hits: [], bursts: [], maxApproach: 0, hudMoved: false, clipped: false, samples: [] };
+      let lastActor, generation = 0;
       const impact = r.attackImpact.bind(r);
       r.attackImpact = (src, target, now, crit, via) => {
         if (src.isHero && via === 'basic') probe.hits.push({ mode: src.attackName, now });
@@ -56,6 +57,10 @@ try {
         animate(now);
         const actor = r.actors.get('hero');
         if (actor?.attackName === 'unarmed') {
+          if (actor !== lastActor) { generation++; lastActor = actor; }
+          if (probe.samples.length < 2000) probe.samples.push({ now, generation, serial: actor.motion.attackSerial,
+            pose: actor.motion.pose, frame: actor.tex.frames.findIndex(f => f.normal === actor.body.texture),
+            x: actor.root.x - actor.baseX, timing: [...actor.motion.attackTiming] });
           probe.maxApproach = Math.max(probe.maxApproach, actor.root.x - actor.baseX);
           probe.hudMoved ||= actor.hud.x !== actor.baseX;
           const left = actor.root.x - actor.body.anchor.x * actor.body.texture.width;
@@ -87,6 +92,15 @@ try {
     const probe = await page.evaluate(() => window.unarmedProbe);
     writeFileSync(resolve(out, `${cls}-probe.json`), JSON.stringify(probe, null, 2));
     assert(probe.maxApproach > 9, `${cls}: never approached melee range`);
+    const attacks = Map.groupBy(probe.samples.filter(s => s.pose === 'attack'), s => `${s.generation}/${s.serial}`);
+    const completed = [...attacks.values()].filter(samples => new Set(samples.map(s => s.frame)).size === 4);
+    assert(completed.length > 0, `${cls}: never displayed all four unarmed poses`);
+    assert(completed.some(samples => samples.at(-1).now - samples[0].now >= 650), `${cls}: unarmed animation still rushed`);
+    assert(completed.some(samples => samples.at(-1).x < Math.max(...samples.map(s => s.x)) * 0.1), `${cls}: return did not finish smoothly`);
+    for (const samples of completed) for (let n = 1; n < samples.length; n++) {
+      const gap = samples[n].now - samples[n - 1].now;
+      if (gap < 40) assert(Math.abs(samples[n].x - samples[n - 1].x) < 30, `${cls}: position snapped between poses`);
+    }
     assert.equal(probe.hudMoved, false); assert.equal(probe.clipped, false);
     const weaponFx = /arrow|arcane_bolt|warrior_slash|warrior_impact|monk_impact/;
     assert.deepEqual(probe.bursts.filter(b => b.mode === 'unarmed' && weaponFx.test(b.name)), []);

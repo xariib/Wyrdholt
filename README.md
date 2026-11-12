@@ -68,8 +68,15 @@ human art acceptance.
 
 Run `node --import tsx tools/visual/unarmed-combat-check.mjs` after building to verify
 all four classes with empty Weapon slots: melee approach, fist hits without weapon
-effects, queued weapon equips, the restored weapon animation, and reload behavior.
+effects, all four attack poses with a smooth recovery, queued weapon equips, the
+restored weapon animation, and reload behavior.
 It uses disposable browser saves and keeps evidence in `tools/smoke/out/unarmed-combat`.
+
+Run `node --import tsx tools/visual/class-gear-check.mjs` to check mixed-class
+inventories through the actual Gear, Inventory and Forge screens, including all
+six slots, copy counts, class switching, preserved ownership and reload. It starts
+a local Vite server and writes disposable-fixture evidence to
+`tools/smoke/out/class-gear`.
 
 Run `node --import tsx tools/visual/hunt-regressions.mjs` after building to check
 repeated backup restores with reused item IDs (combat stats, skins and health bars)

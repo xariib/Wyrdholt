@@ -9,11 +9,13 @@ export class ProductionMotion {
   absorbed = false;
   attackSerial = 0;
   private durations: number[] = [];
+  private interval = 1000;
   private impactSeen = false;
   private impactUntil = 0;
   private pendingHit: boolean | null = null;
   private pendingAttack: number | null = null;
-  constructor(readonly actor: ProductionActor) {}
+  constructor(readonly actor: ProductionActor, readonly completeAttack = false) {}
+  get attackTiming(): readonly number[] { return this.durations; }
   get windupMs(): number {
     return this.durations.slice(0, this.actor.animations.attack.impact_frame ?? 1).reduce((sum, ms) => sum + ms, 0);
   }
@@ -21,6 +23,7 @@ export class ProductionMotion {
     if (this.pose === "death") return;
     if (this.pose === "attack" && (!this.impactSeen || now < this.impactUntil)) { this.pendingAttack = interval; return; }
     this.pose = "attack"; this.start = now; this.critical = false;
+    this.interval = interval;
     this.durations = attackDurations(this.actor.animations.attack, interval);
     this.impactSeen = false; this.impactUntil = 0; this.attackSerial++;
   }
@@ -32,11 +35,18 @@ export class ProductionMotion {
   }
   crit(): void {
     this.critical = true;
-    if (this.pose === "attack") this.durations[2] = this.actor.animations.attack.crit_hold_ms ?? this.durations[2]!;
+    if (this.pose === "attack") {
+      const hold = this.actor.animations.attack.crit_hold_ms ?? this.durations[2]!;
+      const spare = Math.max(0, this.interval - this.durations.reduce((a, b) => a + b, 0));
+      this.durations[2] = this.completeAttack ? Math.min(hold, this.durations[2]! + spare) : hold;
+    }
   }
   hit(now: number, absorbed: boolean): void {
     if (this.pose === "death") return;
     if (this.pose === "attack") this.sample(now);
+    // Bare-handed movement must finish returning before a hit reaction can move it home.
+    // Damage, health labels and contact effects still update immediately from the log.
+    if (this.pose === "attack" && this.completeAttack) { this.pendingHit = absorbed; return; }
     if (this.pose === "attack" && this.impactSeen && now < this.impactUntil) { this.pendingHit = absorbed; return; }
     this.pose = "hit"; this.start = now; this.absorbed = absorbed;
   }
@@ -53,6 +63,7 @@ export class ProductionMotion {
         index = impact;
       }
       if (this.impactSeen && now < this.impactUntil) return { pose: "attack", index: impact, impact: true };
+      if (this.completeAttack && now - this.start < this.durations.reduce((a, b) => a + b, 0)) return { pose: "attack", index, impact: false };
       if (this.pendingHit !== null) {
         const absorbed = this.pendingHit; this.pendingHit = null; this.hit(now, absorbed);
       } else if (this.pendingAttack !== null) {

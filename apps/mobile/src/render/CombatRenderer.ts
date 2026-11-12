@@ -6,7 +6,7 @@ import type { CombatEvent } from "@emberbound/shared-types";
 import type { CombatFrame } from "../game/session";
 import { actorPack, attackDurations, fxPack, productionActorId, sequenceIndex } from "../art/darkwood";
 import { ProductionMotion } from "./productionMotion";
-import { characterOffset, unarmedApproach } from "./characterMotion";
+import { characterOffset, unarmedApproach, UNARMED_ATTACK } from "./characterMotion";
 import { heroAttackName, type HeroAppearance } from "../art/gearSkins";
 import { EnvironmentArt } from "./environmentArt";
 import { drawBackground, groundY } from "./background";
@@ -446,7 +446,7 @@ export class CombatRenderer {
       spriteName,
       attackName,
       motion: production ? new ProductionMotion({ ...production, animations: { ...production.animations,
-        attack: actorPack[attackName === "unarmed" ? "monk" : attackName]!.animations.attack } }) : undefined,
+        attack: attackName === "unarmed" ? UNARMED_ATTACK : actorPack[attackName]!.animations.attack } }, attackName === "unarmed") : undefined,
       targetId: "", emittedAttack: -1, lastAttack: -10000,
       barOffset: -Math.round(tex.anchorY * displayScale) - 5,
       groundOffset: !isHero && this.enemyCount === 3 ? THREE_ENEMY_FORMATION[this.actors.size - 1]!.rise : 0,
@@ -468,7 +468,7 @@ export class CombatRenderer {
       for (const effect of this.artEffects) effect.node.destroy();
       this.artEffects = [];
       this.prerolled.clear(); this.launched.clear();
-      for (const a of this.actors.values()) if (a.motion && a.alive) a.motion = new ProductionMotion(a.motion.actor);
+      for (const a of this.actors.values()) if (a.motion && a.alive) a.motion = new ProductionMotion(a.motion.actor, a.motion.completeAttack);
     }
     while (this.cursor < this.events.length) {
       const e = this.events[this.cursor]!;
@@ -675,7 +675,7 @@ export class CombatRenderer {
       hero.deathAt = hero.flashAt = hero.lungeAt = 0;
       hero.ward100 = 0;
       hero.wardPhase = "off";
-      if (hero.motion) hero.motion = new ProductionMotion(hero.motion.actor);
+      if (hero.motion) hero.motion = new ProductionMotion(hero.motion.actor, hero.motion.completeAttack);
       hero.shownHp100 = hp100;
     } else if (hp100 > hero.hp100 && hero.hp100 > 0) {
       const gained = hp100 - hero.hp100;
@@ -1028,7 +1028,7 @@ export class CombatRenderer {
     let [step, lift] = characterOffset(a.spriteName, sample.pose, sample.index, now - motion.start, a.phase, a.attackName);
     const target = this.actors.get(a.targetId);
     if (a.attackName === "unarmed" && sample.pose === "attack" && target) {
-      step = unarmedApproach(target.baseX - a.baseX, sample.index, now - motion.start, motion.windupMs, a.spriteName);
+      step = unarmedApproach(target.baseX - a.baseX, now - motion.start, motion.attackTiming, a.spriteName);
     }
     a.root.position.set(
       Math.round(Math.max(a.minX, Math.min(a.maxX, a.baseX + step * (a.isHero ? 1 : -1)))),

@@ -1,6 +1,13 @@
 import type { Pose } from "../art/types";
 import { CLASS_BODIES } from "../art/classBodies";
 import type { HeroClass } from "../art/gearSkins";
+import { actorPack, type ProductionClip } from "../art/darkwood";
+
+/** A readable step, contact, follow-through and return, fitted to the logged cadence. */
+export const UNARMED_ATTACK: ProductionClip = {
+  ...actorPack.monk!.animations.attack,
+  ms: [260, 120, 140, 260], min_ms: [80, 100, 60, 80], crit_hold_ms: 170,
+};
 
 /** Pixel offsets only: attacks and damage still belong to the prepared combat log. */
 export function characterOffset(name: string, pose: Pose, frame: number, elapsed: number, phase = 0, attackName = name): readonly [number, number] {
@@ -20,11 +27,14 @@ export function characterOffset(name: string, pose: Pose, frame: number, elapsed
 }
 
 /** Close the visual distance for a bare-handed strike; HUD and simulation positions stay fixed. */
-export function unarmedApproach(distance: number, frame: number, elapsed: number, windupMs: number, classId: string = "monk"): number {
+export function unarmedApproach(distance: number, elapsed: number, durations: readonly number[], classId: string = "monk"): number {
   const reach = Math.max(0, distance - (CLASS_BODIES[classId as HeroClass]?.reach ?? 26));
+  const [windupMs = 260, contactMs = 120, followThroughMs = 140, returnMs = 260] = durations;
   const t = Math.min(1, Math.max(0, elapsed / Math.max(1, windupMs)));
   const weight = classId === "warrior" ? t * t : classId === "mage" ? t * t * (3 - 2 * t)
     : classId === "ranger" ? 1 - (1 - t) * (1 - t) : t;
-  if (frame === 0) return -2 + (reach + 2) * weight;
-  return frame === 1 ? reach : frame === 2 ? reach * (classId === "warrior" ? 0.8 : classId === "ranger" ? 0.45 : 0.65) : 0;
+  if (elapsed < windupMs) return reach * weight;
+  const recovery = Math.min(1, Math.max(0, (elapsed - windupMs - contactMs) / Math.max(1, followThroughMs + returnMs)));
+  // Interpolate across both recovery poses instead of teleporting at frame boundaries.
+  return reach * (1 - recovery * recovery * (3 - 2 * recovery));
 }

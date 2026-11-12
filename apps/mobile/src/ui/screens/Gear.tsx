@@ -8,7 +8,7 @@ import { canUseItem, findInstance, isFightActive, isItemLocked, previewSalvage, 
 import { session } from "../../game/session";
 import { Sheet } from "../components/Common";
 import { ItemIcon, SpriteImage } from "../components/icons";
-import { buildSummary, filterGearGroups, groupsForSlot, pickInstance, slotViews, statRows, type GearFilters, type ItemGroup } from "../gearModel";
+import { buildSummary, classInventory, filterGearGroups, groupsForSlot, pickInstance, slotViews, statRows, type GearFilters, type ItemGroup } from "../gearModel";
 import { SLOT_LABELS, number, pct, rarityColor, rate } from "../format";
 
 export interface GearFocus {
@@ -53,7 +53,7 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
           <button className="btn" onClick={() => setForgeOpen(true)}>Forge</button>
         </div>
         {!inventory && !forgeOpen && !openSlot && retryAction}
-        <button className="btn gold block inventory-entry" onClick={() => setInventory({ newOnly: false, key: 0 })}>Inventory · {number(profile.inventory.instances.length)} copies · all slots</button>
+        <button className="btn gold block inventory-entry" onClick={() => setInventory({ newOnly: false, key: 0 })}>Inventory · {number(classInventory(profile, content).length)} copies · {content.classDef(profile.character.activeClassId).name}</button>
         <div className="loadout-stage">
           <svg className="loadout-links" viewBox="0 0 360 320" preserveAspectRatio="none" aria-hidden="true"><g stroke="currentColor" fill="none"><path d="M95 55H145L180 85 M265 55H215L195 120 M95 155H145L165 160 M265 155H215L200 160 M95 265H145L180 230 M265 265H225L204 178"/></g></svg>
           <div className="loadout-hero"><SpriteImage name={content.classDef(profile.character.activeClassId).sprite} profile={profile} portrait/><span>Lv. {profile.character.level} · {content.classDef(profile.character.activeClassId).name}</span></div>

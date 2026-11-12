@@ -1,5 +1,5 @@
 import { SLOT_ORDER, type ItemDef, type ItemInstance, type SlotId } from "@emberbound/shared-types";
-import { canonicalJson, findInstance, heroStatsFor, type ContentIndex, type Profile } from "@emberbound/game-core";
+import { canUseItem, canonicalJson, findInstance, heroStatsFor, type ContentIndex, type Profile } from "@emberbound/game-core";
 
 import { pct, rate } from "./format";
 
@@ -39,7 +39,7 @@ export function filterGearGroups(groups: ItemGroup[], filters: GearFilters): Ite
 export function slotViews(profile: Profile, content: ContentIndex): SlotView[] {
   const newBySlot = new Map<SlotId, number>();
   for (const inst of profile.inventory.instances) {
-    if (!inst.isNew) continue;
+    if (!inst.isNew || !canUseItem(content.item(inst.baseId), profile.character.activeClassId)) continue;
     const slot = content.item(inst.baseId).slot;
     newBySlot.set(slot, (newBySlot.get(slot) ?? 0) + 1);
   }
@@ -50,8 +50,8 @@ export function slotViews(profile: Profile, content: ContentIndex): SlotView[] {
     const queuedInstance = qid !== undefined && qid !== null ? findInstance(profile, qid) : undefined;
     return {
       slot,
-      equipped: instance ? { instance, item: content.item(instance.baseId) } : null,
-      queued: queuedInstance ? { instance: queuedInstance, item: content.item(queuedInstance.baseId) } : null,
+      equipped: instance && canUseItem(content.item(instance.baseId), profile.character.activeClassId) ? { instance, item: content.item(instance.baseId) } : null,
+      queued: queuedInstance && canUseItem(content.item(queuedInstance.baseId), profile.character.activeClassId) ? { instance: queuedInstance, item: content.item(queuedInstance.baseId) } : null,
       newCount: newBySlot.get(slot) ?? 0,
     };
   });
@@ -67,10 +67,13 @@ function itemBonuses({ rolls, modifiers, upgrade, seasonal }: ItemInstance): str
   return canonicalJson({ rolls, modifiers, upgrade, seasonal });
 }
 
-export function totalNew(profile: Profile): number {
-  let n = 0;
-  for (const i of profile.inventory.instances) if (i.isNew) n += 1;
-  return n;
+/** Keep other classes' copies and NEW state in the save, outside the active view. */
+export function classInventory(profile: Profile, content: ContentIndex): ItemInstance[] {
+  return profile.inventory.instances.filter(i => canUseItem(content.item(i.baseId), profile.character.activeClassId));
+}
+
+export function totalNew(profile: Profile, content: ContentIndex): number {
+  return classInventory(profile, content).filter(i => i.isNew).length;
 }
 
 /** Identical catalog items share one card with a copy count (LOOT_FORGE behaviour). */
@@ -80,7 +83,7 @@ export function groupsForSlot(profile: Profile, content: ContentIndex, slot: Slo
   const queuedId = profile.pending?.equipment?.[slot];
   for (const inst of profile.inventory.instances) {
     const item = content.item(inst.baseId);
-    if (item.slot !== slot) continue;
+    if (item.slot !== slot || !canUseItem(item, profile.character.activeClassId)) continue;
     let g = groups.get(inst.baseId);
     if (!g) {
       g = { baseId: inst.baseId, item, ids: [], newCount: 0, equippedHere: false, queuedHere: false };

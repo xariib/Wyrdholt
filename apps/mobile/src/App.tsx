@@ -106,7 +106,7 @@ export function App() {
   }
 
   const { profile, runResult } = ui;
-  const newCount = totalNew(profile);
+  const newCount = totalNew(profile, session.content);
   const retry = activeBossAttempt(profile) ? null : retryTarget(profile, session.content);
   const openGear = (focus: GearFocus | "new" | null) => {
     setGearFocus(focus);
@@ -147,7 +147,7 @@ export function App() {
       )}
       {tab === "gear" && (
         <main className="screen gear-screen">
-          <GearScreen profile={profile} focus={gearFocus} onFocusHandled={clearFocus} retryAction={ui.offline || runResult ? null : retryAction} />
+          <GearScreen key={profile.character.activeClassId} profile={profile} focus={gearFocus} onFocusHandled={clearFocus} retryAction={ui.offline || runResult ? null : retryAction} />
         </main>
       )}
       {tab === "challenges" && (
@@ -167,7 +167,7 @@ export function App() {
         {tab === "menu" && <SaveTools onChanged={() => setTab("adventure")} />}
         {!ONLINE_PLAY_ENABLED && <p className="small muted">Online Play is temporarily disabled.</p>}
       </main>
-      {tab === "encyclopedia" && <EncyclopediaScreen onBack={() => setTab("menu")} />}
+      {tab === "encyclopedia" && <EncyclopediaScreen classId={profile.character.activeClassId} onBack={() => setTab("menu")} />}
 
       <nav className="nav" aria-label="Game navigation">
         {TABS.map(({ id, label }) => {
