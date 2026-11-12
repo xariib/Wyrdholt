@@ -89,11 +89,48 @@ try {
     return { frames, clipping, unchangedSlots, duplicates, iconDuplicates, looks: looks.length };
   }, { looks, items: CONTENT.items, slots: GEAR_SLOTS });
   await page.screenshot({ path: resolve(out, 'equipment-progression.png'), fullPage: true });
+  const identity = await page.evaluate(async looks => {
+    const { gearAtlas } = await import('/src/art/gearArt.ts');
+    const { asset } = await import('/src/art/manifest.ts');
+    document.body.replaceChildren();
+    document.body.style.gridTemplateColumns = 'repeat(4, 1fr)';
+    const result = [];
+    for (const row of ['Bare · idle', 'Silhouette', 'Bare · punch', 'Equipped · attack']) {
+      for (const cls of ['monk', 'warrior', 'mage', 'ranger']) {
+        const attack = row.includes('punch') || row.includes('attack');
+        const look = looks.find(l => l.label === `${cls} · ${row.startsWith('Equipped') ? 'rare' : 'unequipped'}`).look;
+        const a = asset(`characters/${cls}${attack ? '/attack' : ''}`), atlas = gearAtlas(a, look);
+        const canvas = document.createElement('canvas'); canvas.width = 72; canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        const f = a.frames[attack ? 1 : 0];
+        ctx.drawImage(atlas, f.x, f.y, a.width, a.height, 36 - a.anchor.x, 60 - a.anchor.y, a.width, a.height);
+        if (row === 'Silhouette') {
+          ctx.globalCompositeOperation = 'source-in'; ctx.fillStyle = '#ddd8c5'; ctx.fillRect(0, 0, 72, 64);
+          const data = ctx.getImageData(0, 0, 72, 64).data;
+          let signature = '', area = 0, top = 64, left = 72, right = 0;
+          for (let y = 0; y < 64; y++) for (let x = 0; x < 72; x++) {
+            const opaque = !!data[(y * 72 + x) * 4 + 3]; signature += opaque ? '1' : '0';
+            if (opaque) { area++; top = Math.min(top, y); left = Math.min(left, x); right = Math.max(right, x); }
+          }
+          result.push({ classId: cls, signature, area, height: 60 - top, width: right - left + 1 });
+        }
+        canvas.style.cssText = 'display:block;width:100%;image-rendering:pixelated;background:#182a30';
+        const figure = document.createElement('div'); figure.textContent = `${cls} · ${row}`;
+        figure.append(canvas); document.body.append(figure);
+      }
+    }
+    return result;
+  }, looks);
+  await page.screenshot({ path: resolve(out, 'class-identity.png'), fullPage: true });
+  assert.equal(new Set(identity.map(i => i.signature)).size, 4, 'Classes must differ in silhouette, not just palette');
+  assert.equal(identity.find(i => i.classId === 'mage').height, Math.max(...identity.map(i => i.height)), 'Mage should remain the tallest base body');
+  report.bodies = identity.map(({ signature, ...body }) => body);
   writeFileSync(resolve(out, 'report.json'), JSON.stringify({ ...report, errors }, null, 2));
   assert.deepEqual(errors, []); assert.deepEqual(report.clipping, []);
   assert.deepEqual(report.unchangedSlots, []); assert.deepEqual(report.duplicates, []); assert.deepEqual(report.iconDuplicates, []);
   const equips = [];
   for (const cls of HERO_CLASSES) {
+    console.log(`Checking ${cls}: empty start, queued crown, reload`);
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const app = await context.newPage(), appErrors = []; app.on('pageerror', e => appErrors.push(e.message));
     await app.goto(`http://127.0.0.1:${server.httpServer.address().port}`);
@@ -117,7 +154,7 @@ try {
       window.skinSampleTimer = setInterval(() => {
         const p = session.getSnapshot().profile;
         window.skinSamples.push({ queued: !!p.pending?.equipment?.head,
-          head: window.__emberRenderer.heroAppearance.slots.head.id });
+          head: window.__emberRenderer.heroAppearance.slots.head?.id ?? null });
       }, 10);
     });
     // Observe a fight boundary and activate the real UI in the same browser task,
@@ -125,12 +162,14 @@ try {
     await app.evaluate(async () => {
       const { session } = await import('/src/game/session.ts');
       await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error(`No fresh fight: ${JSON.stringify(session.getSnapshot().profile.adventure)}`)), 45000);
         const check = () => {
           const p = session.getSnapshot().profile, run = p.adventure.run;
           if (p.adventure.activity === 'idle' || run?.phase !== 'fight' || run.elapsedMs >= 400) { requestAnimationFrame(check); return; }
+          clearTimeout(timer);
           document.querySelector('.equip-cta').click();
           const queued = !!session.getSnapshot().profile.pending?.equipment?.head;
-          window.skinSamples.push({ queued, head: window.__emberRenderer.heroAppearance.slots.head.id });
+          window.skinSamples.push({ queued, head: window.__emberRenderer.heroAppearance.slots.head?.id ?? null });
           if (!queued) reject(new Error(`UI equip did not queue at ${run.phase}/${run.elapsedMs}`));
           else resolve();
         }; check();
@@ -148,7 +187,7 @@ try {
     for (const slot of GEAR_SLOTS.filter(s => s !== 'head')) assert.deepEqual(after.look.slots[slot], before.slots[slot]);
     const queued = after.samples.filter(s => s.queued);
     assert(queued.length > 0, `${cls}: did not exercise queued equipment`);
-    assert(queued.every(s => s.head === before.slots.head.id), `${cls}: queued head appeared early`);
+    assert(queued.every(s => s.head === (before.slots.head?.id ?? null)), `${cls}: queued head appeared early`);
     await app.locator('.combat-canvas').screenshot({ path: resolve(out, `${cls}-equipped-combat.png`) });
     await app.getByRole('navigation').getByRole('button', { name: 'Gear', exact: true }).click();
     await app.screenshot({ path: resolve(out, `${cls}-mixed-gear.png`), animations: 'disabled' });

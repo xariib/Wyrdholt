@@ -60,7 +60,8 @@ Run `node --import tsx tools/visual/character-animation-check.mjs` to verify emp
 Run `node --import tsx tools/visual/gear-skins-check.mjs` to check equipped appearances:
 all four classes from empty slots through Legendary gear, distinct pixels for each
 named item and icon, matching combat/portrait layers, pose clipping, queued equipment
-through the real Gear UI, and appearances after reload. It starts a local Vite server
+through the real Gear UI, and appearances after reload. It also checks four distinct
+unarmored silhouettes and produces a class body/attack comparison sheet. It starts a local Vite server
 and writes a visual review sheet and disposable-fixture screenshots to ignored
 `tools/smoke/out/gear-skins`. This browser check does not replace device testing or
 human art acceptance.

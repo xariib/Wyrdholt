@@ -1025,10 +1025,10 @@ export class CombatRenderer {
   private animateProduction(a: ActorView, now: number): void {
     const motion = a.motion!;
     const sample = motion.sample(now);
-    let [step, lift] = characterOffset(sample.pose === "attack" ? a.attackName : a.spriteName, sample.pose, sample.index, now - motion.start, a.phase);
+    let [step, lift] = characterOffset(a.spriteName, sample.pose, sample.index, now - motion.start, a.phase, a.attackName);
     const target = this.actors.get(a.targetId);
     if (a.attackName === "unarmed" && sample.pose === "attack" && target) {
-      step = unarmedApproach(target.baseX - a.baseX, sample.index, now - motion.start, motion.windupMs);
+      step = unarmedApproach(target.baseX - a.baseX, sample.index, now - motion.start, motion.windupMs, a.spriteName);
     }
     a.root.position.set(
       Math.round(Math.max(a.minX, Math.min(a.maxX, a.baseX + step * (a.isHero ? 1 : -1)))),

@@ -1,15 +1,19 @@
 import { actorPack } from "./darkwood";
 import type { ArtAsset, Pose } from "./types";
 import { bareAppearance, heroAttackName, type GearSkin, type HeroAppearance, type HeroClass } from "./gearSkins";
+import { CLASS_BODIES, type ClassBody } from "./classBodies";
 
 // Original, composable pixel art. Body and each equipment slot are separate drawing
 // passes, so taking off a helmet or swapping a weapon cannot leave baked-in armor.
 const ink = "#20262c", skin = "#cf9e78", skinLight = "#edc39a", skinShade = "#986d55";
 type Point = readonly [number, number];
 class Pixels {
-  constructor(readonly ctx: CanvasRenderingContext2D) {}
+  constructor(readonly ctx: CanvasRenderingContext2D, readonly map: (x: number, y: number) => Point = (x, y) => [x, y]) {}
   rect(color: string, x: number, y: number, w: number, h: number) {
-    this.ctx.fillStyle = color; this.ctx.fillRect(Math.round(x), Math.round(y), w, h);
+    if (w <= 0 || h <= 0) return;
+    const a = this.map(x, y), b = this.map(x + w, y + h);
+    this.ctx.fillStyle = color;
+    this.ctx.fillRect(Math.round(a[0]), Math.round(a[1]), Math.max(1, Math.round(b[0]) - Math.round(a[0])), Math.max(1, Math.round(b[1]) - Math.round(a[1])));
   }
   poly(color: string, points: readonly Point[]) {
     // Scan convert instead of antialiasing: every native pixel stays crisp at 2x/3x.
@@ -101,11 +105,11 @@ function chest(p: Pixels, s: GearSkin) {
   if (t >= 3) { p.rect(trim, 1, -24, 3, 3); p.rect(light, 2, -24, 1, 1); }
 }
 
-function boots(p: Pixels, s: GearSkin, x: number, y: number) {
+function boots(p: Pixels, s: GearSkin, x: number, y: number, tone = skin, highlight = skinLight) {
   const sandal = s.classId === "monk" && s.tier < 2;
   p.rect(ink, x - 1, y - (sandal ? 1 : 5), 7, sandal ? 3 : 7);
-  p.rect(sandal ? skin : s.shade, x, y - (sandal ? 1 : 4), 4, sandal ? 2 : 5);
-  p.rect(sandal ? skinLight : s.base, x + 1, y - (sandal ? 1 : 4), 3, sandal ? 1 : 4);
+  p.rect(sandal ? tone : s.shade, x, y - (sandal ? 1 : 4), 4, sandal ? 2 : 5);
+  p.rect(sandal ? highlight : s.base, x + 1, y - (sandal ? 1 : 4), 3, sandal ? 1 : 4);
   p.rect(sandal ? "#8e7250" : s.light, x + 1, y, 4, 1);
   p.rect(s.tier ? s.trim : "#75604b", x, y - (sandal ? 1 : 4), 4, 1);
   if (s.tier >= 2) p.rect(s.trim, x + 2, y - 2, 1, 1);
@@ -113,16 +117,16 @@ function boots(p: Pixels, s: GearSkin, x: number, y: number) {
   if (s.family === "ghostwalk") p.rect(s.trim, x + 4, y - 3, 2, 1);
 }
 
-function glove(p: Pixels, s: GearSkin, hand: Point) {
+function glove(p: Pixels, s: GearSkin, hand: Point, tone = skin) {
   const [x, y] = hand;
   p.rect(ink, x - 1, y - 2, 6, 6); p.rect(s.shade, x, y - 1, 4, 4);
   // Wrist cuffs remain visible underneath a Monk's separate weapon wraps.
   p.rect(ink, x - 1, y - 5, 5, 4); p.rect(s.base, x, y - 4, 3, 3); p.rect(s.light, x, y - 4, 3, 1);
   if (s.tier >= 1) p.rect(s.trim, x + 1, y - 2, 2, 1);
   p.rect(s.base, x + 1, y - 1, 3, 3); p.rect(s.light, x, y - 1, 4, 1);
-  if (s.classId === "monk") { p.rect(s.light, x, y + 1, 4, 1); p.rect(skin, x + 3, y, 1, 2); }
+  if (s.classId === "monk") { p.rect(s.light, x, y + 1, 4, 1); p.rect(tone, x + 3, y, 1, 2); }
   if (s.tier >= 1) p.rect(s.trim, x + 1, y + 1, 2, 1);
-  if (s.family === "fletchers_gloves") p.rect(skin, x + 2, y + 2, 2, 1);
+  if (s.family === "fletchers_gloves") p.rect(tone, x + 2, y + 2, 2, 1);
 }
 
 function weapon(p: Pixels, s: GearSkin, hand: Point, striking: boolean) {
@@ -166,51 +170,126 @@ function weapon(p: Pixels, s: GearSkin, hand: Point, striking: boolean) {
   }
 }
 
+function face(p: Pixels, b: ClassBody, cls: HeroClass, sway: number) {
+  p.rect(ink, -3, -32, 7, 6); p.rect(b.skinShade, -2, -32, 5, 5);
+  if (cls === "warrior") {
+    // Short hair, a heavy brow and a square, bearded jaw.
+    p.poly(ink, [[-7, -41], [-3, -44], [4, -43], [7, -40], [7, -35], [9, -34], [8, -29], [-4, -29], [-7, -33]]);
+    p.poly(b.skin, [[-6, -40], [-3, -42], [4, -41], [6, -38], [6, -34], [8, -33], [7, -30], [-3, -30], [-5, -34]]);
+    p.rect(b.hair, -6, -42, 11, 4); p.rect(b.hairLight, -4, -43, 6, 2);
+    p.rect(b.skinLight, 0, -38, 5, 3); p.rect(b.skinShade, -4, -36, 3, 3);
+    p.poly(b.hair, [[-4, -34], [-1, -31], [7, -32], [6, -29], [-3, -30]]);
+    p.rect(b.hairLight, 0, -30, 4, 1); p.rect(ink, 3, -37, 3, 1);
+    p.line(b.skinShade, [2, -35], [1, -33]);
+  } else if (cls === "mage") {
+    // Receding silver hair, a long nose and a narrow beard.
+    p.poly(ink, [[-4, -43], [3, -43], [6, -39], [6, -36], [10, -34], [7, -32], [6, -29], [0, -28], [-5, -32], [-7, -38]]);
+    p.poly(b.skin, [[-3, -42], [3, -42], [5, -38], [5, -35], [8, -34], [6, -33], [5, -30], [0, -29], [-4, -33], [-5, -38]]);
+    p.rect(b.skinLight, 0, -40, 4, 4); p.rect(b.skinShade, -3, -36, 2, 4);
+    p.poly(b.hair, [[-5, -41], [-3, -42], [-3, -36], [-5 + sway, -30], [-7 + sway, -32], [-7, -38]]);
+    p.line(b.hairLight, [-5, -39], [-5 + sway, -33]);
+    p.poly(ink, [[-2, -33], [6, -32], [5 + sway, -23], [0 + sway, -25], [-3, -30]]);
+    p.poly(b.hair, [[-1, -32], [5, -32], [4 + sway, -24], [1 + sway, -26], [-2, -30]]);
+    p.line(b.hairLight, [3, -31], [3 + sway, -26]); p.rect(ink, 3, -37, 2, 1);
+    p.rect(b.hairLight, 2, -39, 3, 1);
+  } else if (cls === "ranger") {
+    // Tied auburn hair and an angular, clean-shaven face.
+    p.poly(ink, [[-6, -41], [-2, -44], [4, -43], [7, -39], [7, -35], [9, -34], [6, -31], [1, -29], [-4, -32], [-7, -37]]);
+    p.poly(b.skin, [[-5, -40], [-2, -42], [4, -41], [6, -38], [6, -35], [7, -34], [5, -32], [1, -30], [-3, -33], [-5, -37]]);
+    p.poly(ink, [[-6, -39], [-10, -39], [-13 - sway, -32], [-9 - sway, -26], [-7 - sway, -29], [-9, -33]]);
+    p.poly(b.hair, [[-7, -38], [-9, -38], [-11 - sway, -32], [-9 - sway, -28], [-8 - sway, -30], [-9, -34]]);
+    p.poly(b.hair, [[-6, -41], [-2, -43], [4, -42], [6, -39], [-1, -38], [-4, -34], [-6, -36]]);
+    p.line(b.hairLight, [-4, -41], [2, -41]); p.rect(b.skinLight, 1, -38, 4, 3);
+    p.rect(ink, 4, -36, 2, 1); p.line(b.skinShade, [4, -33], [1, -31]);
+  } else {
+    // Shaved head, high cheekbones and a calm, level gaze.
+    p.poly(ink, [[-4, -43], [2, -43], [6, -40], [7, -36], [9, -34], [7, -32], [4, -29], [-2, -30], [-6, -34], [-7, -39]]);
+    p.poly(b.skin, [[-4, -42], [2, -42], [5, -39], [6, -35], [7, -34], [6, -32], [3, -30], [-2, -31], [-5, -35], [-6, -39]]);
+    p.line(b.skinLight, [-3, -41], [2, -41], 2); p.rect(b.skinLight, 1, -38, 4, 3);
+    p.rect(b.skinShade, -4, -36, 3, 3); p.rect(ink, 4, -36, 2, 1);
+    p.line(b.skinShade, [4, -33], [2, -32]);
+  }
+}
+
 function drawHero(ctx: CanvasRenderingContext2D, look: HeroAppearance, pose: Pose | "flash", frame: number) {
-  const p = new Pixels(ctx), cls = look.classId, s = look.slots;
+  const p = new Pixels(ctx), cls = look.classId, s = look.slots, b = CLASS_BODIES[cls];
   const striking = pose === "attack" && (frame === 1 || frame === 2);
-  const bob = pose === "idle" && frame % 4 >= 2 ? 1 : 0;
+  const breath = pose === "idle" && frame >= 2 ? 1 : 0;
+  const crouch = striking ? (cls === "warrior" ? 2 : cls === "mage" ? 0 : 1) : breath;
+  const lean = striking ? (cls === "ranger" ? 3 : 2) : cls === "mage" ? 1 : 0;
+  // Deform each clothing/armor layer around the same anatomical landmarks.
+  const torso = new Pixels(ctx, (x, y) => {
+    const t = Math.max(0, Math.min(1, (-15 - y) / 14));
+    const yy = y < -15 ? b.hips + (y + 15) * (b.hips - b.shoulders) / 14 : y * b.hips / -15;
+    return [x * b.width + lean * t, yy + crouch * t];
+  });
+  const skull = new Pixels(ctx, (x, y) => [x * b.headWidth + lean, y + b.shoulders + 29 + crouch]);
   ctx.save();
   if (pose === "death") {
-    if (frame >= 2) { ctx.translate(17, -13); ctx.rotate(-Math.PI / 2); }
+    if (frame >= 2) { ctx.translate(22, -13); ctx.rotate(-Math.PI / 2); }
     else ctx.translate(-frame * 2, frame * 2);
   }
   if (pose === "hit" || pose === "flash") ctx.translate(-2, 0);
-  // Feet stay planted while the torso breathes.
-  p.poly(ink, [[-7, -15], [6, -15], [8, -2], [1, -1], [-1, -10], [-4, -1], [-11, -1]]);
-  p.poly("#686658", [[-6, -14], [-1, -14], [-5, -2], [-9, -2]]);
-  p.poly("#85816c", [[0, -14], [5, -14], [6, -2], [2, -2]]);
-  p.line("#aaa18a", [3, -12], [4, -4]);
-  for (const x of [-10, 2]) {
-    if (s.boots) boots(p, s.boots, x, -2);
-    else { p.rect(ink, x - 1, -3, 7, 3); p.rect(skin, x, -2, 5, 1); }
+  for (const [i, foot] of b.feet.entries()) {
+    const hip: Point = [i ? 2 : -5, b.hips - 1];
+    const knee: Point = [foot + (i ? 0 : -1) + (striking ? 2 : 0), Math.round(b.hips / 2) + (cls === "monk" ? -1 : 0)];
+    const ankle: Point = [foot, -4];
+    for (const [a, z] of [[hip, knee], [knee, ankle]] as const) {
+      const half = Math.floor((b.legWidth + 2) / 2);
+      p.line(ink, [a[0] + 2 - half, a[1] - half], [z[0] + 2 - half, z[1] - half], b.legWidth + 2);
+      p.line(i ? b.trousers : b.clothShade, [a[0] + 3 - half, a[1] + 1 - half], [z[0] + 3 - half, z[1] + 1 - half], b.legWidth);
+    }
+    p.line(b.clothLight, [knee[0] + 2, knee[1] + 1], [foot + 2, -5]);
+    if (s.boots) boots(p, s.boots, foot, -2, b.skin, b.skinLight);
+    else { p.rect(ink, foot - 1, -3, 7, 3); p.rect(b.skin, foot, -2, 5, 1); }
   }
-  ctx.translate(0, bob);
-  // Plain undershirt remains when Chest is empty; no shoulder plates or cape.
-  p.poly(ink, [[-7, -29], [5, -29], [9, -24], [6, -13], [-8, -13], [-10, -24]]);
-  p.poly("#aaa18b", [[-6, -28], [4, -28], [8, -24], [5, -14], [-7, -14], [-9, -24]]);
-  p.rect("#756d5e", -6, -24, 3, 10); p.line("#d1c4a6", [-2, -27], [4, -25]);
-  if (s.chest) chest(p, s.chest);
-  // Neck, head and face remain the same person across equipment changes.
-  p.rect(ink, -3, -32, 7, 6); p.rect(skinShade, -2, -32, 5, 5);
-  p.poly(ink, [[-5, -42], [3, -42], [7, -38], [7, -34], [9, -34], [8, -32], [5, -29], [-3, -30], [-7, -35], [-7, -39]]);
-  p.poly(skin, [[-4, -41], [3, -41], [6, -37], [6, -34], [8, -34], [7, -33], [4, -30], [-2, -31], [-5, -35], [-5, -39]]);
-  p.rect(skinLight, 0, -39, 5, 4); p.rect(skinShade, -4, -36, 3, 4);
-  p.rect("#4a3830", -5, -41, 8, 3); p.rect("#6b5040", -4, -41, 5, 1);
-  if (cls === "monk") { p.rect(skin, -5, -41, 8, 3); p.rect(skinLight, -2, -41, 4, 1); }
-  p.rect(ink, 4, -36, 2, 1); p.rect(skinShade, 3, -32, 3, 1);
-  if (cls === "mage") { p.rect("#c4bfa7", -1, -32, 5, 3); p.rect("#e4d9bb", 2, -32, 2, 3); }
-  if (s.head) head(p, s.head);
-  const attack = heroAttackName(look);
-  const front: Point = attack === "unarmed"
-    ? pose === "attack" ? ([[4, -23], [17, -25], [13, -24], [8, -21]] as const)[frame] ?? [8, -21] : [8, -21]
-    : attack === "monk" ? [striking ? 17 : 9, striking ? -25 : -21]
-    : attack === "ranger" ? [striking ? 13 : 9, -20] : [striking ? 12 : 9, striking ? -23 : -18];
-  const back: Point = attack === "unarmed" ? [-5, -23] : attack === "monk" ? [-9, -20] : attack === "ranger" && striking ? [1, -20] : [-10, -15];
-  for (const [shoulder, hand] of [[[-8, -25], back], [[6, -25], front]] as const) {
-    p.line(ink, shoulder, hand, 5); p.line(skinShade, [shoulder[0] + 1, shoulder[1] + 1], [hand[0] + 1, hand[1] + 1], 3);
-    p.rect(skin, hand[0], hand[1], 4, 3); p.rect(skinLight, hand[0] + 1, hand[1], 3, 1);
-    if (s.gloves) glove(p, s.gloves, hand);
+  // Everyday clothes are part of the base model; armor is exclusively an equipped layer.
+  const hem = cls === "mage" ? -8 : -13;
+  torso.poly(ink, [[-7, -29], [5, -29], [8, -25], [6, -17], [7, hem], [-8, hem], [-7, -19], [-9, -25]]);
+  torso.poly(b.cloth, [[-6, -28], [4, -28], [7, -25], [5, -17], [6, hem - 1], [-7, hem - 1], [-6, -19], [-8, -25]]);
+  torso.poly(b.clothShade, [[-7, -26], [-3, -25], [-3, -17], [-5, hem - 1], [-7, hem - 1], [-6, -19]]);
+  if (cls === "monk") {
+    torso.line(b.clothLight, [-5, -28], [3, -18], 2);
+    torso.line(b.clothShade, [4, -28], [-4, -17]);
+    torso.rect(b.clothLight, -6, -16, 12, 2);
+  } else if (cls === "warrior") {
+    torso.poly(b.skinShade, [[-4, -29], [4, -29], [2, -25], [-1, -25]]);
+    torso.line(b.clothLight, [-2, -23], [4, -23]);
+    torso.line(b.clothShade, [-5, -17], [5, -17]);
+  } else {
+    torso.line(b.clothLight, [-1, -27], [4, -25]);
+    torso.line(b.clothShade, [0, -24], [0, hem - 2]);
+    torso.rect(b.clothLight, 1, -23, 1, 1);
+    if (cls === "ranger") torso.line(b.clothShade, [-6, -17], [5, -16]);
+  }
+  if (s.chest) chest(torso, s.chest);
+  face(skull, b, cls, pose === "idle" ? frame % 2 : striking ? 1 : 0);
+  if (s.head) head(skull, s.head);
+  const attack = heroAttackName(look), unarmed = attack === "unarmed" || attack === "monk";
+  const guard: Record<HeroClass, Point> = { monk: [9, -26], warrior: [12, -22], mage: [9, -26], ranger: [10, -27] };
+  const fists: Record<HeroClass, readonly Point[]> = {
+    monk: [[4, -25], [18, -27], [14, -25], [9, -26]],
+    warrior: [[6, -20], [17, -23], [15, -20], [12, -22]],
+    mage: [[4, -27], [17, -29], [13, -28], [9, -26]],
+    ranger: [[4, -26], [19, -28], [14, -26], [10, -27]],
+  };
+  const frontBase: Point = unarmed ? pose === "attack" ? fists[cls][frame] ?? guard[cls] : guard[cls]
+    : attack === "ranger" ? [striking ? 10 : 8, -21] : [striking ? 11 : 9, striking ? -23 : -19];
+  const backBase: Point = unarmed ? [cls === "warrior" ? -10 : -7, b.shoulders + 7]
+    : attack === "ranger" && striking ? [0, -21] : [-10, b.hips];
+  const front: Point = [frontBase[0], frontBase[1] + crouch], back: Point = [backBase[0], backBase[1] + crouch];
+  const shoulderY = b.shoulders + 4 + crouch;
+  for (const [i, hand] of [back, front].entries()) {
+    const shoulder: Point = [(i ? 5 : -8) * b.width + lean, shoulderY];
+    const elbow: Point = [i ? (shoulder[0] + hand[0]) / 2 : shoulder[0] - 2,
+      striking && i ? hand[1] + (cls === "warrior" ? 4 : 1) : shoulderY + (cls === "mage" ? 9 : 7)];
+    for (const [a, z] of [[shoulder, elbow], [elbow, hand]] as const) {
+      p.line(ink, a, z, b.armWidth + 2);
+      p.line(b.skinShade, [a[0] + 1, a[1] + 1], [z[0] + 1, z[1] + 1], b.armWidth);
+      p.line(b.skin, [a[0] + 1, a[1] + 1], [z[0] + 1, z[1] + 1]);
+    }
+    p.rect(b.skin, hand[0], hand[1], 4, 3); p.rect(b.skinLight, hand[0] + 1, hand[1], 3, 1);
+    if (s.gloves) glove(p, s.gloves, hand, b.skin);
     if (s.weapon && cls === "monk") weapon(p, s.weapon, hand, striking);
   }
   if (s.weapon && cls !== "monk") weapon(p, s.weapon, front, striking);
