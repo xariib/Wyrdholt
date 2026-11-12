@@ -188,7 +188,7 @@ export class CombatRenderer {
       autoStart: false,
       sharedTicker: false,
       autoDensity: false,
-      resolution: 1,
+      resolution: 2,
       roundPixels: true,
       backgroundAlpha: 1,
       background: "#10182a",

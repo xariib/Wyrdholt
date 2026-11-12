@@ -4,6 +4,8 @@ import { bareAppearance, heroAttackName, type GearSkin, type HeroAppearance, typ
 import { CLASS_BODIES, type ClassBody } from "./classBodies";
 import { Pixels, type PixelPoint as Point } from "./pixels";
 import { head, chest, glove, boots, weapon, ring } from "./pixelGear";
+import { refinedReady, refinedAtlas, refinedIcon } from "./refinedPixelArt";
+import { asset as findAsset } from "./manifest";
 
 // Original, composable pixel art. Body and each equipment slot are separate drawing
 // passes, so taking off a helmet or swapping a weapon cannot leave baked-in armor.
@@ -194,6 +196,7 @@ function drawHero(ctx: CanvasRenderingContext2D, look: HeroAppearance, pose: Pos
 
 /** Geometry/timing comes from the existing animation contract, pixels from the equipped layers. */
 export function gearAtlas(asset: ArtAsset, appearance: HeroAppearance, layer?: RenderLayer): HTMLCanvasElement {
+  if (refinedReady(appearance.classId)) return refinedAtlas(asset, appearance, layer);
   const canvas = document.createElement("canvas"); canvas.width = asset.atlasWidth; canvas.height = asset.atlasHeight;
   const ctx = canvas.getContext("2d")!; ctx.imageSmoothingEnabled = false;
   const pose = (asset.id.split("/")[2] ?? "idle") as Pose | "flash";
@@ -207,6 +210,7 @@ export function gearAtlas(asset: ArtAsset, appearance: HeroAppearance, layer?: R
 }
 
 export function portraitAtlas(classId: HeroClass, appearance = bareAppearance(classId)): HTMLCanvasElement {
+  if (refinedReady(classId)) return refinedAtlas(findAsset(`characters/${classId}`)!, appearance);
   const clip = actorPack[classId]!.animations.idle;
   const canvas = document.createElement("canvas"); canvas.width = clip.frame[0]! * clip.ms.length; canvas.height = clip.frame[1]!;
   const ctx = canvas.getContext("2d")!;
@@ -216,6 +220,7 @@ export function portraitAtlas(classId: HeroClass, appearance = bareAppearance(cl
 
 /** Inventory art uses the same equipment shapes and materials as the worn layers. */
 export function gearIcon(s: GearSkin): HTMLCanvasElement {
+  if (refinedReady(s.classId)) return refinedIcon(s);
   const canvas = document.createElement("canvas"); canvas.width = 32; canvas.height = 32;
   const ctx = canvas.getContext("2d")!, p = new Pixels(ctx);
   ctx.translate(16, 29);

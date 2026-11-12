@@ -46,7 +46,8 @@ try {
     const { gearAtlas, portraitAtlas, gearIcon } = await import('/src/art/gearArt.ts');
     const { gearSkin } = await import('/src/art/gearSkins.ts');
     const { asset } = await import('/src/art/manifest.ts');
-    const R = 1;
+    const { loadRefinedHero, REFINED_PIXEL_SCALE: R } = await import('/src/art/refinedPixelArt.ts');
+    await Promise.all(['monk', 'warrior', 'mage', 'ranger'].map(loadRefinedHero));
     document.body.style.cssText = 'margin:20px;background:#101d23;color:#dfddc7;font:14px system-ui;display:grid;grid-template-columns:repeat(6,1fr);gap:12px';
     const hash = canvas => {
       let h = 2166136261;
@@ -84,7 +85,7 @@ try {
       }
     }
     // Each named item must change actual pixels, not only a data attribute or rarity border.
-    const classIcons = new Map();
+    const classIcons = new Map(), bodyAtlases = new Map();
     for (const cls of ['monk', 'mage', 'warrior', 'ranger']) for (const slot of slots) {
       const seen = new Map(), icons = new Map(), neutralIcons = new Map();
       const starter = looks.find(l => l.label === `${cls} · common`).look;
@@ -95,37 +96,41 @@ try {
         const ih = hash(gearIcon(skin));
         if (seen.has(h)) duplicates.push([item.id, seen.get(h)]); seen.set(h, item.id);
         if (icons.has(ih)) iconDuplicates.push([item.id, icons.get(ih)]); icons.set(ih, item.id);
-        // Remove material differences: named items must have their own shapes/details.
-        const neutral = { ...skin, base: '#888888', shade: '#444444', light: '#cccccc', trim: '#aaaaaa' };
-        const nh = hash(gearIcon(neutral));
+        // Remove hue differences: named items must retain distinctive contours and shading details.
+        const neutral = gearIcon(skin), nc = neutral.getContext('2d'), nd = nc.getImageData(0, 0, neutral.width, neutral.height);
+        for (let n=0;n<nd.data.length;n+=4) {const value=Math.round(nd.data[n]*.299+nd.data[n+1]*.587+nd.data[n+2]*.114);nd.data[n]=nd.data[n+1]=nd.data[n+2]=value;}
+        nc.putImageData(nd,0,0);const nh = hash(neutral);
         if (neutralIcons.has(nh)) neutralDuplicates.push([item.id, neutralIcons.get(nh)]);
         neutralIcons.set(nh, item.id);
         const familyKey = `${skin.family}/${nh}`;
         if (classIcons.has(familyKey)) classDuplicates.push([item.id, classIcons.get(familyKey)]);
         classIcons.set(familyKey, item.id);
-        const icon = gearIcon(skin), rgba = icon.getContext('2d').getImageData(0, 0, 32, 32).data;
+        const icon = gearIcon(skin), rgba = icon.getContext('2d').getImageData(0, 0, icon.width, icon.height).data;
         if (rgba.some((n, i) => i % 4 === 3 && n !== 0 && n !== 255)) nonPixelAlpha.push(`${item.id}/icon`);
         // Inspect each connected equipment component against the posed anatomy.
         // Both layers are produced by the real renderer using identical joints.
         for (const pose of ['idle', 'attack', 'hit', 'death']) {
           const a = asset(`characters/${cls}${pose === 'idle' ? '' : '/' + pose}`);
-          const gear = gearAtlas(a, look, slot), body = gearAtlas(a, look, 'body');
+          const gear = gearAtlas(a, look, slot), bodyKey=cls+'/'+pose;
+          if(!bodyAtlases.has(bodyKey))bodyAtlases.set(bodyKey,gearAtlas(a,look,'body'));
+          const body=bodyAtlases.get(bodyKey);
           const gd = gear.getContext('2d').getImageData(0, 0, gear.width, gear.height).data;
           const bd = body.getContext('2d').getImageData(0, 0, body.width, body.height).data;
           for (const [frameIndex, f] of a.frames.entries()) {
             attachmentFrames++;
-            const visited = new Set(), alpha = (data, x, y) => data[((f.y + y) * gear.width + f.x + x) * 4 + 3];
-            for (let y = 0; y < a.height; y++) for (let x = 0; x < a.width; x++) {
-              if (!alpha(gd, x, y) || visited.has(y * a.width + x)) continue;
-              const queue = [[x, y]]; visited.add(y * a.width + x);
+            const fw=a.width*R,fh=a.height*R;
+            const visited = new Set(), alpha = (data, x, y) => data[((f.y*R + y) * gear.width + f.x*R + x) * 4 + 3];
+            for (let y = 0; y < fh; y++) for (let x = 0; x < fw; x++) {
+              if (!alpha(gd, x, y) || visited.has(y * fw + x)) continue;
+              const queue = [[x, y]]; visited.add(y * fw + x);
               let touches = false;
               for (let n = 0; n < queue.length; n++) {
                 const [px, py] = queue[n];
                 if (alpha(gd, px, py) !== 255) nonPixelAlpha.push(`${item.id}/${pose}/${frameIndex}`);
-                if (!px || !py || px === a.width - 1 || py === a.height - 1) clipping.push(`${item.id}/${pose}/${frameIndex}`);
-                for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-                  const nx = px + dx, ny = py + dy, key = ny * a.width + nx;
-                  if (nx < 0 || ny < 0 || nx >= a.width || ny >= a.height) continue;
+                if (!px || !py || px === fw - 1 || py === fh - 1) clipping.push(`${item.id}/${pose}/${frameIndex}`);
+                for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+                  const nx = px + dx, ny = py + dy, key = ny * fw + nx;
+                  if (nx < 0 || ny < 0 || nx >= fw || ny >= fh) continue;
                   if (alpha(bd, nx, ny)) touches = true;
                   if (alpha(gd, nx, ny) && !visited.has(key)) { visited.add(key); queue.push([nx, ny]); }
                 }
@@ -142,7 +147,8 @@ try {
   const identity = await page.evaluate(async looks => {
     const { gearAtlas } = await import('/src/art/gearArt.ts');
     const { asset } = await import('/src/art/manifest.ts');
-    const R = 1;
+    const { loadRefinedHero, REFINED_PIXEL_SCALE: R } = await import('/src/art/refinedPixelArt.ts');
+    await Promise.all(['monk', 'warrior', 'mage', 'ranger'].map(loadRefinedHero));
     document.body.replaceChildren();
     document.body.style.gridTemplateColumns = 'repeat(4, 1fr)';
     const result = [];
@@ -234,7 +240,7 @@ try {
     await app.waitForFunction(id => document.querySelector('.loadout-hero [data-appearance]')?.dataset.appearance.includes(id), baseId);
     await app.getByRole('navigation').getByRole('button', { name: 'Adventure', exact: true }).click();
     await app.waitForFunction(id => window.__emberRenderer.heroAppearance.slots.head?.id.endsWith(id), baseId);
-    await app.waitForFunction(() => window.__emberRenderer.actors.get('hero')?.tex.normal.source.resolution === 1);
+    await app.waitForFunction(() => window.__emberRenderer.actors.get('hero')?.tex.normal.source.resolution === 2);
     const after = await app.evaluate(() => {
       clearInterval(window.skinSampleTimer);
       return { look: window.__emberRenderer.heroAppearance, samples: window.skinSamples,

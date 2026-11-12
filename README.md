@@ -51,9 +51,10 @@ Run `node --import tsx tools/smoke/online-check.mjs` against a build made with `
 
 ## Visual regression checks
 
-The four heroes use pixel art in combat and portraits, with individually designed
-equipment attached to their body joints. See the [pixel character contract](docs/design/PIXEL_CHARACTERS.md)
-for named item designs, class cuts and animation details.
+The four heroes use detailed pixel artwork in combat and portraits, with separate
+illustrated idle/attack poses and 128 individually illustrated class items.
+See the [refined pixel character contract](docs/design/REFINED_PIXEL_CHARACTERS.md)
+for source artwork, reference credits, equipment attachment and rendering details.
 
 After building, run `node --import tsx tools/visual/mobile-review.mjs` for disposable-fixture screenshots at six phone/tablet sizes, including short landscape, large balances, safe areas, equipment sheets and boss combat. Run `node tools/visual/combat-layout-check.mjs` to check all four classes and poses against the actual canvas clipping bounds in three backgrounds. Both tools start a local preview, accept `CHROMIUM_EXECUTABLE_PATH`, and keep evidence under ignored `tools/smoke/out`.
 
@@ -63,7 +64,7 @@ Run `node --import tsx tools/visual/character-animation-check.mjs` to verify emp
 
 Run `node --import tsx tools/visual/gear-skins-check.mjs` to check equipped appearances:
 all four classes from empty slots through Legendary gear and mixed outfits, distinct
-shapes/details for every named item and class even with colors neutralized, equipment
+shapes/details for every named item and class in grayscale, equipment
 attachment in every pose, integer pixels, matching combat/portrait layers, pose clipping, queued equipment
 through the real Gear UI, and appearances after reload. It also checks four distinct
 unarmored silhouettes and produces a class body/attack comparison sheet. It starts a local Vite server

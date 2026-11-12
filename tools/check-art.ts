@@ -6,11 +6,21 @@ import { validateArt, ART_BUDGET } from "../apps/mobile/src/art/types";
 import { PAINTED_SHEETS } from "../apps/mobile/src/art/paintedSources";
 import { CONTENT } from "@emberbound/game-content";
 import { gearSkin, isHeroClass } from "../apps/mobile/src/art/gearSkins";
+import { REFINED_CLASSES, REFINED_LINEUP, refinedGearSource, refinedGearFamilies } from "../apps/mobile/src/art/refinedPixelSources";
 
 const errors = validateArt(productionAssets);
 const classItems = CONTENT.items.filter(item => item.classId && isHeroClass(item.classId));
+for (const source of [REFINED_LINEUP, ...REFINED_CLASSES.map(refinedGearSource)]) {
+  try {
+    const png = readFileSync(resolve("apps/mobile/public", source.file));
+    if (png.subarray(0,8).toString("hex") !== "89504e470d0a1a0a" || png[25] !== 6 || png.readUInt32BE(16) !== source.width || png.readUInt32BE(20) !== source.height) throw new Error("Invalid refined pixel PNG contract");
+  } catch(error) { errors.push(`${source.file}: ${String(error)}`); }
+}
 for (const item of classItems) {
-  try { if (item.classId && isHeroClass(item.classId)) gearSkin(item, item.classId); }
+  try { if (item.classId && isHeroClass(item.classId)) {
+    const skin=gearSkin(item,item.classId);
+    if(!refinedGearFamilies(item.classId).includes(skin.family))throw new Error("Missing illustrated equipment cell");
+  } }
   catch (error) { errors.push(`${item.id}: ${String(error)}`); }
 }
 const pack = JSON.parse(readFileSync("docs/art/darkwood-production-v1/MANIFEST.json", "utf8")) as { approved_production_files: { path: string; sha256: string; bytes: number }[] };

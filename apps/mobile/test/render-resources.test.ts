@@ -5,6 +5,8 @@ import { CombatRenderer } from "../src/render/CombatRenderer";
 import type { ArtAsset } from "../src/art/types";
 import { actorPack } from "../src/art/darkwood";
 import { ProductionMotion } from "../src/render/productionMotion";
+import * as refinedArt from "../src/art/refinedPixelArt";
+import * as equippedArt from "../src/art/gearArt";
 
 vi.mock("pixi.js/unsafe-eval", () => ({}));
 vi.mock("pixi.js", () => ({
@@ -77,6 +79,16 @@ describe("weapon-driven attack playback", () => {
 });
 
 describe("animation texture ownership", () => {
+  it("does not re-enter scene construction when detailed character art is already loaded", () => {
+    vi.spyOn(refinedArt, "refinedReady").mockReturnValue(true);
+    vi.spyOn(equippedArt, "gearAtlas").mockReturnValue({ width: 512, height: 128 } as HTMLCanvasElement);
+    const changed = vi.fn(), uploads = vi.spyOn(Texture, "from"), bank = new TextureBank(changed);
+    const actor = bank.optional("characters/monk");
+    expect(actor?.frames).toHaveLength(4);
+    expect(changed).not.toHaveBeenCalled();
+    expect(uploads).toHaveBeenCalledWith(expect.objectContaining({ resolution: 2, scaleMode: "nearest" }));
+    bank.dispose();
+  });
   function fixture(darkwood: boolean): ArtAsset {
     return {
       id: "characters/monk", file: darkwood ? "art/darkwood/monk.png" : "art/characters/monk.png", approved: true,

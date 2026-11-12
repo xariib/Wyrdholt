@@ -1,5 +1,8 @@
 # Pixel characters and equipment
 
+The original code-drawn style below is retained as the loading/error fallback.
+The active artwork is described in [refined pixel characters](REFINED_PIXEL_CHARACTERS.md).
+
 Characters, portraits and inventory icons share the same pixel artwork. Each of the
 128 live class items has a named material and design, with a class-specific cut.
 Rarity, item rolls, upgrade level and instance IDs do not choose the artwork.

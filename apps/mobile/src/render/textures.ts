@@ -5,6 +5,7 @@ import { ArtScope, frameCanvas } from "../art/load";
 import { ART_BUDGET, type ArtAsset, type ArtId } from "../art/types";
 import { gearAtlas } from "../art/gearArt";
 import { bareAppearance, isHeroClass, type HeroAppearance } from "../art/gearSkins";
+import { loadRefinedHero, refinedReady, refinedDecodedBytes, refinedLayerBytes, REFINED_PIXEL_SCALE } from "../art/refinedPixelArt";
 
 export interface SpriteTextures {
   normal: Texture; flash: Texture;
@@ -25,9 +26,9 @@ export class TextureBank {
   private frameBytes = 0;
   constructor(private readonly changed: () => void, private readonly resolveAsset: (id: ArtId) => ArtAsset | undefined = asset,
     private readonly appearance?: HeroAppearance) {}
-  get decodedBytes(): number { return this.scope.decodedBytes + this.frameBytes; }
-  private texture(canvas: HTMLCanvasElement): Texture {
-    const t = Texture.from({ resource: canvas, scaleMode: "nearest" });
+  get decodedBytes(): number { return this.scope.decodedBytes + this.frameBytes + (this.disposed ? 0 : refinedDecodedBytes() + refinedLayerBytes()); }
+  private texture(canvas: HTMLCanvasElement, resolution = 1): Texture {
+    const t = Texture.from({ resource: canvas, scaleMode: "nearest", resolution });
     this.owned.add(t);
     this.frameBytes += canvas.width * canvas.height * 4;
     return t;
@@ -52,18 +53,24 @@ export class TextureBank {
     this.pending.add(id);
     const name = id.split("/")[1]!;
     if (id.startsWith("characters/") && isHeroClass(name) && this.resolveAsset === asset) {
-      const bytes = a.atlasWidth * a.atlasHeight * 4;
-      if (this.decodedBytes + bytes > ART_BUDGET.maxDecodedBytes) return;
-      const look = this.appearance?.classId === name ? this.appearance : bareAppearance(name);
-      const atlas = this.texture(gearAtlas(a, look));
-      const frames = a.frames.map(f => {
-        const normal = new Texture({ source: atlas.source, frame: new Rectangle(f.x, f.y, a.width, a.height) });
-        this.views.add(normal);
-        return { normal, flash: normal };
-      });
-      const first = frames[a.clips.idle.frames[0]!]!;
-      this.textures.set(id, { ...first, width: a.width, height: a.height, anchorX: a.anchor.x, anchorY: a.anchor.y,
-        scale: 1, facing: a.facing, frames, asset: a });
+      const publish = (notify = true) => {
+        if (this.disposed) return;
+        const resolution = refinedReady(name) ? REFINED_PIXEL_SCALE : 1;
+        const bytes = a.atlasWidth * a.atlasHeight * 4 * resolution * resolution;
+        if (this.decodedBytes + bytes > ART_BUDGET.maxDecodedBytes) return;
+        const look = this.appearance?.classId === name ? this.appearance : bareAppearance(name);
+        const atlas = this.texture(gearAtlas(a, look), resolution);
+        const frames = a.frames.map(f => {
+          const normal = new Texture({ source: atlas.source, frame: new Rectangle(f.x, f.y, a.width, a.height) });
+          this.views.add(normal); return { normal, flash: normal };
+        });
+        const first = frames[a.clips.idle.frames[0]!]!;
+        this.textures.set(id, { ...first, width: a.width, height: a.height, anchorX: a.anchor.x, anchorY: a.anchor.y,
+          scale: 1, facing: a.facing, frames, asset: a });
+        if (notify) this.changed();
+      };
+      if (refinedReady(name)) publish(false);
+      else void loadRefinedHero(name).then(() => publish()).catch(() => publish());
       return;
     }
     // Darkwood supplies its own flash poses. Read frames directly from the atlas:

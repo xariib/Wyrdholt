@@ -8,12 +8,23 @@ import type { Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { starterAppearance, equippedAppearance, gearSkin, isHeroClass, type HeroClass } from "../../art/gearSkins";
 import { gearIcon, portraitAtlas } from "../../art/gearArt";
+import { loadRefinedHero, refinedReady, REFINED_PIXEL_SCALE } from "../../art/refinedPixelArt";
 import { ICONS } from "../../art/placeholderIcons";
 import { asset, actorId } from "../../art/manifest";
 import { ArtScope, frameCanvas } from "../../art/load";
 import type { ArtId } from "../../art/types";
 
 const cache = new Map<string, string>();
+
+function useRefinedHero(name: HeroClass): boolean {
+  const [ready, setReady] = useState(() => refinedReady(name));
+  useEffect(() => {
+    let active = true; setReady(refinedReady(name));
+    void loadRefinedHero(name).then(() => { if (active) setReady(true); }).catch(() => {});
+    return () => { active = false; };
+  }, [name]);
+  return ready && refinedReady(name);
+}
 
 function iconUrl(name: string): string {
   let url = cache.get(name);
@@ -56,7 +67,8 @@ export function ItemIcon({ icon, item, rarityColor, size = 44 }: { icon: string;
 }
 
 function EquippedItemIcon({ item, rarityColor, size }: { item: ItemDef; rarityColor: string; size: number }) {
-  const src = useMemo(() => gearIcon(gearSkin(item, item.classId as HeroClass)).toDataURL(), [item]);
+  const ready = useRefinedHero(item.classId as HeroClass);
+  const src = useMemo(() => gearIcon(gearSkin(item, item.classId as HeroClass)).toDataURL(), [item, ready]);
   return <span className="item-icon" data-gear-skin={item.id} style={{ borderColor: rarityColor, width: size, height: size }}>
     <img className="pixelated" src={src} alt="" draggable={false} style={{ width: size * 0.82, height: size * 0.82 }} />
   </span>;
@@ -78,13 +90,14 @@ export function SpriteImage({ name, className, portrait = false, profile }: { na
 }
 
 function EquippedSprite({ name, className, portrait, profile }: { name: HeroClass; className?: string; portrait: boolean; profile?: Profile }) {
+  const ready = useRefinedHero(name);
   const look = profile ? equippedAppearance(profile, session.content, profile.equipment, name) : starterAppearance(name, session.content);
   const images = useMemo(() => {
     const atlas = portraitAtlas(name, look);
-    const first = document.createElement("canvas"); first.width = actorPack[name]!.animations.idle.frame[0]!; first.height = atlas.height;
+    const first = document.createElement("canvas"); first.width = actorPack[name]!.animations.idle.frame[0]! * (ready ? REFINED_PIXEL_SCALE : 1); first.height = atlas.height;
     first.getContext("2d")!.drawImage(atlas, 0, 0);
     return { atlas: atlas.toDataURL(), first: first.toDataURL() };
-  }, [name, look.key]);
+  }, [name, look.key, ready]);
   if (portrait) return <AnimatedPortrait key={name} name={name} fallback={images.first} source={images.atlas} appearanceKey={look.key} />;
   return <img className={`pixelated ${className ?? ""}`} data-appearance={look.key} src={images.first} alt="" draggable={false} />;
 }
