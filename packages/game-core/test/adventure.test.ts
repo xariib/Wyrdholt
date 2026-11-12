@@ -9,7 +9,7 @@ import {
   type AdventureEvent,
   type Profile,
 } from "@emberbound/game-core";
-import { clone, content, newProfile, run, setLevel, setMastery } from "./helpers";
+import { clone, content, newProfile, run, setLevel, setMastery, withLegacyStarterGear } from "./helpers";
 
 function advanceUntil(p: Profile, predicate: (events: AdventureEvent[]) => boolean, maxMs = 3_600_000, step = 250): AdventureEvent[] {
   const events: AdventureEvent[] = [];
@@ -23,7 +23,7 @@ function advanceUntil(p: Profile, predicate: (events: AdventureEvent[]) => boole
 
 describe("stages and Push", () => {
   it("one stage is one encounter and stages advance automatically", () => {
-    const p = newProfile(10);
+    const p = withLegacyStarterGear(newProfile(10));
     run(p, { type: "startPush", zoneId: "greenfields" });
     const events = advanceUntil(p, (ev) => ev.filter((e) => e.type === "fightSettled").length >= 3);
     const settled = events.filter((e): e is Extract<AdventureEvent, { type: "fightSettled" }> => e.type === "fightSettled");
@@ -110,7 +110,7 @@ describe("stages and Push", () => {
   });
 
   it("switching activity keeps the Push checkpoint with the same seed and HP", () => {
-    const p = newProfile(16);
+    const p = withLegacyStarterGear(newProfile(16));
     run(p, { type: "startPush", zoneId: "greenfields" });
     advanceUntil(p, (ev) => ev.filter((e) => e.type === "fightSettled").length >= 2);
     const before = clone(p.adventure.run!);
@@ -183,7 +183,7 @@ describe("build snapshot rule", () => {
   });
 
   it("caps carried HP when a new build lowers max HP, and never refills it", () => {
-    const p = newProfile(22, "mage", "monk");
+    const p = withLegacyStarterGear(newProfile(22, "mage", "monk"));
     run(p, { type: "devGrant", baseIds: ["ironbark_mantle_mage"] });
     const mantle = p.inventory.instances[p.inventory.instances.length - 1]!;
     run(p, { type: "equip", slot: "chest", instanceId: mantle.id });

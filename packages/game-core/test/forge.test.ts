@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { CONTENT, FORGE_V1 } from "@emberbound/game-content";
 import { ContentIndex, createInstance, fuse, forgeCeiling, eligibleForgeIds, cloneProfile, serializeSave, parseSave, MemorySaveFs, writeSaveSafely, loadSaveSafely, advanceAdventure, applyCommand } from "../src/index";
 import type { ForgeInput } from "@emberbound/shared-types";
-import { newProfile, content } from "./helpers";
+import { newProfile, content, withLegacyStarterGear } from "./helpers";
 function setup(rarity = "common", slot = "weapon") {
   const p = newProfile(123); p.gold = 50000; p.forge = { version: 1, nextTransactionId: 1, devUnlocked: true };
   const base = CONTENT.items.find(i => i.rarity === rarity && i.slot === slot)!;
@@ -62,5 +62,5 @@ describe("Forge V1 authoritative transaction", () => {
     expect(p.gold).toBe(completed ? s.p.gold : before.gold); expect(p.inventory.instances.map(i => i.id)).toEqual((completed ? s.p : before).inventory.instances.map(i => i.id));
     fuse(p, content, FORGE_V1, s.input, true); expect(p.inventory.instances.map(i => i.id)).toEqual(s.p.inventory.instances.map(i => i.id)); expect(p.gold).toBe(s.p.gold);
   });
-  it("DEV grants use real IDs and reset preserves owned/equipped/queued and outputs", () => { const p = newProfile(); const options = { contentTimeMs: 0, forgeConfig: FORGE_V1, allowDevForge: true }; applyCommand(p, content, { type: "devForge", action: "grant", slot: "weapon", rarity: "common" }, options); const ids = p.forge!.devItemIds!; p.pending = { equipment: { weapon: ids[0]! } }; const owned = p.equipment.weapon; applyCommand(p, content, { type: "devForge", action: "reset" }, options); expect(p.inventory.instances.some(i => i.id === owned)).toBe(true); expect(p.inventory.instances.some(i => i.id === ids[0])).toBe(true); expect(p.inventory.nextInstanceId).toBeGreaterThan(Math.max(...ids)); });
+  it("DEV grants use real IDs and reset preserves owned/equipped/queued and outputs", () => { const p = withLegacyStarterGear(newProfile()); const options = { contentTimeMs: 0, forgeConfig: FORGE_V1, allowDevForge: true }; applyCommand(p, content, { type: "devForge", action: "grant", slot: "weapon", rarity: "common" }, options); const ids = p.forge!.devItemIds!; p.pending = { equipment: { weapon: ids[0]! } }; const owned = p.equipment.weapon; applyCommand(p, content, { type: "devForge", action: "reset" }, options); expect(p.inventory.instances.some(i => i.id === owned)).toBe(true); expect(p.inventory.instances.some(i => i.id === ids[0])).toBe(true); expect(p.inventory.nextInstanceId).toBeGreaterThan(Math.max(...ids)); });
 });

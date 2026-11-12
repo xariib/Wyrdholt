@@ -71,7 +71,8 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
                   setOpenSlot(v.slot);
                 }}
               >
-                <ItemIcon item={item} icon={item?.icon ?? "blade"} rarityColor={item ? rarityColor(content, item.rarity) : "#28324a"} />
+                {item ? <ItemIcon item={item} icon={item.icon} rarityColor={rarityColor(content, item.rarity)} />
+                  : <span className="item-icon item-icon-empty" aria-hidden="true">+</span>}
                 <span style={{ minWidth: 0 }}>
                   <div className="slot-label">{SLOT_LABELS[v.slot]}</div>
                   <div className="item-name">{item?.name ?? "Empty"}</div>

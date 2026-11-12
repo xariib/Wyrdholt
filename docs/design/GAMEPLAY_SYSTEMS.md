@@ -49,8 +49,8 @@ animation and pause when hidden or when reduced motion is requested.
 
 Character appearance follows the six equipped copies in combat, the header, and
 Character/Gear portraits. Each named class item supplies its own visual layer and
-matching inventory icon. Starter cloth, leather and simple weapons replace the
-fixed armored costumes; empty slots show plain clothing, bare hands/feet, or an
+matching inventory icon. Every new character starts with an empty inventory and
+all six equipment slots empty. Empty slots show plain clothing, bare hands/feet, or an
 uncovered head. Mixed rarities remain visibly mixed. Queued equipment appears only
 after it becomes equipped, and current combat uses the fight's pinned build.
 These skins are derived presentation data, with no save fields or stat changes.

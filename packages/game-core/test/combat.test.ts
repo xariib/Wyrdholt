@@ -143,7 +143,9 @@ describe("combat engine", () => {
   });
 
   it("times out at the configured cap", () => {
-    const { summary } = run(input({ stage: 9, level: 1, rules: ["test_enemy_tough", "test_enemy_soft"] }));
+    const fixture = input({ stage: 9, level: 1, rules: ["test_enemy_tough", "test_enemy_soft"] });
+    fixture.hero.maxHp100 = 100_000; // Controlled survival: this test exercises the time cap.
+    const { summary } = run(fixture);
     expect(summary.outcome).toBe("timeout");
     expect(summary.durationMs).toBe(content.snapshot.config.maxFightMs);
   });

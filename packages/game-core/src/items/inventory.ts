@@ -104,7 +104,13 @@ export function upgradeClassGear(profile: Profile, content: ContentIndex): boole
     const replacement = item.classVariants?.[classId];
     if (replacement) { instance.baseId = replacement; migrated = true; }
   }
-  const changed = reconcileEquipment(profile, content, true) || migrated;
+  // A content update alone must not equip deliberately empty slots. Only the
+  // legacy shared-item/class conversion needs equipment reconciliation.
+  const incompatible = SLOT_ORDER.some(slot => {
+    const instance = findInstance(profile, profile.equipment[slot] ?? 0);
+    return instance && !canUseItem(content.item(instance.baseId), profile.character.activeClassId);
+  });
+  const changed = (migrated || incompatible ? reconcileEquipment(profile, content, true) : false) || migrated;
   discardIncompatiblePendingGear(profile, content, profile.pending?.activeClassId ?? profile.character.activeClassId);
   profile.contentVersion = content.snapshot.contentVersion;
   return changed;

@@ -206,9 +206,10 @@ export class ContentIndex {
       }
     }
     if (this.snapshot.starterWeapons) {
-      for (const cls of this.classes.values()) {
-        if (!cls.implemented || cls.tier !== 1) continue;
-        const starter = this.item(this.snapshot.starterWeapons[cls.id] ?? "");
+      for (const [classId, itemId] of Object.entries(this.snapshot.starterWeapons)) {
+        const cls = this.classDef(classId);
+        if (!cls.implemented || cls.tier !== 1) throw new Error(`Invalid starter class ${classId}`);
+        const starter = this.item(itemId);
         if (starter.slot !== "weapon" || starter.classId !== cls.id) throw new Error(`Invalid starter weapon for ${cls.id}`);
       }
     }

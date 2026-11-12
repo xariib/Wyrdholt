@@ -6,13 +6,15 @@ import {readFileSync,writeFileSync,mkdirSync,statSync} from 'node:fs';
 import {resolve,join,extname,sep} from 'node:path';
 import {chromium,expect} from 'playwright/test';
 import {CONTENT,FORGE_V1} from '@emberbound/game-content';
+import {equipCommonGear} from '../fixtures/equipment.mjs';
 import {ContentIndex,createInstance,createProfile,rollLoot,applyCommand,advanceAdventure,parseSave,serializeSave,eligibleForgeIds,fuse,previewSalvage,salvageItem,previewBulkSalvage,salvageItems,currentBuild,resolveHeroStats} from '@emberbound/game-core';
 const content=new ContentIndex(CONTENT),dist=resolve(process.argv[2]??'apps/mobile/dist'),out=resolve(process.argv[3]??'tools/smoke/out/c3-flow');mkdirSync(out,{recursive:true});
 const report={pass:false,scope:'Controlled local Chromium/IDB flow; not natural pacing/native/human acceptance',cases:[],errors:[]};
 // Controlled past clear/Gold, configured loot RNG. No DEV commands; this is not pacing evidence.
 const p=createProfile(content,{name:'C3 QA',activeClassId:'mage',alternateClassId:'monk',masterSeed:1042,nowWallMs:Date.now()});
+equipCommonGear(p,content);
 p.gold=500;p.adventure.zones.greenfields.cleared=true;
-const starter=content.item(CONTENT.starterWeapons[p.character.activeClassId]);
+const starter=content.item(p.inventory.instances.find(i=>i.id===p.equipment.weapon).baseId);
 const effectBase=content.item('crown_of_thorns').classVariants[p.character.activeClassId];
 let seeds=0;
 const copies=base=>p.inventory.instances.filter(i=>i.baseId===base&&i.isNew);

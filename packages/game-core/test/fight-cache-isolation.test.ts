@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { FightCache, heroStatsFor, prepareFight, startRun } from "@emberbound/game-core";
-import { content, newProfile } from "./helpers";
+import { content, newProfile, withLegacyStarterGear } from "./helpers";
 
 describe("replacing a profile invalidates combat caches", () => {
   it.each([true, false])("cannot transfer cached gear strength between backups (strong first=%s)", strongFirst => {
-    const first = newProfile(17, "warrior", "mage"), second = newProfile(17, "warrior", "mage");
+    const first = withLegacyStarterGear(newProfile(17, "warrior", "mage")), second = withLegacyStarterGear(newProfile(17, "warrior", "mage"));
     const strong = strongFirst ? first : second;
     strong.inventory.instances.find(i => i.id === strong.equipment.weapon)!.baseId = "kingsfall";
     const cache = new FightCache();

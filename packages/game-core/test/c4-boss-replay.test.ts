@@ -9,13 +9,13 @@ import {
   fightSeed,
   replayFight,
 } from "@emberbound/game-core";
-import { clone, content, newProfile, run } from "./helpers";
+import { clone, content, newProfile, run, withLegacyStarterGear } from "./helpers";
 
 const attempt = { bossId: "ashen_king", tier: 1, attemptIndex: 1 };
 
 describe("C4 boss replay", () => {
   it("snapshots the build and replays the same full-HP fight after the profile changes", () => {
-    const profile = newProfile(40, "mage", "monk");
+    const profile = withLegacyStarterGear(newProfile(40, "mage", "monk"));
     run(profile, { type: "startPush", zoneId: "greenfields" });
     profile.adventure.run!.hp100 = 1;
     const before = clone(profile);

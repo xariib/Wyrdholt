@@ -6,7 +6,7 @@ import {
   parseSave, serializeSave, sha256Hex, simulateOffline, writeSaveSafely,
   type Profile, type SaveEnvelope,
 } from "@emberbound/game-core";
-import { clone, content, newProfile, run, setLevel, setMastery } from "./helpers";
+import { clone, content, newProfile, run, setLevel, setMastery, withLegacyStarterGear } from "./helpers";
 
 // Approved SAVE-TRIAGE-02 contract, independent of the private parser helpers.
 // Unknown IDs and semantic relationships between fields are deliberately outside it.
@@ -397,7 +397,7 @@ describe("SAVE-TRIAGE-02 valid compatibility and boundaries", () => {
     const snapshot = clone(content.snapshot);
     snapshot.zones.find(z => z.id === "greenfields")!.ruleIds = ["test_enemy_tough", "test_enemy_soft"];
     const testContent = new ContentIndex(snapshot);
-    const p = active(); p.adventure.run!.stageIndex = 9;
+    const p = withLegacyStarterGear(active()); p.adventure.run!.stageIndex = 9;
     advanceAdventure(p, testContent, 600_000, { offline: false, contentTimeMs: 0 });
     expect(p.adventure.lastResult?.kind).toBe("timeout");
     assertRoundTrip(p);

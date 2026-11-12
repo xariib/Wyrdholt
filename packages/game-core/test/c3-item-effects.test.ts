@@ -10,12 +10,12 @@ import {
 import type { ContentSnapshot } from "@emberbound/shared-types";
 import C2_CONTENT from "./fixtures/c2-content.json";
 import C2_GOLDEN from "./fixtures/c2-golden.json";
-import { content, newProfile, setLevel, setMastery } from "./helpers";
+import { content, newProfile, setLevel, setMastery, withLegacyStarterGear } from "./helpers";
 
 const added = CONTENT.items.filter(item => item.effect && C2_CONTENT.items.some(old => old.id === item.id && !old.effect));
 const classes = ["monk", "mage", "warrior", "ranger"];
 function equipped(cls: string, ids: string[]) {
-  const p = newProfile(6006, cls, cls === "monk" ? "mage" : "monk");
+  const p = withLegacyStarterGear(newProfile(6006, cls, cls === "monk" ? "mage" : "monk"));
   setLevel(p, 18); setMastery(p, cls, 20);
   for (const id of ids) { const i = createInstance(p, id, { isNew: true }); p.equipment[content.item(id).slot] = i.id; }
   return p;
@@ -37,7 +37,8 @@ describe("C3 item effects", () => {
     expect(CONTENT.items.filter(i => ["epic", "legendary"].includes(i.rarity)).every(i => i.effect?.mechanics.length)).toBe(true);
     const { contentVersion: _old, items: oldItems, ...oldRest } = C2_CONTENT;
     const { contentVersion: _new, items: newItems, soloBosses: _c4, longTerm: _c5, social: _coop, starterWeapons, ...newRest } = CONTENT;
-    expect([starterWeapons?.warrior, ...newRest.starterItems]).toEqual(oldRest.starterItems);
+    expect(starterWeapons).toEqual({});
+    expect(newRest.starterItems).toEqual([]);
     expect({ ...newRest, starterItems: oldRest.starterItems }).toEqual(oldRest);
     for (const old of oldItems) {
       const { classId: _class, classVariants: _variants, ...item } = newItems.find(i => i.id === old.id)!;

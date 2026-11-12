@@ -11,8 +11,9 @@ const fixture = (classId = "warrior") => createProfile(content, { name: "Skins",
 
 describe("equipment-driven appearances", () => {
   it.each(HERO_CLASSES)("uses fists for an unarmed %s until its queued weapon is equipped", cls => {
-    const p = fixture(cls), weapon = p.equipment.weapon!;
-    delete p.equipment.weapon;
+    const p = fixture(cls);
+    const weapon = createInstance(p, CONTENT.items.find(i => i.classId === cls && i.slot === "weapon" && i.rarity === "common")!.id, { isNew: true }).id;
+    p.equipment.gloves = createInstance(p, `worn_grips_${cls}`, { isNew: true }).id;
     const pinned = { ...p.equipment };
     expect(p.equipment.gloves).toBeDefined();
     expect(heroAttackName(equippedAppearance(p, content))).toBe("unarmed");
@@ -32,12 +33,14 @@ describe("equipment-driven appearances", () => {
     expect(unarmedApproach(100, 3, 400, 120)).toBe(0);
     expect(unarmedApproach(12, 1, 120, 120)).toBe(0);
   });
-  it.each(HERO_CLASSES)("starts %s in simple, class-specific gear and leaves saves untouched", cls => {
+  it.each(HERO_CLASSES)("starts %s with no gear and leaves saves untouched", cls => {
     const p = fixture(cls), before = serializeSave(p, 0);
     const look = equippedAppearance(p, content);
     expect(starterAppearance(cls, content)).toEqual(look);
-    expect(Object.keys(look.slots)).toEqual([...GEAR_SLOTS]);
-    for (const s of Object.values(look.slots)) expect(s).toMatchObject({ classId: cls, tier: 0 });
+    expect(look.slots).toEqual({});
+    expect(p.equipment).toEqual({});
+    expect(p.inventory.instances).toEqual([]);
+    expect(heroAttackName(look)).toBe("unarmed");
     expect(serializeSave(p, 0)).toBe(before);
   });
   it("ignores stronger owned and queued gear, then changes exactly the equipped slot", () => {
@@ -58,7 +61,9 @@ describe("equipment-driven appearances", () => {
     expect(equippedAppearance(p, content, p.equipment, "mage").slots).toEqual({});
   });
   it("gives duplicate copies the same skin and every named class piece a distinct identity", () => {
-    const p = fixture(), before = equippedAppearance(p, content);
+    const p = fixture();
+    p.equipment.weapon = createInstance(p, "wayfarer_blade", { isNew: true }).id;
+    const before = equippedAppearance(p, content);
     const copy = createInstance(p, "wayfarer_blade", { isNew: true }); p.equipment.weapon = copy.id;
     expect(equippedAppearance(p, content)).toEqual(before);
     const skins = CONTENT.items.filter(i => HERO_CLASSES.includes(i.classId as typeof HERO_CLASSES[number]))

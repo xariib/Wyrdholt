@@ -10,10 +10,10 @@ import {
   writeSaveSafely,
   type SaveEnvelope,
 } from "@emberbound/game-core";
-import { newProfile } from "./helpers";
+import { newProfile, withLegacyStarterGear } from "./helpers";
 
 function fixture(full = false) {
-  const profile = newProfile(8201);
+  const profile = withLegacyStarterGear(newProfile(8201));
   profile.gold = 777;
   profile.pending = { activeClassId: "mage", equipment: { weapon: profile.equipment.weapon!, ring: null } };
   Object.assign(profile, { futureState: { charge: 4 } });

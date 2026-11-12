@@ -2,7 +2,7 @@ import type { ContentConfig, ContentSnapshot, RarityDef, RuleDef } from "@emberb
 import { SOLO_BOSSES } from "./bosses";
 import { CLASSES, mageTrack, monkTrack, rangerTrack, warriorTrack } from "./classes";
 import { ENEMIES } from "./enemies";
-import { ITEMS, STARTER_ITEMS, STARTER_WEAPONS } from "./items";
+import { ITEMS } from "./items";
 import { LONG_TERM } from "./longTerm";
 import { SOCIAL } from "./social";
 import { LEVEL_XP_STEPS } from "./progression";
@@ -24,7 +24,7 @@ export { DEV_SAMPLE_ITEMS } from "./items";
  * - Pacing (XP/mastery tables, budgets, drop chances): C1 design, docs/design/C1_ADVENTURE.md
  */
 
-export const CONTENT_VERSION = "emberbound-content/0.7.0-all-class-gear";
+export const CONTENT_VERSION = "emberbound-content/0.8.0-empty-start";
 
 const config: ContentConfig = {
   recoveryBp: 1_800, // 18% of max HP after non-final victories (ADVENTURE_MILESTONE)
@@ -83,8 +83,10 @@ export const CONTENT: ContentSnapshot = {
   zones: ZONES,
   lootTables: LOOT_TABLES,
   rules,
-  starterItems: STARTER_ITEMS,
-  starterWeapons: STARTER_WEAPONS,
+  // Every class earns its equipment through play. Keep the explicit class-gear
+  // map for compatibility with older catalogs, but grant no starting items.
+  starterItems: [],
+  starterWeapons: {},
   soloBosses: SOLO_BOSSES,
   longTerm: LONG_TERM,
   social: SOCIAL,

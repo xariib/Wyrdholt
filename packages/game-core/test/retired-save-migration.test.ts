@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_SAVE_PATHS, MemorySaveFs, loadSaveSafely, parseSave, serializeSave, sha256Hex, writeSaveSafely, type Profile } from "@emberbound/game-core";
-import { newProfile } from "./helpers";
+import { newProfile, withLegacyStarterGear } from "./helpers";
 
 function oldSave(profile: Profile, change: (p: any) => void = () => {}, savedAt = 123) {
   const envelope = JSON.parse(serializeSave(profile, savedAt));
@@ -16,7 +16,7 @@ function oldSave(profile: Profile, change: (p: any) => void = () => {}, savedAt 
 
 describe("retired Android 0.5.0 save compatibility", () => {
   it.each([1, 2, 3, 4, 5])("preserves all surviving progress and rewards for schema %i", schema => {
-    const p = newProfile(1042);
+    const p = withLegacyStarterGear(newProfile(1042));
     p.schema = schema; p.gold = 9876;
     p.pending = { activeClassId: "mage", equipment: { ring: null } };
     const ladder = { version: 1 as const, highestClearedTier: 1, attemptCount: 1, active: null,

@@ -8,11 +8,13 @@ import { chromium } from 'playwright';
 import { CONTENT } from '@emberbound/game-content';
 import { ContentIndex, FightCache, createProfile, heroStatsFor, prepareFight, serializeSave, startRun } from '@emberbound/game-core';
 import { equippedAppearance } from '../../apps/mobile/src/art/gearSkins.ts';
+import { equipCommonGear } from '../fixtures/equipment.mjs';
 
 const out = resolve('tools/smoke/out/hunt-regressions'); mkdirSync(out, { recursive: true });
 const content = new ContentIndex(CONTENT), report = { restores: [], errors: [] };
 const fixture = name => createProfile(content, { name, activeClassId: 'warrior', alternateClassId: 'mage', masterSeed: 17, nowWallMs: Date.now() });
 const strong = fixture('Strong'), weak = fixture('Weak');
+equipCommonGear(strong, content); equipCommonGear(weak, content);
 strong.inventory.instances.find(i => i.id === strong.equipment.weapon).baseId = 'kingsfall';
 strong.inventory.instances.find(i => i.id === strong.equipment.chest).baseId = 'last_light_vest_warrior';
 const server = await preview({ root: resolve('apps/mobile'), configFile: false, preview: { host: '127.0.0.1', port: 0 } });

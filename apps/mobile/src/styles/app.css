@@ -559,6 +559,14 @@ h3 {
   width: 30px;
   height: 30px;
 }
+
+.item-icon-empty {
+  width: 44px;
+  height: 44px;
+  border-style: dashed;
+  color: var(--muted);
+  font-size: 22px;
+}
 .badge-dot {
   position: absolute;
   top: 6px;

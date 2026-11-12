@@ -3,6 +3,7 @@ import {
   ContentIndex,
   applyCommand,
   createProfile,
+  createInstance,
   type Command,
   type Profile,
 } from "@emberbound/game-core";
@@ -17,6 +18,17 @@ export function newProfile(seed = 1, active = "monk", alternate = "mage"): Profi
     masterSeed: seed,
     nowWallMs: 0,
   });
+}
+
+/** Explicit historical loadout for ownership/geared-combat fixtures. New profiles stay empty. */
+export function withLegacyStarterGear(profile: Profile): Profile {
+  const classId = profile.character.activeClassId;
+  const weapons: Record<string, string> = { monk: "wayfarer_wraps", mage: "apprentice_staff", warrior: "wayfarer_blade", ranger: "trail_bow" };
+  for (const id of [weapons[classId]!, "linen_hood", "trail_tunic", "worn_grips", "road_boots", "copper_band"]) {
+    const template = content.item(id), item = content.item(template.classVariants?.[classId] ?? id);
+    profile.equipment[item.slot] = createInstance(profile, item.id, { isNew: false, provenance: { source: "starter" } }).id;
+  }
+  return profile;
 }
 
 export function run(profile: Profile, command: Command, offline = false) {

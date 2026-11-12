@@ -13,7 +13,7 @@ import {
   simulateOffline,
   writeSaveSafely,
 } from "@emberbound/game-core";
-import { clone, content, newProfile, run, setLevel } from "./helpers";
+import { clone, content, newProfile, run, setLevel, withLegacyStarterGear } from "./helpers";
 
 describe("item instances", () => {
   it("assigns unique, increasing ids that survive save/load", () => {
@@ -44,7 +44,7 @@ describe("item instances", () => {
   });
 
   it("keeps catalog definition and owned instance separate, with room for per-instance data", () => {
-    const p = newProfile(42);
+    const p = withLegacyStarterGear(newProfile(42));
     const inst = p.inventory.instances[0]!;
     inst.rolls = { attack: 2 };
     inst.upgrade = { level: 1 };
@@ -57,7 +57,7 @@ describe("item instances", () => {
   });
 
   it("reserves equipped and queued instances", () => {
-    const p = newProfile(43);
+    const p = withLegacyStarterGear(newProfile(43));
     const reserved = reservedInstanceIds(p);
     expect(reserved.size).toBe(6);
   });

@@ -8,7 +8,7 @@ import {
 } from "@emberbound/game-core";
 import { SLOT_ORDER, type ContentSnapshot } from "@emberbound/shared-types";
 import legacySnapshot from "./fixtures/c2-content.json";
-import { content, newProfile, run } from "./helpers";
+import { content, newProfile, run, withLegacyStarterGear } from "./helpers";
 
 const classes = [
   ["monk", "wayfarer_wraps", "wraps"],
@@ -78,10 +78,10 @@ describe("class gear", () => {
     expect(migrated.inventory).toEqual(inventory);
     expect(migrated.schema).toBe(before.schema);
   });
-  it.each(classes)("gives %s the correct starter and loot across all five weapon rarities", (classId, starter, icon) => {
+  it.each(classes)("starts %s empty and earns matching loot across all five weapon rarities", (classId, _starter, icon) => {
     const p = newProfile(17, classId, classId === "warrior" ? "mage" : "warrior");
-    expect(p.inventory.instances).toHaveLength(6);
-    expect(findInstance(p, p.equipment.weapon!)?.baseId).toBe(starter);
+    expect(p.inventory).toEqual({ nextInstanceId: 1, instances: [] });
+    expect(p.equipment).toEqual({});
 
     const seen = new Set<string>();
     for (const table of ["greenfields_farm", "greenfields_boss", "greenfields_cache", "darkwood_cache", "ashen_cache"]) {
@@ -99,8 +99,7 @@ describe("class gear", () => {
     }
     expect([...seen].sort()).toEqual([...FORGE_V1.rarities].sort());
     for (const slot of SLOT_ORDER) {
-      const equipped = findInstance(p, p.equipment[slot]!)!;
-      expect(content.item(equipped.baseId).classId).toBe(classId);
+      expect(p.equipment[slot]).toBeUndefined();
       for (const rarity of FORGE_V1.rarities) {
         expect(content.snapshot.items.some(i => i.classId === classId && i.slot === slot && i.rarity === rarity)).toBe(true);
       }
@@ -124,7 +123,7 @@ describe("class gear", () => {
   });
 
   it("validates equip against the next class and releases incompatible queued copies", () => {
-    const p = newProfile(17, "mage", "warrior");
+    const p = withLegacyStarterGear(newProfile(17, "mage", "warrior"));
     const sword = createInstance(p, "briar_edge", { isNew: true });
     const robe = createInstance(p, "spellweave_robe", { isNew: true });
     const staff = p.equipment.weapon;

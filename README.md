@@ -55,7 +55,7 @@ After building, run `node --import tsx tools/visual/mobile-review.mjs` for dispo
 
 Short browser viewports scroll instead of shrinking away the combat area. Android remains portrait. Browser screenshots do not replace physical-device visual acceptance.
 
-Run `node --import tsx tools/visual/character-animation-check.mjs` to verify attack movement, steady health labels, animated portraits and reduced-motion support for all four classes, plus class-specific starter gear in all six slots.
+Run `node --import tsx tools/visual/character-animation-check.mjs` to verify empty starting inventories and equipment, unarmed attack movement, steady health labels, animated portraits and reduced-motion support for all four classes.
 
 Run `node --import tsx tools/visual/gear-skins-check.mjs` to check equipped appearances:
 all four classes from empty slots through Legendary gear, distinct pixels for each

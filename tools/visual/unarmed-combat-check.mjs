@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { preview } from 'vite';
 import { chromium } from 'playwright';
 import { CONTENT } from '@emberbound/game-content';
-import { ContentIndex, createProfile, serializeSave, startRun } from '@emberbound/game-core';
+import { ContentIndex, createInstance, createProfile, serializeSave, startRun } from '@emberbound/game-core';
 
 const out = resolve('tools/smoke/out/unarmed-combat'); mkdirSync(out, { recursive: true });
 const content = new ContentIndex(CONTENT), report = [];
@@ -22,7 +22,10 @@ try {
     await page.locator('.class-option').first().waitFor();
     const p = createProfile(content, { name: 'Unarmed', activeClassId: cls,
       alternateClassId: cls === 'mage' ? 'monk' : 'mage', masterSeed: 71, nowWallMs: Date.now() });
-    delete p.equipment.weapon; // Owned starter stays in inventory, not in the character's hands.
+    assert.deepEqual(p.equipment, {}); assert.deepEqual(p.inventory.instances, []);
+    const weapon = CONTENT.items.find(i => i.classId === cls && i.slot === 'weapon' && i.rarity === 'common');
+    // Earned loot stays in inventory until the player explicitly equips it.
+    createInstance(p, weapon.id, { isNew: true, provenance: { source: 'test-reward' } });
     startRun(p, content, 'greenfields', 'trail', 0);
     await page.evaluate(async raw => {
       const db = await new Promise((ok, fail) => {

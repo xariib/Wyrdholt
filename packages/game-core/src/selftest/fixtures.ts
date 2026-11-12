@@ -289,6 +289,9 @@ export const SELF_TEST_CASES: readonly SelfTestCase[] = [
     description: "Monk M1 vs boss with test rules Iron Hide + Soft Hits (expected 120s timeout)",
     run(content) {
       const p = baseProfile(content, 808, "monk", "mage");
+      // Keep this a timeout case after empty starts; archived starter catalogs
+      // retain their original fixture and golden hashes.
+      if (Object.keys(p.equipment).length === 0) setLevel(content, p, 3);
       const record = fightRecordFor(content, p, "greenfields", 9, null, 9);
       record.activeRuleIds = ["test_enemy_tough", "test_enemy_soft"];
       return replayCase(content, record);
