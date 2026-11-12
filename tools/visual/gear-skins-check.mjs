@@ -7,7 +7,7 @@ import { createServer } from 'vite';
 import { chromium } from 'playwright';
 import { CONTENT } from '@emberbound/game-content';
 import { ContentIndex, createProfile, createInstance } from '@emberbound/game-core';
-import { equippedAppearance, bareAppearance, HERO_CLASSES, GEAR_SLOTS } from '../../apps/mobile/src/art/gearSkins.ts';
+import { equippedAppearance, bareAppearance, gearSkin, HERO_CLASSES, GEAR_SLOTS } from '../../apps/mobile/src/art/gearSkins.ts';
 
 const out = resolve('tools/smoke/out/gear-skins'); mkdirSync(out, { recursive: true });
 const content = new ContentIndex(CONTENT), looks = [];
@@ -20,6 +20,14 @@ for (const cls of HERO_CLASSES) {
       assert(item); p.equipment[slot] = createInstance(p, item.id, { isNew: false }).id;
     }
     looks.push({ label: `${cls} · ${rarity}`, look: equippedAppearance(p, content) });
+  }
+  for (let mix = 0; mix < 8; mix++) {
+    const look = bareAppearance(cls);
+    for (const [offset, slot] of GEAR_SLOTS.entries()) {
+      const choices = CONTENT.items.filter(i => i.classId === cls && i.slot === slot);
+      look.slots[slot] = gearSkin(choices[(mix + offset * 2) % choices.length], cls);
+    }
+    looks.push({ label: `${cls} · mixed ${mix + 1}`, look });
   }
 }
 const server = await createServer({ root: resolve('apps/mobile'), logLevel: 'error', server: { host: '127.0.0.1', port: 0 },
@@ -38,8 +46,7 @@ try {
     const { gearAtlas, portraitAtlas, gearIcon } = await import('/src/art/gearArt.ts');
     const { gearSkin } = await import('/src/art/gearSkins.ts');
     const { asset } = await import('/src/art/manifest.ts');
-    const { loadPaintedHero, HERO_RESOLUTION: R } = await import('/src/art/paintedHeroes.ts');
-    await Promise.all(['monk','warrior','mage','ranger'].map(loadPaintedHero));
+    const R = 1;
     document.body.style.cssText = 'margin:20px;background:#101d23;color:#dfddc7;font:14px system-ui;display:grid;grid-template-columns:repeat(6,1fr);gap:12px';
     const hash = canvas => {
       let h = 2166136261;
@@ -47,14 +54,15 @@ try {
       return h >>> 0;
     };
     const clipping = [], unchangedSlots = [], duplicates = [], iconDuplicates = [];
-    let frames = 0;
+    const detached = [], neutralDuplicates = [], classDuplicates = [], nonPixelAlpha = [];
+    let frames = 0, attachmentFrames = 0;
     for (const { label, look } of looks) {
       const id = `characters/${look.classId}`;
       const idle = gearAtlas(asset(id), look);
       if (hash(idle) !== hash(portraitAtlas(look.classId, look))) throw new Error(`Portrait differs from combat: ${label}`);
       const first = document.createElement('canvas'); first.width = asset(id).width * R; first.height = asset(id).height * R;
       first.getContext('2d').drawImage(idle, 0, 0);
-      first.style.cssText = 'width:100%;image-rendering:auto;background:#182a30';
+      first.style.cssText = 'width:100%;image-rendering:pixelated;background:#182a30';
       const figure = document.createElement('div'); figure.textContent = label; figure.append(first); document.body.append(figure);
       for (const pose of ['idle', 'attack', 'hit', 'death', 'flash']) {
         const a = asset(pose === 'idle' ? id : `${id}/${pose}`), atlas = gearAtlas(a, look);
@@ -76,8 +84,9 @@ try {
       }
     }
     // Each named item must change actual pixels, not only a data attribute or rarity border.
+    const classIcons = new Map();
     for (const cls of ['monk', 'mage', 'warrior', 'ranger']) for (const slot of slots) {
-      const seen = new Map(), icons = new Map();
+      const seen = new Map(), icons = new Map(), neutralIcons = new Map();
       const starter = looks.find(l => l.label === `${cls} · common`).look;
       for (const item of items.filter(i => i.classId === cls && i.slot === slot)) {
         const skin = gearSkin(item, cls);
@@ -86,15 +95,54 @@ try {
         const ih = hash(gearIcon(skin));
         if (seen.has(h)) duplicates.push([item.id, seen.get(h)]); seen.set(h, item.id);
         if (icons.has(ih)) iconDuplicates.push([item.id, icons.get(ih)]); icons.set(ih, item.id);
+        // Remove material differences: named items must have their own shapes/details.
+        const neutral = { ...skin, base: '#888888', shade: '#444444', light: '#cccccc', trim: '#aaaaaa' };
+        const nh = hash(gearIcon(neutral));
+        if (neutralIcons.has(nh)) neutralDuplicates.push([item.id, neutralIcons.get(nh)]);
+        neutralIcons.set(nh, item.id);
+        const familyKey = `${skin.family}/${nh}`;
+        if (classIcons.has(familyKey)) classDuplicates.push([item.id, classIcons.get(familyKey)]);
+        classIcons.set(familyKey, item.id);
+        const icon = gearIcon(skin), rgba = icon.getContext('2d').getImageData(0, 0, 32, 32).data;
+        if (rgba.some((n, i) => i % 4 === 3 && n !== 0 && n !== 255)) nonPixelAlpha.push(`${item.id}/icon`);
+        // Inspect each connected equipment component against the posed anatomy.
+        // Both layers are produced by the real renderer using identical joints.
+        for (const pose of ['idle', 'attack', 'hit', 'death']) {
+          const a = asset(`characters/${cls}${pose === 'idle' ? '' : '/' + pose}`);
+          const gear = gearAtlas(a, look, slot), body = gearAtlas(a, look, 'body');
+          const gd = gear.getContext('2d').getImageData(0, 0, gear.width, gear.height).data;
+          const bd = body.getContext('2d').getImageData(0, 0, body.width, body.height).data;
+          for (const [frameIndex, f] of a.frames.entries()) {
+            attachmentFrames++;
+            const visited = new Set(), alpha = (data, x, y) => data[((f.y + y) * gear.width + f.x + x) * 4 + 3];
+            for (let y = 0; y < a.height; y++) for (let x = 0; x < a.width; x++) {
+              if (!alpha(gd, x, y) || visited.has(y * a.width + x)) continue;
+              const queue = [[x, y]]; visited.add(y * a.width + x);
+              let touches = false;
+              for (let n = 0; n < queue.length; n++) {
+                const [px, py] = queue[n];
+                if (alpha(gd, px, py) !== 255) nonPixelAlpha.push(`${item.id}/${pose}/${frameIndex}`);
+                if (!px || !py || px === a.width - 1 || py === a.height - 1) clipping.push(`${item.id}/${pose}/${frameIndex}`);
+                for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+                  const nx = px + dx, ny = py + dy, key = ny * a.width + nx;
+                  if (nx < 0 || ny < 0 || nx >= a.width || ny >= a.height) continue;
+                  if (alpha(bd, nx, ny)) touches = true;
+                  if (alpha(gd, nx, ny) && !visited.has(key)) { visited.add(key); queue.push([nx, ny]); }
+                }
+              }
+              if (!touches) detached.push(`${item.id}/${pose}/${frameIndex}: ${queue.length}px at ${x},${y}`);
+            }
+          }
+        }
       }
     }
-    return { frames, clipping, unchangedSlots, duplicates, iconDuplicates, looks: looks.length };
+    return { frames, attachmentFrames, clipping, unchangedSlots, duplicates, iconDuplicates, neutralDuplicates, classDuplicates, detached, nonPixelAlpha, looks: looks.length };
   }, { looks, items: CONTENT.items, slots: GEAR_SLOTS });
   await page.screenshot({ path: resolve(out, 'equipment-progression.png'), fullPage: true });
   const identity = await page.evaluate(async looks => {
     const { gearAtlas } = await import('/src/art/gearArt.ts');
     const { asset } = await import('/src/art/manifest.ts');
-    const { HERO_RESOLUTION: R } = await import('/src/art/paintedHeroes.ts');
+    const R = 1;
     document.body.replaceChildren();
     document.body.style.gridTemplateColumns = 'repeat(4, 1fr)';
     const result = [];
@@ -131,6 +179,8 @@ try {
   writeFileSync(resolve(out, 'report.json'), JSON.stringify({ ...report, errors }, null, 2));
   assert.deepEqual(errors, []); assert.deepEqual(report.clipping, []);
   assert.deepEqual(report.unchangedSlots, []); assert.deepEqual(report.duplicates, []); assert.deepEqual(report.iconDuplicates, []);
+  assert.deepEqual(report.neutralDuplicates, []); assert.deepEqual(report.classDuplicates, []);
+  assert.deepEqual(report.detached, []); assert.deepEqual(report.nonPixelAlpha, []);
   const equips = [];
   for (const cls of HERO_CLASSES) {
     console.log(`Checking ${cls}: empty start, queued crown, reload`);
@@ -184,7 +234,7 @@ try {
     await app.waitForFunction(id => document.querySelector('.loadout-hero [data-appearance]')?.dataset.appearance.includes(id), baseId);
     await app.getByRole('navigation').getByRole('button', { name: 'Adventure', exact: true }).click();
     await app.waitForFunction(id => window.__emberRenderer.heroAppearance.slots.head?.id.endsWith(id), baseId);
-    await app.waitForFunction(() => window.__emberRenderer.actors.get('hero')?.tex.normal.source.resolution === 4);
+    await app.waitForFunction(() => window.__emberRenderer.actors.get('hero')?.tex.normal.source.resolution === 1);
     const after = await app.evaluate(() => {
       clearInterval(window.skinSampleTimer);
       return { look: window.__emberRenderer.heroAppearance, samples: window.skinSamples,

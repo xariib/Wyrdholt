@@ -1,5 +1,8 @@
 # Painted fantasy characters
 
+Archived experiment, superseded by [pixel characters](PIXEL_CHARACTERS.md).
+The sources remain available for reference; the game no longer loads painted heroes.
+
 The approved painted 2D lineup replaces the code-drawn pixel heroes in character
 selection, the header, equipment portraits and combat. The four identities are a
 shaved-headed Monk, a bearded Warrior, an older white-haired Mage and an auburn-haired

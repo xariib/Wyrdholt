@@ -1,5 +1,6 @@
 import { canUseItem, type ContentIndex, type Profile } from "@emberbound/game-core";
 import type { ItemDef, SlotId } from "@emberbound/shared-types";
+import { namedGearDesign, type GearDesign } from "./gearDesigns";
 
 /** Cosmetic data only: never stored in a save or used by the simulation. */
 export const GEAR_SLOTS = ["weapon", "head", "chest", "gloves", "boots", "ring"] as const;
@@ -16,6 +17,7 @@ export interface GearSkin {
   shade: string;
   light: string;
   trim: string;
+  design: GearDesign;
 }
 export interface HeroAppearance {
   classId: HeroClass;
@@ -28,25 +30,12 @@ export function heroAttackName(appearance?: HeroAppearance): HeroClass | "unarme
   return appearance?.slots.weapon?.classId ?? "unarmed";
 }
 const tiers: Record<string, number> = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4 };
-const fabrics: Record<HeroClass, readonly [string, string, string][]> = {
-  monk: [["#b7a180", "#79674f", "#deceb0"], ["#b29b63", "#6d6344", "#ded0a1"], ["#b16b43", "#693f32", "#e4a968"], ["#6a7e98", "#394c68", "#b6c7d3"], ["#e4d9b9", "#978165", "#fff0cd"]],
-  mage: [["#8b858a", "#514d5c", "#bbb0ac"], ["#747189", "#46465f", "#b0a4c2"], ["#5f699a", "#363e66", "#9cadd0"], ["#705582", "#403454", "#b697c6"], ["#424e7a", "#252b4c", "#909dc1"]],
-  warrior: [["#9a8870", "#625546", "#c7b496"], ["#8c7461", "#534943", "#b5a28a"], ["#81908d", "#455558", "#becac2"], ["#657387", "#343f54", "#a8b7c9"], ["#b2a786", "#675d50", "#ece0b4"]],
-  ranger: [["#878367", "#505442", "#b5b295"], ["#6e805c", "#3c503d", "#a3b58a"], ["#4e796a", "#2c4d49", "#8db49b"], ["#526574", "#303e4d", "#8da9b4"], ["#486757", "#293c37", "#a4b995"]],
-};
-const trims = ["#bca27a", "#b7aa7c", "#c9b584", "#d8b87b", "#f0cf80"];
-
-/** Each named piece has its own material/ornament; class variants retain their own cut. */
+/** Every named item has an authored class cut; rarity never selects its artwork. */
 export function gearSkin(item: ItemDef, classId: HeroClass): GearSkin {
   const tier = tiers[item.rarity] ?? 0;
   const family = item.id.replace(/_(monk|mage|warrior|ranger)$/, "");
-  const [base, shade, light] = fabrics[classId][tier]!;
-  let trim = trims[tier]!;
-  if (/ember|cinder|coal|blood/.test(family)) trim = "#e99365";
-  else if (/venom|viper|thorn|briar/.test(family)) trim = "#a5c483";
-  else if (/storm|thunder|gale|ghost|stillwater/.test(family)) trim = "#9acedd";
-  else if (/moon|seer|scribe|spell/.test(family)) trim = "#b6a5dc";
-  return { id: `${classId}/${item.id}`, slot: item.slot, classId, tier, family, base, shade, light, trim };
+  const design = namedGearDesign(family, classId, item.slot);
+  return { id: classId + "/" + item.id, slot: item.slot, classId, tier, family, design, base: design.base, shade: design.shade, light: design.light, trim: design.trim };
 }
 
 export function bareAppearance(classId: HeroClass): HeroAppearance { return { classId, key: `${classId}:bare`, slots: {} }; }

@@ -11,6 +11,25 @@ const fixture = (classId = "warrior") => createProfile(content, { name: "Skins",
   alternateClassId: classId === "mage" ? "monk" : "mage", masterSeed: 17, nowWallMs: 0 });
 
 describe("equipment-driven appearances", () => {
+  it("covers every live class item with a named design independent of rarity", () => {
+    const items = CONTENT.items.filter(i => HERO_CLASSES.includes(i.classId as typeof HERO_CLASSES[number]));
+    expect(items).toHaveLength(128);
+    for (const item of items) {
+      const cls = item.classId as typeof HERO_CLASSES[number], skin = gearSkin(item, cls);
+      expect(skin.design.shape).toBe(skin.family);
+      expect(skin.design.cut).toBe(cls);
+      for (const rarity of ["common", "uncommon", "rare", "epic", "legendary"] as const) {
+        const alternate = gearSkin({ ...item, rarity }, cls);
+        expect(alternate.design).toEqual(skin.design);
+        expect([alternate.base, alternate.shade, alternate.light, alternate.trim]).toEqual([skin.base, skin.shade, skin.light, skin.trim]);
+      }
+    }
+  });
+  it("requires an authored design when a new item family is introduced", () => {
+    const item = CONTENT.items.find(i => i.classId === "warrior")!;
+    expect(() => gearSkin({ ...item, id: "unillustrated_item_warrior" }, "warrior")).toThrow("Missing pixel gear design");
+    expect(() => gearSkin({ ...item, id: "linen_hood_warrior", slot: "boots" }, "warrior")).toThrow("Missing pixel gear design");
+  });
   it.each(HERO_CLASSES)("uses fists for an unarmed %s until its queued weapon is equipped", cls => {
     const p = fixture(cls);
     const weapon = createInstance(p, CONTENT.items.find(i => i.classId === cls && i.slot === "weapon" && i.rarity === "common")!.id, { isNew: true }).id;

@@ -4,8 +4,15 @@ import { resolve } from "node:path";
 import { productionAssets, environments } from "../apps/mobile/src/art/manifest";
 import { validateArt, ART_BUDGET } from "../apps/mobile/src/art/types";
 import { PAINTED_SHEETS } from "../apps/mobile/src/art/paintedSources";
+import { CONTENT } from "@emberbound/game-content";
+import { gearSkin, isHeroClass } from "../apps/mobile/src/art/gearSkins";
 
 const errors = validateArt(productionAssets);
+const classItems = CONTENT.items.filter(item => item.classId && isHeroClass(item.classId));
+for (const item of classItems) {
+  try { if (item.classId && isHeroClass(item.classId)) gearSkin(item, item.classId); }
+  catch (error) { errors.push(`${item.id}: ${String(error)}`); }
+}
 const pack = JSON.parse(readFileSync("docs/art/darkwood-production-v1/MANIFEST.json", "utf8")) as { approved_production_files: { path: string; sha256: string; bytes: number }[] };
 if (pack.approved_production_files.length !== 187) errors.push("Darkwood must contain 187 approved files");
 for (const file of pack.approved_production_files) {
@@ -39,4 +46,4 @@ for (const sheet of Object.values(PAINTED_SHEETS)) {
   } catch (error) { errors.push(`${sheet.file}: ${String(error)}`); }
 }
 if (errors.length) { console.error(errors.join("\n")); process.exitCode = 1; }
-else console.log(`Art validation PASS: ${productionAssets.length} approved assets and ${Object.keys(PAINTED_SHEETS).length} painted character sheets.`);
+else console.log(`Art validation PASS: ${productionAssets.length} approved assets, ${classItems.length} named pixel gear designs and ${Object.keys(PAINTED_SHEETS).length} archived painted sheets.`);
