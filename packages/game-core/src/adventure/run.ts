@@ -72,9 +72,12 @@ export class FightCache {
     return this.entries.find((e) => e.key === key);
   }
 
-  /** Forget fights (after the profile was replaced, e.g. by offline catch-up). */
+  /** Invalidate all profile-derived data after replacement (restore/reset/catch-up). */
   clearFights(): void {
     this.entries.length = 0;
+    // Instance IDs are unique only within a profile. Another save can reuse them
+    // for different items, so its build key must not inherit the old item's stats.
+    this.heroStats.clear();
   }
 
   put(entry: PreparedFight): void {

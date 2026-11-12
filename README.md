@@ -49,9 +49,39 @@ The tests serve the built game locally and use disposable browser contexts. They
 
 Run `node --import tsx tools/smoke/online-check.mjs` against a build made with `VITE_WYRDHOLT_ONLINE_PLAY=true` to check the local authority flow.
 
-## Character animation checks
+## Visual regression checks
 
-After building, run `node --import tsx tools/visual/character-animation-check.mjs` to check attack movement, steady health labels, animated portraits, reduced-motion support, and class-specific starter gear in all six slots. Evidence stays under ignored `tools/smoke/out`. Browser checks do not replace physical-device or human playtesting.
+After building, run `node --import tsx tools/visual/mobile-review.mjs` for disposable-fixture screenshots at six phone/tablet sizes, including short landscape, large balances, safe areas, equipment sheets and boss combat. Run `node tools/visual/combat-layout-check.mjs` to check all four classes and poses against the actual canvas clipping bounds in three backgrounds. Both tools start a local preview, accept `CHROMIUM_EXECUTABLE_PATH`, and keep evidence under ignored `tools/smoke/out`.
+
+Short browser viewports scroll instead of shrinking away the combat area. Android remains portrait. Browser screenshots do not replace physical-device visual acceptance.
+
+Run `node --import tsx tools/visual/character-animation-check.mjs` to verify attack movement, steady health labels, animated portraits and reduced-motion support for all four classes, plus class-specific starter gear in all six slots.
+
+Run `node --import tsx tools/visual/gear-skins-check.mjs` to check equipped appearances:
+all four classes from empty slots through Legendary gear, distinct pixels for each
+named item and icon, matching combat/portrait layers, pose clipping, queued equipment
+through the real Gear UI, and appearances after reload. It starts a local Vite server
+and writes a visual review sheet and disposable-fixture screenshots to ignored
+`tools/smoke/out/gear-skins`. This browser check does not replace device testing or
+human art acceptance.
+
+Run `node --import tsx tools/visual/unarmed-combat-check.mjs` after building to verify
+all four classes with empty Weapon slots: melee approach, fist hits without weapon
+effects, queued weapon equips, the restored weapon animation, and reload behavior.
+It uses disposable browser saves and keeps evidence in `tools/smoke/out/unarmed-combat`.
+
+Run `node --import tsx tools/visual/hunt-regressions.mjs` after building to check
+repeated backup restores with reused item IDs (combat stats, skins and health bars)
+and the living, healed pose during rest after a defeat. It uses disposable saves;
+reports and screenshots stay in ignored `tools/smoke/out/hunt-regressions`.
+
+## Mobile performance checks
+
+After `npm run build:web`, run `node tools/perf/combat-profile.mjs`. It serves the build locally and checks all four classes at 360 × 640 with six-times CPU throttling. The report records combat-art decoded bytes, health/status geometry rebuilds, HUD mutations, and renderer timings while Adventure is visible and hidden. Set `CHROMIUM_EXECUTABLE_PATH` to use an installed Chromium browser. Reports stay in ignored `tools/perf/out`.
+
+For before/after comparisons, preserve the earlier build and pass its directory and a report name: `node tools/perf/combat-profile.mjs artifacts/performance/before-dist before`. Startup profiling is available through `node tools/perf/startup-profile.mjs http://127.0.0.1:4173/ --rate=6 --runs=3` against a running preview.
+
+Browser throttling is a comparison tool, not an older-phone guarantee. Validate the Android build on a physical budget phone as well: cold start, a two-minute combat measurement including three enemies and Mage ward, navigation with a large inventory, offline return, background/resume, and a longer session for heat and battery use. The build compatibility check retains the Chrome/WebView 97 target.
 
 ## Project guide
 

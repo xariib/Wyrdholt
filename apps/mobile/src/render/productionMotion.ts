@@ -14,6 +14,9 @@ export class ProductionMotion {
   private pendingHit: boolean | null = null;
   private pendingAttack: number | null = null;
   constructor(readonly actor: ProductionActor) {}
+  get windupMs(): number {
+    return this.durations.slice(0, this.actor.animations.attack.impact_frame ?? 1).reduce((sum, ms) => sum + ms, 0);
+  }
   attack(now: number, interval: number): void {
     if (this.pose === "death") return;
     if (this.pose === "attack" && (!this.impactSeen || now < this.impactUntil)) { this.pendingAttack = interval; return; }

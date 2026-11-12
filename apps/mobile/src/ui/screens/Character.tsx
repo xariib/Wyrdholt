@@ -76,7 +76,7 @@ function ClassCard({ profile, classId, role, queued }: { profile: Profile; class
     >
       <div className="class-head">
         <div className="class-art production-class-art">
-          <SpriteImage name={cls.sprite} portrait />
+          <SpriteImage name={cls.sprite} profile={profile} portrait />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="row spread">

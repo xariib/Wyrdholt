@@ -155,7 +155,7 @@ export function OfflineOverlay({
             const color = rarityColor(content, item.rarity);
             return (
               <div key={id} className="list-item">
-                <ItemIcon icon={item.icon} rarityColor={color} size={40} />
+                <ItemIcon item={item} icon={item.icon} rarityColor={color} size={40} />
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <div className="item-name">{item.name}</div>
                   <div className="rarity" style={{ color }}>

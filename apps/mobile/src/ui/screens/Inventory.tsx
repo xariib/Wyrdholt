@@ -153,7 +153,7 @@ function InventoryItem({ group }: { group: InventoryGroup }) {
   const duplicates = group.copies.filter(copy => copy.equippedDuplicate).length;
   return <>
     <div className="row">
-      <ItemIcon icon={item.icon} rarityColor={rarityColor(content, item.rarity)} size={40} />
+      <ItemIcon item={item} icon={item.icon} rarityColor={rarityColor(content, item.rarity)} size={40} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="item-name">{item.name}</div>
         <div className="rarity" style={{ color: rarityColor(content, item.rarity) }}>

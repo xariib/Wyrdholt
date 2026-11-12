@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ASHEN_CROWN, ASHEN_KING_ID, activeBossAttempt, ashenCrownAt, type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { Bar } from "../components/Common";
@@ -23,6 +23,11 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
   const crown = ashenCrownAt(cleared);
   const reward = result?.outcome === "victory" ? ASHEN_CROWN.milestones.find(m => m.tier === result.tier) : undefined;
   const retry = result && result.outcome !== "victory";
+  const combatRef = useRef<HTMLDivElement>(null);
+  const fighting = !!attempt;
+  useEffect(() => {
+    if (active && fighting) combatRef.current?.scrollIntoView({ block: "start" });
+  }, [active, fighting]);
 
   async function start(): Promise<void> {
     setStarting(true);
@@ -54,7 +59,7 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
 
       {attempt && (
         <section className="adventure-world" aria-label={`Ashen King tier ${nextTier} combat`}>
-          <div className="combat-frame boss-combat">
+          <div ref={combatRef} className="combat-frame boss-combat" data-background={zone.background}>
             <CombatView active={active} heroSprite={session.content.classDef(attempt.record.build.classId).sprite} background={zone.background} />
             <div className="combat-banner boss">ASHEN KING · TIER {nextTier}</div>
           </div>
@@ -114,10 +119,14 @@ function LongTermCombat({ profile, active, attempt }: { profile: Profile; active
   const { bossId, tier } = attempt.record.encounter;
   const content = session.content;
   const boss = content.soloBosses.get(bossId);
+  const combatRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (active) combatRef.current?.scrollIntoView({ block: "start" });
+  }, [active, bossId, tier]);
   if (!boss) return null;
   return (
     <section className="adventure-world" aria-label={`${boss.name} combat`}>
-      <div className="combat-frame boss-combat">
+      <div ref={combatRef} className="combat-frame boss-combat" data-background={content.zone(boss.unlockZoneId).background}>
         <CombatView active={active} heroSprite={content.classDef(attempt.record.build.classId).sprite} background={content.zone(boss.unlockZoneId).background} />
         <div className="combat-banner boss">{boss.name} · Tier {tier}</div>
       </div>

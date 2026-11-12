@@ -37,6 +37,12 @@ export function number(n: number): string {
   return n.toLocaleString("en-US");
 }
 
+const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
+/** Header space is bounded; exact balances remain in its title and accessible label. */
+export function compactNumber(n: number): string {
+  return n >= 1_000_000 ? compact.format(n) : number(n);
+}
+
 export function rarityColor(content: ContentIndex, rarityId: string): string {
   return content.rarities.get(rarityId)?.color ?? "#b9b3a6";
 }

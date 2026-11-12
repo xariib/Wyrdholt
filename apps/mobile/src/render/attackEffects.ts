@@ -1,11 +1,12 @@
 import type { Graphics } from "pixi.js";
 
 /** Small, pixel-snapped accents. All timing comes from combat playback, never simulation. */
-export type AttackStyle = "slash" | "palm" | "arcane" | "arrow" | "fang" | "venom" | "fire" | "earth";
+export type AttackStyle = "fist" | "slash" | "palm" | "arcane" | "arrow" | "fang" | "venom" | "fire" | "earth";
 export type EffectPoint = readonly [number, number];
 
 export function attackStyle(sprite: string): AttackStyle {
   switch (sprite) {
+    case "unarmed": return "fist";
     case "warrior": case "warlord": case "warden": return "slash";
     case "monk": return "palm";
     case "mage": case "wisp": return "arcane";
@@ -18,6 +19,7 @@ export function attackStyle(sprite: string): AttackStyle {
 }
 
 const PALETTES: Record<AttackStyle, readonly [number, number]> = {
+  fist: [0xc9ae87, 0xf2e1bf],
   slash: [0xffc478, 0xfff3d4], palm: [0x5edbd1, 0xd8fff3],
   arcane: [0xb48aff, 0xf3e3ff], arrow: [0x92d879, 0xf1ffd8],
   fang: [0xe59691, 0xffe3d3], venom: [0x92cd50, 0xe6ffad],
@@ -79,7 +81,10 @@ export function drawAttackImpact(
   const direction = to[0] >= from[0] ? 1 : -1;
   g.alpha = fade;
 
-  if (style === "slash") {
+  if (style === "fist") {
+    // Compact physical contact: no blade sweep, arrow streak or spell burst.
+    for (let i = -1; i <= 1; i++) line(g, x - direction * (7 + p * 4), y + i * 3, x - direction * 2, y + i * 2, core, 1, 0.7);
+  } else if (style === "slash") {
     // A curved blade sweep, with a fine bright edge and a warm trailing edge.
     const radius = (14 + p * 7) * strength;
     const sweep = Math.min(1, p * 4);

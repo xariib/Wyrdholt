@@ -46,7 +46,7 @@ export function ForgeSheet({ profile, onClose, onCompare }: { profile: Profile; 
     <div className="row spread"><h2>Forge</h2><button className="btn ghost sheet-close" aria-label="Close Forge" onClick={close}>×</button></div>
     {receipt ? <div className="stack forge-result" data-critical={receipt.critical} data-testid="forge-result">
       <div className="slot-label">{receipt.critical ? "CRITICAL FUSION" : "FUSION COMPLETE"}</div>
-      <ItemIcon icon={content.item(receipt.outputBaseId).icon} rarityColor={rarityColor(content, receipt.outputRarity)} size={64}/>
+      <ItemIcon item={content.item(receipt.outputBaseId)} icon={content.item(receipt.outputBaseId).icon} rarityColor={rarityColor(content, receipt.outputRarity)} size={64}/>
       <div style={{ color: rarityColor(content, receipt.outputRarity) }}>{rarityName(receipt.outputRarity)} · {SLOT_LABELS[receipt.slot]}</div>
       <h3>{content.item(receipt.outputBaseId).name}</h3><ItemDetails item={content.item(receipt.outputBaseId)}/>
       <p className="small muted">{receipt.count} items consumed · {receipt.gold.toLocaleString()} Gold spent</p>
@@ -74,7 +74,7 @@ export function ForgeSheet({ profile, onClose, onCompare }: { profile: Profile; 
       <p className="small muted">Locked, equipped and queued items are protected from Forge. Unlock a copy in Gear to use it as a material. Prices and odds are provisional test values.</p>
       {lockedCount > 0 && <p className="small" data-testid="forge-locked-count">{lockedCount} locked {lockedCount === 1 ? "copy" : "copies"} excluded for this slot and rarity.</p>}
       <div className="forge-items">{[...groups].map(([base, copies]) => { const item = content.item(base), chosen = copies.filter(id => selected.includes(id)); return <div className="forge-item" key={base}>
-        <div className="row"><ItemIcon icon={item.icon} rarityColor={rarityColor(content, rarity)} size={40}/><div className="forge-item-name"><strong>{item.name}</strong><div className="small">{copies.length} available · {chosen.length} selected</div></div></div>
+        <div className="row"><ItemIcon item={item} icon={item.icon} rarityColor={rarityColor(content, rarity)} size={40}/><div className="forge-item-name"><strong>{item.name}</strong><div className="small">{copies.length} available · {chosen.length} selected</div></div></div>
         <details><summary>Inspect item</summary><ItemDetails item={item}/></details>
         <div className="row"><button className="btn" aria-label={`Remove ${item.name}`} disabled={!chosen.length} onClick={() => setIds(selected.filter(id => id !== chosen[chosen.length - 1]))}>−</button>
         <button className="btn" aria-label={`Add ${item.name}`} disabled={selected.length >= recipe.count || chosen.length === copies.length} onClick={() => setIds([...selected, copies.find(id => !selected.includes(id))!])}>+</button>

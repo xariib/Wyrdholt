@@ -12,7 +12,7 @@ mkdirSync(out, { recursive: true });
 const TOLERANCE_MS = 67; // four 60 Hz frames: headless software GL drops frames; the old offset was 150-350 ms
 const report = [];
 for (const engine of engines) {
-  const browser = await engine.launch(engine === chromium ? { args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } : {});
+  const browser = await engine.launch(engine === chromium ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH, args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } : {});
   try {
     for (const hero of ["Warrior", "Monk", "Mage", "Ranger"]) {
       const page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })).newPage();

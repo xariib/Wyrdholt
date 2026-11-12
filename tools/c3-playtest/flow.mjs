@@ -13,14 +13,15 @@ const report={pass:false,scope:'Controlled local Chromium/IDB flow; not natural 
 const p=createProfile(content,{name:'C3 QA',activeClassId:'mage',alternateClassId:'monk',masterSeed:1042,nowWallMs:Date.now()});
 p.gold=500;p.adventure.zones.greenfields.cleared=true;
 const starter=content.item(CONTENT.starterWeapons[p.character.activeClassId]);
+const effectBase=content.item('crown_of_thorns').classVariants[p.character.activeClassId];
 let seeds=0;
 const copies=base=>p.inventory.instances.filter(i=>i.baseId===base&&i.isNew);
-while(copies(starter.id).length<9||copies('crown_of_thorns').length<2){
+while(copies(starter.id).length<9||copies(effectBase).length<2){
   assert(++seeds<50000,'Fixture loot target not reached');
   if(copies(starter.id).length<9)rollLoot(p,content,'greenfields_farm',40,seeds,{source:'c3-qa-configured-loot'});
   else rollLoot(p,content,'darkwood_cache',40,seeds,{source:'c3-qa-configured-loot'});
 }
-const weapon=copies(starter.id),effect=copies('crown_of_thorns')[0],effectPeer=copies('crown_of_thorns')[1];
+const weapon=copies(starter.id),effect=copies(effectBase)[0],effectPeer=copies(effectBase)[1];
 createInstance(p,'wayfarer_blade',{isNew:true}); // A sword carried over from an older build.
 assert(effect&&content.item(effect.baseId).effect);
 assert(applyCommand(p,content,{type:'startFarm',zoneId:'greenfields'},{contentTimeMs:0}).ok);

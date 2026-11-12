@@ -48,7 +48,7 @@ export function EncyclopediaScreen({ onBack }: { onBack: () => void }) {
         const slot = SLOT_LABELS[item.slot] ?? item.slot;
         const className = item.classId ? content.classDef(item.classId).name : "";
         if (!matches(item.name, className, rarity.name, slot, item.effect?.name ?? "", item.effect?.description ?? "", ...item.tags)) return [];
-        return <Entry key={item.id} name={item.name} detail={`${rarity.name} · ${slot}${className ? ` · ${className} only` : ""}`} art={<ItemIcon icon={item.icon} rarityColor={rarityColor(content, item.rarity)} size={34} />}>
+        return <Entry key={item.id} name={item.name} detail={`${rarity.name} · ${slot}${className ? ` · ${className} only` : ""}`} art={<ItemIcon item={item} icon={item.icon} rarityColor={rarityColor(content, item.rarity)} size={34} />}>
           <div className="chips">{statRows(null, item, { pct, rate }).map(stat => <span className="tag" key={stat.key}>{stat.format(stat.candidate)} {stat.label}</span>)}</div>
           {item.effect && <p><b>{item.effect.name}</b> · {item.effect.description}</p>}
           <p className="small muted">Minimum encounter level {item.minEncounterLevel}</p>

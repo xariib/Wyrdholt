@@ -3,7 +3,7 @@ import { registerBackAction } from "../../platform/backNavigation";
 import { session, type Toast } from "../../game/session";
 import { curveProgress, masteryRank, type Profile } from "@emberbound/game-core";
 import { SpriteImage } from "./icons";
-import { number } from "../format";
+import { compactNumber, number } from "../format";
 
 export function Bar({ value, max, kind }: { value: number; max: number; kind?: "mastery" | "hp" }) {
   const width = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 100;
@@ -22,7 +22,7 @@ export function Header({ profile, onDebug }: { profile: Profile; onDebug?: () =>
   return (
     <header className="header">
       <div className="portrait">
-        <SpriteImage name={cls.sprite} />
+        <SpriteImage name={cls.sprite} profile={profile} />
       </div>
       <div className="header-main">
         <div className="header-brand"><img src="./brand/A3_native.png" width="103" height="42" alt="Wyrdholt: Idle" /></div><div className="header-name">{c.name}</div>
@@ -38,9 +38,9 @@ export function Header({ profile, onDebug }: { profile: Profile; onDebug?: () =>
           </span>
         </div>
       </div>
-      <div className="gold-chip">
+      <div className="gold-chip" title={`${number(profile.gold)} gold`} aria-label={`${number(profile.gold)} gold`}>
         <span className="coin" />
-        {number(profile.gold)}
+        {compactNumber(profile.gold)}
       </div>
       {onDebug && (
         <button className="icon-btn" onClick={onDebug} aria-label="Developer tools">

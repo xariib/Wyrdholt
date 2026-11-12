@@ -6,7 +6,8 @@ import type { CombatEvent } from "@emberbound/shared-types";
 import type { CombatFrame } from "../game/session";
 import { actorPack, attackDurations, fxPack, productionActorId, sequenceIndex } from "../art/darkwood";
 import { ProductionMotion } from "./productionMotion";
-import { characterOffset } from "./characterMotion";
+import { characterOffset, unarmedApproach } from "./characterMotion";
+import { heroAttackName, type HeroAppearance } from "../art/gearSkins";
 import { EnvironmentArt } from "./environmentArt";
 import { drawBackground, groundY } from "./background";
 import { GLYPHS, glyphCanvas } from "./pixelArt";
@@ -92,12 +93,16 @@ interface ActorView {
   critAt: number;
   healAt: number;
   spriteName: string;
+  attackName: string;
   motion?: ProductionMotion;
   targetId: string;
   emittedAttack: number;
   lastAttack: number;
   groundOffset: number;
   barOffset: number;
+  /** Last painted geometry; unchanged pixels do not need new Graphics commands. */
+  paintedBar?: { width: number; y: number; fill: number; low: boolean; ward: number; hasWard: boolean; shield: boolean };
+  paintedPips?: { y: number; statuses: string[] };
   wardPhase: "off" | "form" | "idle_loop" | "absorb_hit" | "break";
   wardAt: number;
 }
@@ -154,6 +159,7 @@ export class CombatRenderer {
   private rebuilding = false;
   private lastPlayback = -1;
   private heroSprite = "monk";
+  private heroAppearance?: HeroAppearance;
   private enemyCount = 1;
   private backgroundId = "greenfields";
   private W = 192;
@@ -216,6 +222,17 @@ export class CombatRenderer {
       this.heroSprite = sprite;
       this.fightKey = "";
     }
+  }
+
+  setHeroAppearance(appearance: HeroAppearance): void {
+    if (appearance.key === this.heroAppearance?.key) return;
+    this.heroAppearance = appearance;
+    this.heroSprite = appearance.classId;
+    this.clearScene();
+    this.sprites.dispose();
+    this.sprites = new TextureBank(() => { this.fightKey = ""; }, undefined, appearance);
+    this.artScene = "";
+    this.fightKey = "";
   }
 
   /** Zone background theme (ZoneDef.background). Redraws only when it changes. */
@@ -321,10 +338,10 @@ export class CombatRenderer {
     const previousHero = this.actors.get("hero");
     const heroHp = previousHero ? previousHero.shownHp100 : null;
     this.clearScene();
-    const artScene = [this.heroSprite, ...fight.setup.enemies.map(e => e.sprite)].join("|");
+    const artScene = sceneAssets(this.heroSprite, fight.setup.enemies.map(e => e.sprite));
     if (artScene !== this.artScene) {
       this.sprites.dispose();
-      this.sprites = new TextureBank(() => { this.fightKey = ""; });
+      this.sprites = new TextureBank(() => { this.fightKey = ""; }, undefined, this.heroAppearance);
       this.artScene = artScene;
     }
     this.fightKey = fight.key;
@@ -353,6 +370,7 @@ export class CombatRenderer {
 
   private makeActor(id: string, spriteName: string, isHero: boolean, x: number, max100: number, hp100: number): ActorView {
     const tex = this.sprites.get(spriteName);
+    const attackName = isHero ? heroAttackName(this.heroAppearance?.classId === spriteName ? this.heroAppearance : undefined) : spriteName;
     // Enlarge the small placeholder silhouettes where their formation has room.
     const placeholderEnemy = !isHero && !tex.asset;
     const targetScale = placeholderEnemy ? 2 : tex.scale;
@@ -364,7 +382,8 @@ export class CombatRenderer {
     x = Math.round(Math.max(leftWidth + 2, Math.min(this.W - 2 - (tex.width * displayScale - leftWidth), x)));
     if (actorPack[spriteName]) {
       for (const pose of ["attack", "hit", "death", "flash"]) this.sprites.optional(`${productionActorId(spriteName)}/${pose}`);
-      const effects = spriteName === "mage" ? ["arcane_bolt", "arcane_bolt_hit", "arcane_ward_back", "arcane_ward_front"] : spriteName === "ranger" ? ["arrow", "arrow_hit"] : spriteName === "monk" ? ["monk_impact", "monk_impact_crit"] : spriteName === "warrior" ? ["warrior_impact", "warrior_impact_crit", "warrior_slash"] : spriteName === "wolf" ? ["wolf_bite"] : ["venom_glob", "venom_splash"];
+      const effects = attackName === "unarmed" ? [] : attackName === "mage" ? ["arcane_bolt", "arcane_bolt_hit"] : attackName === "ranger" ? ["arrow", "arrow_hit"] : attackName === "monk" ? ["monk_impact", "monk_impact_crit"] : attackName === "warrior" ? ["warrior_impact", "warrior_impact_crit", "warrior_slash"] : attackName === "wolf" ? ["wolf_bite"] : ["venom_glob", "venom_splash"];
+      if (spriteName === "mage") effects.push("arcane_ward_back", "arcane_ward_front");
       for (const fx of effects) this.sprites.optional(`vfx/${fx}`);
     }
     const production = actorPack[spriteName];
@@ -425,7 +444,9 @@ export class CombatRenderer {
       critAt: -10000,
       healAt: -10000,
       spriteName,
-      motion: actorPack[spriteName] ? new ProductionMotion(actorPack[spriteName]!) : undefined,
+      attackName,
+      motion: production ? new ProductionMotion({ ...production, animations: { ...production.animations,
+        attack: actorPack[attackName === "unarmed" ? "monk" : attackName]!.animations.attack } }) : undefined,
       targetId: "", emittedAttack: -1, lastAttack: -10000,
       barOffset: -Math.round(tex.anchorY * displayScale) - 5,
       groundOffset: !isHero && this.enemyCount === 3 ? THREE_ENEMY_FORMATION[this.actors.size - 1]!.rise : 0,
@@ -447,7 +468,7 @@ export class CombatRenderer {
       for (const effect of this.artEffects) effect.node.destroy();
       this.artEffects = [];
       this.prerolled.clear(); this.launched.clear();
-      for (const a of this.actors.values()) if (a.motion && a.alive) a.motion = new ProductionMotion(actorPack[a.spriteName]!);
+      for (const a of this.actors.values()) if (a.motion && a.alive) a.motion = new ProductionMotion(a.motion.actor);
     }
     while (this.cursor < this.events.length) {
       const e = this.events[this.cursor]!;
@@ -473,11 +494,11 @@ export class CombatRenderer {
       if (e.type !== "attack") continue;
       const src = this.actors.get(String(e.src));
       if (!src?.motion || !src.alive) continue;
-      const clip = actorPack[src.spriteName]!.animations.attack;
+      const clip = src.motion.actor.animations.attack;
       const interval = this.attackInterval(j, String(e.src));
       const durations = attackDurations(clip, interval);
       const impact = clip.impact_frame ?? 1;
-      const lead = durations.slice(0, impact).reduce((a, b) => a + b, 0) + (PROJECTILE_ACTORS.has(src.spriteName) ? PROJECTILE_MS : 0);
+      const lead = durations.slice(0, impact).reduce((a, b) => a + b, 0) + (PROJECTILE_ACTORS.has(src.attackName) ? PROJECTILE_MS : 0);
       if (e.t - lead > t) continue;
       const target = this.actors.get(String(e.tgt));
       if (!target?.alive) continue;
@@ -488,7 +509,7 @@ export class CombatRenderer {
         src.motion.scheduledAttack(now - (t - (e.t - lead)), interval);
       }
       // Neutral projectile only. Contact/critical effects are emitted by the logged HIT.
-      if (PROJECTILE_ACTORS.has(src.spriteName) && t >= e.t - PROJECTILE_MS && !this.launched.has(j)) {
+      if (PROJECTILE_ACTORS.has(src.attackName) && t >= e.t - PROJECTILE_MS && !this.launched.has(j)) {
         this.launched.add(j);
         const before = this.artEffects.length;
         this.attackArt(src, target, now - (t - (e.t - PROJECTILE_MS)), true);
@@ -528,7 +549,7 @@ export class CombatRenderer {
         // Wind-up already started in prerollAttacks(); otherwise (direct/tooling calls) start now.
         if (!this.prerolled.has(this.cursor - 1) || this.events[this.cursor - 1] !== e) src.motion?.attack(now, src.lastAttack > 0 ? now - src.lastAttack : 1000);
         src.lastAttack = now;
-        if (!src.motion && src.isHero && this.heroSprite === "mage" && tgt) this.projectile(src, tgt, now);
+        if (!src.motion && src.attackName === "mage" && tgt) this.projectile(src, tgt, now);
         break;
       }
       case "hit": {
@@ -646,15 +667,23 @@ export class CombatRenderer {
 
   private showRecovery(frame: CombatFrame): void {
     const hero = this.actors.get("hero");
-    if (!hero || frame.carriedHp100 === null || !hero.alive) return;
-    if (frame.carriedHp100 > hero.hp100 && hero.hp100 > 0) {
-      const gained = frame.carriedHp100 - hero.hp100;
-      hero.hp100 = frame.carriedHp100;
+    if (!hero) return;
+    // Null means the next run starts at full health, including after defeat.
+    const hp100 = frame.carriedHp100 ?? frame.heroMaxHp100;
+    if (!hero.alive && hp100 > 0) {
+      hero.alive = true;
+      hero.deathAt = hero.flashAt = hero.lungeAt = 0;
+      hero.ward100 = 0;
+      hero.wardPhase = "off";
+      if (hero.motion) hero.motion = new ProductionMotion(hero.motion.actor);
+      hero.shownHp100 = hp100;
+    } else if (hp100 > hero.hp100 && hero.hp100 > 0) {
+      const gained = hp100 - hero.hp100;
       this.floatNumber(hero, Math.round(gained / 100), COLORS.heal, 1, performance.now(), "", "+");
-    } else if (frame.carriedHp100 < hero.hp100) {
-      hero.hp100 = frame.carriedHp100;
     }
+    hero.hp100 = hp100;
     hero.max100 = frame.heroMaxHp100;
+    hero.statuses.clear();
   }
 
   // ------------------------------------------------------------ animation
@@ -789,34 +818,49 @@ export class CombatRenderer {
     const x = -Math.floor(width / 2);
     const y = a.barOffset;
     const fill = a.max100 > 0 ? Math.max(0, Math.round((a.shownHp100 / a.max100) * (width - 2))) : 0;
+    const low = a.shownHp100 / Math.max(1, a.max100) < 0.3;
+    const hasWard = a.wardCap100 > 0;
+    const ward = hasWard && a.ward100 > 0 ? Math.max(1, Math.min(width - 2, Math.round((a.ward100 / a.wardCap100) * (width - 2)))) : 0;
+    const shield = ward > 0 && a.alive;
+    this.drawPips(a);
+    const painted = a.paintedBar;
+    if (painted && painted.width === width && painted.y === y && painted.fill === fill && painted.low === low && painted.ward === ward && painted.hasWard === hasWard && painted.shield === shield) return;
+    a.paintedBar = { width, y, fill, low, ward, hasWard, shield };
     const g = a.bar;
     g.clear();
     g.rect(x, y, width, 4).fill(0x14121a);
     g.rect(x + 1, y + 1, width - 2, 2).fill(0x3a2a30);
     if (fill > 0) {
-      const ratio = a.shownHp100 / Math.max(1, a.max100);
-      g.rect(x + 1, y + 1, fill, 2).fill(ratio < 0.3 ? 0xf08a3a : 0xd8434a);
-      g.rect(x + 1, y + 1, fill, 1).fill(ratio < 0.3 ? 0xffb070 : 0xf06a6a);
+      g.rect(x + 1, y + 1, fill, 2).fill(low ? 0xf08a3a : 0xd8434a);
+      g.rect(x + 1, y + 1, fill, 1).fill(low ? 0xffb070 : 0xf06a6a);
     }
-    if (a.wardCap100 > 0) {
+    if (hasWard) {
       // Ward: a thin pale-blue bar just above the HP bar, filled as a share of the ward's cap.
       g.rect(x, y - 2, width, 2).fill(0x14121a);
-      const ward = a.ward100 > 0 ? Math.max(1, Math.min(width - 2, Math.round((a.ward100 / a.wardCap100) * (width - 2)))) : 0;
       if (ward > 0) g.rect(x + 1, y - 1, ward, 1).fill(0x8fd0ff);
       // Reuse this actor's graphics: no extra ticker, objects or gameplay state.
       // A small shield stays visible even when the ward is only a fraction of its cap.
-      if (ward > 0 && a.alive) {
+      if (shield) {
         g.poly([x - 7, y, x - 2, y, x - 2, y + 4, x - 4, y + 6, x - 7, y + 4]).fill(0x8fd0ff);
         g.rect(x - 5, y + 1, 1, 3).fill(0x245578);
       }
     }
-    this.drawPips(a);
   }
 
   private drawPips(a: ActorView): void {
+    const y = a.barOffset - 3 - (a.wardCap100 > 0 ? 2 : 0); // above the ward bar when there is one
+    const painted = a.paintedPips;
+    if (painted && painted.y === y && painted.statuses.length === a.statuses.size) {
+      let i = 0;
+      let same = true;
+      for (const status of a.statuses) {
+        if (painted.statuses[i++] !== status) { same = false; break; }
+      }
+      if (same) return;
+    }
+    a.paintedPips = { y, statuses: [...a.statuses] };
     const g = a.pips;
     g.clear();
-    const y = a.barOffset - 3 - (a.wardCap100 > 0 ? 2 : 0); // above the ward bar when there is one
     let i = 0;
     for (const s of a.statuses) {
       const color = PIP_COLORS[statusFamily(s)] ?? 0xffffff;
@@ -935,10 +979,10 @@ export class CombatRenderer {
     this.heroSprite = scene.hero;
     this.enemyCount = scene.enemies.length;
     this.clearScene();
-    const signature = [scene.hero, ...scene.enemies].join("|");
+    const signature = sceneAssets(scene.hero, scene.enemies);
     if (signature !== this.artScene) {
       this.sprites.dispose();
-      this.sprites = new TextureBank(() => { if (this.preview) this.renderPreview(this.preview); });
+      this.sprites = new TextureBank(() => { if (this.preview) this.renderPreview(this.preview); }, undefined, this.heroAppearance);
       this.artScene = signature;
     }
     const now = 10000 + scene.timeMs;
@@ -981,7 +1025,11 @@ export class CombatRenderer {
   private animateProduction(a: ActorView, now: number): void {
     const motion = a.motion!;
     const sample = motion.sample(now);
-    const [step, lift] = characterOffset(a.spriteName, sample.pose, sample.index, now - motion.start, a.phase);
+    let [step, lift] = characterOffset(sample.pose === "attack" ? a.attackName : a.spriteName, sample.pose, sample.index, now - motion.start, a.phase);
+    const target = this.actors.get(a.targetId);
+    if (a.attackName === "unarmed" && sample.pose === "attack" && target) {
+      step = unarmedApproach(target.baseX - a.baseX, sample.index, now - motion.start, motion.windupMs);
+    }
     a.root.position.set(
       Math.round(Math.max(a.minX, Math.min(a.maxX, a.baseX + step * (a.isHero ? 1 : -1)))),
       this.ground() + a.groundOffset + lift,
@@ -995,7 +1043,7 @@ export class CombatRenderer {
       a.body.scale.set(1); a.displayScale = 1;
       a.body.position.set(0, 0);
     }
-    // The approved flash is used verbatim. No white shader or palette replacement.
+    // The flash silhouette uses the same equipped layers as the body.
     const flash = this.sprites.optional(`${id}/flash`);
     a.flash.alpha = 0;
     if (sample.pose === "hit" && !motion.absorbed && now - motion.start < 50 && flash) {
@@ -1003,7 +1051,7 @@ export class CombatRenderer {
       a.flash.scale.set(1); a.flash.alpha = 1;
     }
     for (const node of a.vfx.values()) node.visible = false;
-    if (sample.pose === "attack" && a.spriteName === "warrior" && (sample.index === 1 || sample.index === 2)) this.artOverlay(a, "warrior_slash", sample.index - 1);
+    if (sample.pose === "attack" && a.attackName === "warrior" && (sample.index === 1 || sample.index === 2)) this.artOverlay(a, "warrior_slash", sample.index - 1);
     if (sample.impact && !this.events.length && a.emittedAttack !== motion.attackSerial) {
       a.emittedAttack = motion.attackSerial;
       const target = this.actors.get(a.targetId);
@@ -1034,15 +1082,15 @@ export class CombatRenderer {
   private attackArt(src: ActorView, target: ActorView, now: number, scheduled = false): void {
     const contact: [number, number] = [target.baseX, this.ground() + target.groundOffset - Math.round(target.tex.anchorY * target.displayScale * 0.5)];
     const crit = src.motion!.critical;
-    const projectile = src.spriteName === "mage" ? "arcane_bolt" : src.spriteName === "ranger" ? "arrow" : src.spriteName === "spider" ? "venom_glob" : null;
+    const projectile = src.attackName === "mage" ? "arcane_bolt" : src.attackName === "ranger" ? "arrow" : src.attackName === "spider" ? "venom_glob" : null;
     if (projectile) {
-      const clip = actorPack[src.spriteName]!.animations.attack;
+      const clip = src.motion!.actor.animations.attack;
       const point = clip.fx_projectile_spawn!;
       const start: [number, number] = [src.baseX + point[0]! - clip.anchor[0]!, this.ground() + src.groundOffset + point[1]! - clip.anchor[1]!];
       this.attackTrail(src, target, start, contact, now);
       this.artBurst(projectile, start, contact, now, PROJECTILE_MS, scheduled ? undefined : projectile === "arcane_bolt" ? "arcane_bolt_hit" : projectile === "arrow" ? "arrow_hit" : "venom_splash");
     } else {
-      const name = src.spriteName === "wolf" ? "wolf_bite" : `${src.spriteName}_impact${crit ? "_crit" : ""}`;
+      const name = src.attackName === "wolf" ? "wolf_bite" : `${src.attackName}_impact${crit ? "_crit" : ""}`;
       if (fxPack[name]) this.artBurst(name, contact, contact, now);
       if (!scheduled) this.attackImpact(src, target, now, crit, "basic");
     }
@@ -1053,7 +1101,7 @@ export class CombatRenderer {
     if (this.effects.length >= ART_BUDGET.maxVfx / 2) return;
     const node = new Graphics();
     this.fxLayer.addChild(node);
-    const style = attackStyle(src.spriteName);
+    const style = attackStyle(src.attackName);
     this.effects.push({ node, start: now, duration: PROJECTILE_MS, owner: src.id, target: target.id,
       update: (g, p) => drawAttackTrail(g, p, style, from, to) });
   }
@@ -1064,14 +1112,15 @@ export class CombatRenderer {
     this.fxLayer.addChild(node);
     const from: EffectPoint = [src.baseX, this.ground() + src.groundOffset - src.tex.anchorY * src.displayScale * 0.5];
     const to: EffectPoint = [target.baseX, this.ground() + target.groundOffset - target.tex.anchorY * target.displayScale * 0.5];
-    const style = via === "wildfire" ? "fire" : via === "venom_burst" ? "venom" : attackStyle(src.spriteName);
+    const style = via === "wildfire" ? "fire" : via === "venom_burst" ? "venom" : attackStyle(src.attackName);
     this.effects.push({ node, start: now, duration: critical ? 340 : via === "basic" ? 240 : 300,
       update: (g, p) => drawAttackImpact(g, p, style, from, to, critical, via !== "basic") });
   }
 
   private contactArt(src: ActorView, target: ActorView, now: number, crit: boolean): void {
+    if (src.attackName === "unarmed") return; // The logged HIT draws the physical fist impact.
     const point: [number, number] = [target.baseX, this.ground() + target.groundOffset - Math.round(target.tex.anchorY * target.displayScale * 0.5)];
-    const name = src.spriteName === "mage" ? "arcane_bolt_hit" : src.spriteName === "ranger" ? "arrow_hit" : src.spriteName === "spider" ? "venom_splash" : src.spriteName === "wolf" ? "wolf_bite" : `${src.spriteName}_impact${crit ? "_crit" : ""}`;
+    const name = src.attackName === "mage" ? "arcane_bolt_hit" : src.attackName === "ranger" ? "arrow_hit" : src.attackName === "spider" ? "venom_splash" : src.attackName === "wolf" ? "wolf_bite" : `${src.attackName}_impact${crit ? "_crit" : ""}`;
     this.artBurst(name, point, point, now);
   }
 
@@ -1117,7 +1166,7 @@ export class CombatRenderer {
 
   presentationSnapshot(): unknown {
     return { cssScale: 2, width: this.W, height: this.H, background: this.backgroundId, actors: [...this.actors.values()].map(a => ({
-      id: a.id, name: a.spriteName, production: !!a.tex.asset?.file.startsWith("art/darkwood/"), pose: a.motion?.pose,
+      id: a.id, name: a.spriteName, attack: a.attackName, production: !!a.tex.asset?.file.startsWith("art/darkwood/"), pose: a.motion?.pose,
       anchor: [a.body.anchor.x * a.body.texture.width, a.body.anchor.y * a.body.texture.height],
       frame: [a.body.texture.width, a.body.texture.height], scale: [a.body.scale.x, a.body.scale.y],
       world: [a.root.x, a.root.y], left: a.root.x - a.body.anchor.x * a.body.texture.width,
@@ -1165,4 +1214,9 @@ export interface ArtPreviewScene {
   pose: Pose;
   effect: string;
   timeMs: number;
+}
+
+/** Formation order/count changes reuse the same scene-owned atlas sources. */
+function sceneAssets(hero: string, enemies: string[]): string {
+  return [...new Set([hero, ...enemies])].sort().join("|");
 }

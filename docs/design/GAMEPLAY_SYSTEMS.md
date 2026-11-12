@@ -47,6 +47,19 @@ steps and hit recoil. Health bars remain steady; damage and contact effects stil
 follow the deterministic event log. Large character portraits play their idle
 animation and pause when hidden or when reduced motion is requested.
 
+Character appearance follows the six equipped copies in combat, the header, and
+Character/Gear portraits. Each named class item supplies its own visual layer and
+matching inventory icon. Starter cloth, leather and simple weapons replace the
+fixed armored costumes; empty slots show plain clothing, bare hands/feet, or an
+uncovered head. Mixed rarities remain visibly mixed. Queued equipment appears only
+after it becomes equipped, and current combat uses the fight's pinned build.
+These skins are derived presentation data, with no save fields or stat changes.
+An empty Weapon slot uses a bare-handed guard, melee approach, punch and physical
+contact effects for every class. Equipping a weapon switches the attack pose,
+wind-up and effects to wraps, sword, staff or bow at the same safe build boundary.
+Weaponless attacks do not launch arrows or staff bolts; class mechanics and logged
+damage timing remain authoritative.
+
 ## INTEGRATED FOR WEB TESTING / HUMAN VALIDATION OPEN — Forge V1
 
 Slot-targeted fusion uses same-slot, same-rarity items. Guaranteed +1 rarity;

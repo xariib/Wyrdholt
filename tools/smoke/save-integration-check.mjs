@@ -152,6 +152,7 @@ try {
     { name: "unsupported-main", slots: { main: changed(valid, (p, e) => { p.schema = 6; e.schema = 6; }), backup: valid }, reason: "A saved adventure uses a version this build cannot open." },
     { name: "corrupt-sidefile", slots: { main: valid, temp: "not a save", backup: valid }, reason: "A saved adventure could not be read as a valid save." },
     { name: "malformed-profile", slots: { main: changed(valid, p => { delete p.clock; }), backup: valid }, reason: "A saved adventure could not be read as a valid save." },
+    { name: "malformed-character", slots: { main: changed(valid, p => { p.character.name = { broken: true }; }), backup: valid }, reason: "A saved adventure could not be read as a valid save." },
     { name: "legacy-schema1-rules", slots: { main: legacySave, backup: valid }, reason: "A saved adventure belongs to a different game version." },
     { name: "read-io", slots: { main: valid, backup: valid }, reason: "The saved adventure could not be read or written reliably.", fault: "read" },
     { name: "occupied-web-lock", slots: { main: valid, backup: valid }, reason: "The saved adventure is in use elsewhere or could not be accessed safely.", holdLock: true },
@@ -412,6 +413,14 @@ try {
   await c5Page.getByRole("button", { name: "Challenges", exact: true }).tap();
   await seasons.getByText(`${season.relicName} · Rank 1 · +3% Attack in this ladder`, { exact: true }).waitFor();
   assert(await seasons.getByRole("button", { name: /Tier 2 opens/ }).isDisabled());
+  // Model an absence, as in the boss reload check above. Moving Date.now while
+  // the foreground clock still runs can settle the new wall time before reload,
+  // legitimately leaving no offline dialog for this assertion to find.
+  const rolloverWrites = (await audit(c5Page)).mutations.filter(m => m.method === "put" && m.key === paths.main).length;
+  await c5Page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
+  await c5Page.waitForFunction(({ writes, main }) => window.__saveAudit.mutations.filter(m => m.method === "put" && m.key === main).length >= writes + 2,
+    { writes: rolloverWrites, main: paths.main });
+  assert((await readC5()).clock.lastSettledWallMs < nextSeason.startMs);
   await c5Page.clock.setSystemTime(nextSeason.startMs + 1);
   await c5Page.reload();
   const offlineModal = c5Page.locator(".modal").filter({ hasText: "While you were away" });

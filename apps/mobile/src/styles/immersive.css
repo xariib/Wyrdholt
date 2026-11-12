@@ -86,18 +86,23 @@
 
 /* The zone route and combat HUD frame the arena. */
 .immersive .adventure-screen{
-  overflow:hidden;
+  overflow-y:auto;
+  overflow-x:hidden;
   padding:0 12px calc(var(--nav-height) + var(--sab) + 8px);
   gap:8px}
 .adventure-world{
   margin:0 -12px}
 .adventure-screen .adventure-world{
   display:flex;
-  flex:1;
+  flex:1 0 auto;
   flex-direction:column;
   min-height:0}
 .immersive .combat-frame{
+  --canvas-floor:66px;
   position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-rows:minmax(220px,1fr) auto;
   height:clamp(280px,53vh,570px);
   aspect-ratio:auto;
   min-height:280px;
@@ -110,13 +115,17 @@
   display:grid;
   flex:1;
   grid-template-columns:minmax(0,1fr) auto;
-  grid-template-rows:minmax(0,1fr) auto;
+  grid-template-rows:minmax(220px,1fr) auto;
   height:auto;
-  min-height:0;
+  min-height:248px;
   background:#0a1824}
-.immersive .adventure-screen .combat-frame[data-background="darkwood"]{
+.immersive .combat-frame[data-background="darkwood"]{
   --canvas-floor:100px}
 .immersive .combat-host{
+  position:relative;
+  grid-column:1 / -1;
+  min-height:220px;
+  overflow:hidden;
   height:100%;
   width:100%}
 .adventure-screen .combat-host{
@@ -124,7 +133,7 @@
   grid-column:1 / -1;
   overflow:hidden}
 /* The 340px minimum canvas includes ground below the actors. Crop that ground to leave room for poses. */
-.adventure-screen .combat-canvas{
+.immersive .combat-frame .combat-canvas{
   --floor-space:clamp(16px,calc(100% - 146px),30px);
   position:absolute;
   bottom:clamp(calc(var(--floor-space) - var(--canvas-floor)),calc(100% - 340px),0px)}
@@ -188,13 +197,12 @@
   text-overflow:ellipsis;
   white-space:nowrap}
 .combat-vitals{
-  position:absolute;
-  bottom:0;
-  left:0;
-  right:0;
+  position:static;
+  min-width:0;
   padding:8px 14px;
   background:#0a1824e8;
   display:flex;
+  flex-wrap:wrap;
   align-items:center;
   gap:10px;
   font:12px var(--font-body);
@@ -206,7 +214,7 @@
   background:none}
 .vitals-track{
   height:7px;
-  flex:1;
+  flex:1 0 32px;
   background:#284350}
 .vitals-fill{
   display:block;
@@ -219,6 +227,7 @@
 .vitals-ward[hidden]{
   display:none}
 .run-readout{
+  flex:none;
   gap:4px;
   padding:0 2px}
 .run-readout .row.small{
@@ -371,6 +380,8 @@
 
 /* One native-scrolling sheet, with a reserved swipe handle. */
 .immersive .sheet{
+  max-width:480px;
+  margin-inline:auto;
   background:#10232d;
   border:1px solid #456271;
   border-radius:14px 14px 0 0;
@@ -467,6 +478,8 @@
   border:0;
   border-top:1px solid var(--line)}
 .immersive .modal{
+  max-width:452px;
+  margin-inline:auto;
   background:#10232d;
   border:1px solid #456271;
   border-radius:8px}
@@ -501,6 +514,7 @@
 /* Logical body rows 12–59 never crop the visual frame, plume, staff or bow. */
 .production-portrait{display:block;position:relative;box-sizing:content-box;width:192px;height:192px;padding:8px;overflow:visible;flex:none}
 .production-portrait img{display:block;max-width:none!important;max-height:none!important;object-fit:initial!important;image-rendering:pixelated}
+.portrait-window{display:block;overflow:hidden}
 .loadout-hero{left:50%;width:208px;transform:translateX(-50%);top:48px}
 .class-card .class-head{flex-wrap:wrap}
 .class-card .production-class-art{width:100%;height:208px;background:none;border:0;overflow:visible}
@@ -561,7 +575,8 @@
 .inventory-selection { padding-block:12px; border-block:1px solid #3c6068; }
 .inventory-item p { margin-block:6px 0; }
 
-.immersive .boss-combat { height:clamp(245px,46vh,420px); min-height:245px; }
+.immersive .boss-combat { height:clamp(280px,46vh,420px); min-height:280px; }
+.boss-combat .combat-vitals { grid-column:1 / -1; }
 .immersive .boss-combat .combat-banner { top:16px; }
 .boss-auto-push { justify-content:flex-start; min-height:44px; cursor:pointer; }
 .boss-auto-push input { width:20px; height:20px; margin:0; accent-color:var(--gold); }
@@ -581,5 +596,3 @@
   border: 1px solid var(--line);
   border-radius: 6px;
 }
-
-.portrait-window{display:block;overflow:hidden}

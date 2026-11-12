@@ -14,6 +14,7 @@
  * Headless numbers are for comparing builds, not for pass/fail. P2 is decided on the phone.
  */
 import { writeFileSync, mkdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 const args = process.argv.slice(2);
@@ -21,11 +22,11 @@ const base = args.find((a) => !a.startsWith("--")) ?? "http://127.0.0.1:4173/";
 const rate = Number(args.find((a) => a.startsWith("--rate="))?.slice(7) ?? 6);
 const runs = Number(args.find((a) => a.startsWith("--runs="))?.slice(7) ?? 3);
 const noWebgl = args.includes("--no-webgl");
-const out = new URL("./out/", import.meta.url).pathname;
+const out = fileURLToPath(new URL("./out/", import.meta.url));
 mkdirSync(out, { recursive: true });
 
 const launchArgs = noWebgl ? ["--disable-gpu", "--disable-software-rasterizer"] : ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"];
-const browser = await chromium.launch({ args: launchArgs });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_EXECUTABLE_PATH, args: launchArgs });
 const context = await browser.newContext({ viewport: { width: 360, height: 780 }, deviceScaleFactor: 3, hasTouch: true, isMobile: true });
 const page = await context.newPage();
 const errors = [];

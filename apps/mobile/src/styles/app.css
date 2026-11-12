@@ -140,6 +140,7 @@ h3 {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding: 10px 12px calc(var(--nav-height) + var(--sab) + 12px);
+  scroll-padding-block: 12px calc(var(--nav-height) + var(--sab) + 12px);
   display: flex;
   flex-direction: column;
   gap: var(--gap);
@@ -736,7 +737,8 @@ h3 {
   left: 50%;
   bottom: calc(var(--nav-height) + var(--sab) + 12px);
   transform: translateX(-50%);
-  z-index: 60;
+  /* Feedback sits above navigation, but never covers a dialog's text/actions. */
+  z-index: 35;
   max-width: calc(100% - 32px);
   padding: 10px 14px;
   border-radius: 12px;

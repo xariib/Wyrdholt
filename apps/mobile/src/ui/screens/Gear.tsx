@@ -56,7 +56,7 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
         <button className="btn gold block inventory-entry" onClick={() => setInventory({ newOnly: false, key: 0 })}>Inventory · {number(profile.inventory.instances.length)} copies · all slots</button>
         <div className="loadout-stage">
           <svg className="loadout-links" viewBox="0 0 360 320" preserveAspectRatio="none" aria-hidden="true"><g stroke="currentColor" fill="none"><path d="M95 55H145L180 85 M265 55H215L195 120 M95 155H145L165 160 M265 155H215L200 160 M95 265H145L180 230 M265 265H225L204 178"/></g></svg>
-          <div className="loadout-hero"><SpriteImage name={content.classDef(profile.character.activeClassId).sprite} portrait/><span>Lv. {profile.character.level} · {content.classDef(profile.character.activeClassId).name}</span></div>
+          <div className="loadout-hero"><SpriteImage name={content.classDef(profile.character.activeClassId).sprite} profile={profile} portrait/><span>Lv. {profile.character.level} · {content.classDef(profile.character.activeClassId).name}</span></div>
         <div className="loadout">
           {slots.map((v) => {
             const item = v.equipped?.item ?? null;
@@ -71,7 +71,7 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
                   setOpenSlot(v.slot);
                 }}
               >
-                <ItemIcon icon={item?.icon ?? "blade"} rarityColor={item ? rarityColor(content, item.rarity) : "#28324a"} />
+                <ItemIcon item={item} icon={item?.icon ?? "blade"} rarityColor={item ? rarityColor(content, item.rarity) : "#28324a"} />
                 <span style={{ minWidth: 0 }}>
                   <div className="slot-label">{SLOT_LABELS[v.slot]}</div>
                   <div className="item-name">{item?.name ?? "Empty"}</div>
@@ -274,7 +274,7 @@ function GroupRow({ profile, group, selected, onSelect }: { profile: Profile; gr
   const color = rarityColor(content, group.item.rarity);
   return (
     <button className={`list-item ${selected ? "selected" : ""} ${group.equippedHere ? "equipped" : ""}`} onClick={onSelect}>
-      <ItemIcon icon={group.item.icon} rarityColor={color} size={40} />
+      <ItemIcon item={group.item} icon={group.item.icon} rarityColor={color} size={40} />
       <span style={{ flex: 1, minWidth: 0 }}>
         <div className="item-name">
           {group.item.name}

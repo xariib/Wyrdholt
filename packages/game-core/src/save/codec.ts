@@ -173,13 +173,22 @@ function totalsProblem(value: unknown, path: string): string | null {
   ]);
 }
 
-/** Structural gate for the three persisted state domains, not full Profile or
+/** Structural gate for persisted character and runtime state, not full Profile or
  * content validation. Sparse zones and unknown extensions are left intact.
  * Diagnostic paths deliberately omit user-controlled zone keys/save contents.
  */
 function profileStateProblem(value: unknown): string | null {
   if (!isRecord(value)) return "profile";
-  const { clock, stats, adventure } = value;
+  const { character, clock, stats, adventure } = value;
+  if (!isRecord(character)) return "character";
+  const characterProblem = stateFieldsProblem(character, "character", [
+    ["name", "string"], ["activeClassId", "string"], ["alternateClassId", "string"],
+    ["xp", "counter"], ["level", "positive"],
+  ]);
+  if (characterProblem) return characterProblem;
+  if (!isRecord(character.masteryXp) || Object.values(character.masteryXp).some(xp => !Number.isSafeInteger(xp) || (xp as number) < 0)) {
+    return "character.masteryXp";
+  }
   if (!isRecord(clock)) return "clock";
   if (!isRecord(stats)) return "stats";
   if (!isRecord(adventure)) return "adventure";

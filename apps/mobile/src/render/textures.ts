@@ -1,8 +1,10 @@
-import { Texture } from "pixi.js";
+import { Rectangle, Texture } from "pixi.js";
 import { SPRITES, spriteCanvas } from "./pixelArt";
 import { asset, actorId } from "../art/manifest";
 import { ArtScope, frameCanvas } from "../art/load";
 import { ART_BUDGET, type ArtAsset, type ArtId } from "../art/types";
+import { gearAtlas } from "../art/gearArt";
+import { bareAppearance, isHeroClass, type HeroAppearance } from "../art/gearSkins";
 
 export interface SpriteTextures {
   normal: Texture; flash: Texture;
@@ -18,9 +20,11 @@ export class TextureBank {
   private textures = new Map<string, SpriteTextures>();
   private pending = new Set<string>();
   private owned = new Set<Texture>();
+  private views = new Set<Texture>();
   private disposed = false;
   private frameBytes = 0;
-  constructor(private readonly changed: () => void, private readonly resolveAsset: (id: ArtId) => ArtAsset | undefined = asset) {}
+  constructor(private readonly changed: () => void, private readonly resolveAsset: (id: ArtId) => ArtAsset | undefined = asset,
+    private readonly appearance?: HeroAppearance) {}
   get decodedBytes(): number { return this.scope.decodedBytes + this.frameBytes; }
   private texture(canvas: HTMLCanvasElement): Texture {
     const t = Texture.from({ resource: canvas, scaleMode: "nearest" });
@@ -46,12 +50,42 @@ export class TextureBank {
     const a = this.resolveAsset(id);
     if (!a || this.pending.has(id) || this.disposed) return;
     this.pending.add(id);
-    const bytes = a.frames.length * a.width * a.height * 8;
+    const name = id.split("/")[1]!;
+    if (id.startsWith("characters/") && isHeroClass(name) && this.resolveAsset === asset) {
+      const bytes = a.atlasWidth * a.atlasHeight * 4;
+      if (this.decodedBytes + bytes > ART_BUDGET.maxDecodedBytes) return;
+      const look = this.appearance?.classId === name ? this.appearance : bareAppearance(name);
+      const atlas = this.texture(gearAtlas(a, look));
+      const frames = a.frames.map(f => {
+        const normal = new Texture({ source: atlas.source, frame: new Rectangle(f.x, f.y, a.width, a.height) });
+        this.views.add(normal);
+        return { normal, flash: normal };
+      });
+      const first = frames[a.clips.idle.frames[0]!]!;
+      this.textures.set(id, { ...first, width: a.width, height: a.height, anchorX: a.anchor.x, anchorY: a.anchor.y,
+        scale: 1, facing: a.facing, frames, asset: a });
+      return;
+    }
+    // Darkwood supplies its own flash poses. Read frames directly from the atlas:
+    // no per-frame canvas copies, duplicate flash pixels, or per-frame GPU uploads.
+    const separateFlash = !a.file.startsWith("art/darkwood/");
+    const bytes = separateFlash ? a.frames.length * a.width * a.height * 8 : 0;
     if (this.decodedBytes + bytes + a.atlasWidth * a.atlasHeight * 4 > ART_BUDGET.maxDecodedBytes) return;
     void this.scope.load(a).then(image => {
       if (this.disposed) return;
       if (this.decodedBytes + bytes > ART_BUDGET.maxDecodedBytes) return;
-      const frames = a.frames.map((_, i) => ({ normal: this.texture(frameCanvas(a, image, i)), flash: this.texture(frameCanvas(a, image, i, !a.file.startsWith("art/darkwood/"))) }));
+      let frames: SpriteTextures["frames"];
+      if (separateFlash) {
+        frames = a.frames.map((_, i) => ({ normal: this.texture(frameCanvas(a, image, i)), flash: this.texture(frameCanvas(a, image, i, true)) }));
+      } else {
+        const atlas = Texture.from({ resource: image, scaleMode: "nearest" });
+        this.owned.add(atlas); // The image bytes are already counted by ArtScope.
+        frames = a.frames.map(f => {
+          const normal = new Texture({ source: atlas.source, frame: new Rectangle(f.x, f.y, a.width, a.height) });
+          this.views.add(normal);
+          return { normal, flash: normal };
+        });
+      }
       const first = frames[a.clips.idle.frames[0]!]!;
       this.textures.set(id, { ...first, width: a.width, height: a.height, anchorX: a.anchor.x, anchorY: a.anchor.y, scale: 1 / a.pixelsPerUnit, facing: a.facing, frames, asset: a });
       this.changed();
@@ -60,6 +94,9 @@ export class TextureBank {
   dispose(): void {
     this.disposed = true;
     this.scope.dispose();
+    // Frame views share an atlas source. Only its owning texture destroys it.
+    for (const t of this.views) t.destroy(false);
+    this.views.clear();
     for (const t of this.owned) t.destroy(true);
     this.owned.clear();
     this.textures.clear();

@@ -2,7 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { spriteDataUrl, spriteCanvas } from "../../render/pixelArt";
 
 
-import { actorPack, productionUrl } from "../../art/darkwood";
+import { actorPack } from "../../art/darkwood";
+import type { ItemDef } from "@emberbound/shared-types";
+import type { Profile } from "@emberbound/game-core";
+import { session } from "../../game/session";
+import { starterAppearance, equippedAppearance, gearSkin, isHeroClass, type HeroClass } from "../../art/gearSkins";
+import { gearIcon, portraitAtlas } from "../../art/gearArt";
 import { ICONS } from "../../art/placeholderIcons";
 import { asset, actorId } from "../../art/manifest";
 import { ArtScope, frameCanvas } from "../../art/load";
@@ -45,7 +50,19 @@ function useArt(id: ArtId, fallback: string): string {
   return loaded?.id === id ? loaded.url : fallback;
 }
 
-export function ItemIcon({ icon, rarityColor, size = 44 }: { icon: string; rarityColor: string; size?: number }) {
+export function ItemIcon({ icon, item, rarityColor, size = 44 }: { icon: string; item?: ItemDef | null; rarityColor: string; size?: number }) {
+  if (item && isHeroClass(item.classId ?? "")) return <EquippedItemIcon item={item} rarityColor={rarityColor} size={size} />;
+  return <LegacyItemIcon icon={icon} rarityColor={rarityColor} size={size} />;
+}
+
+function EquippedItemIcon({ item, rarityColor, size }: { item: ItemDef; rarityColor: string; size: number }) {
+  const src = useMemo(() => gearIcon(gearSkin(item, item.classId as HeroClass)).toDataURL(), [item]);
+  return <span className="item-icon" data-gear-skin={item.id} style={{ borderColor: rarityColor, width: size, height: size }}>
+    <img className="pixelated" src={src} alt="" draggable={false} style={{ width: size * 0.82, height: size * 0.82 }} />
+  </span>;
+}
+
+function LegacyItemIcon({ icon, rarityColor, size }: { icon: string; rarityColor: string; size: number }) {
   const fallback = useMemo(() => iconUrl(icon), [icon]);
   const src = useArt(`icons/${icon}`, fallback);
   return (
@@ -55,17 +72,31 @@ export function ItemIcon({ icon, rarityColor, size = 44 }: { icon: string; rarit
   );
 }
 
-export function SpriteImage({ name, className, portrait = false }: { name: string; className?: string; portrait?: boolean }) {
+export function SpriteImage({ name, className, portrait = false, profile }: { name: string; className?: string; portrait?: boolean; profile?: Profile }) {
+  if (isHeroClass(name)) return <EquippedSprite name={name} className={className} portrait={portrait} profile={profile} />;
+  return <LegacySprite name={name} className={className} />;
+}
+
+function EquippedSprite({ name, className, portrait, profile }: { name: HeroClass; className?: string; portrait: boolean; profile?: Profile }) {
+  const look = profile ? equippedAppearance(profile, session.content, profile.equipment, name) : starterAppearance(name, session.content);
+  const images = useMemo(() => {
+    const atlas = portraitAtlas(name, look);
+    const first = document.createElement("canvas"); first.width = actorPack[name]!.animations.idle.frame[0]!; first.height = atlas.height;
+    first.getContext("2d")!.drawImage(atlas, 0, 0);
+    return { atlas: atlas.toDataURL(), first: first.toDataURL() };
+  }, [name, look.key]);
+  if (portrait) return <AnimatedPortrait key={name} name={name} fallback={images.first} source={images.atlas} appearanceKey={look.key} />;
+  return <img className={`pixelated ${className ?? ""}`} data-appearance={look.key} src={images.first} alt="" draggable={false} />;
+}
+
+function LegacySprite({ name, className }: { name: string; className?: string }) {
   const fallback = useMemo(() => spriteUrl(name, 4), [name]);
   const src = useArt(actorId(name), fallback);
-  if (portrait && actorPack[name]) {
-    return <AnimatedPortrait key={name} name={name} fallback={src} />;
-  }
   return <img className={`pixelated ${className ?? ""}`} src={src} alt="" draggable={false} />;
 }
 
 /** One atlas, no React frame loop; pause hidden portraits and respect reduced motion. */
-function AnimatedPortrait({ name, fallback }: { name: string; fallback: string }) {
+function AnimatedPortrait({ name, fallback, source, appearanceKey }: { name: string; fallback: string; source: string; appearanceKey: string }) {
   const clip = actorPack[name]!.animations.idle;
   const image = useRef<HTMLImageElement>(null);
   const [failed, setFailed] = useState(false);
@@ -99,9 +130,9 @@ function AnimatedPortrait({ name, fallback }: { name: string; fallback: string }
       document.removeEventListener("visibilitychange", sync);
     };
   }, [clip, failed]);
-  return <span className="production-portrait" data-actor={name} data-logical-height="48" data-visual-height={clip.frame[1]}>
+  return <span className="production-portrait" data-actor={name} data-appearance={appearanceKey} data-logical-height="48" data-visual-height={clip.frame[1]}>
     <span className="portrait-window" style={{ width: clip.frame[0]! * 3, height: clip.frame[1]! * 3 }}>
-      <img ref={image} className="pixelated" src={failed ? fallback : productionUrl(clip.sprite_strip)} onError={() => setFailed(true)} alt={name} draggable={false}
+      <img ref={image} className="pixelated" src={failed ? fallback : source} onError={() => setFailed(true)} alt={name} draggable={false}
         style={{ width: clip.frame[0]! * 3 * (failed ? 1 : clip.ms.length), height: clip.frame[1]! * 3 }} />
     </span>
   </span>;

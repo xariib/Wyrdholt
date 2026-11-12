@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { session } from "../../game/session";
 import type { CombatRenderer } from "../../render/CombatRenderer";
 import { perfMonitor } from "../../platform/perfMonitor";
+import { equippedAppearance, GEAR_SLOTS } from "../../art/gearSkins";
 
 /**
  * PixiJS (about 230 KB) is loaded on demand, after the first screen is interactive,
@@ -61,18 +62,42 @@ export function CombatView({ active, heroSprite, background }: { active: boolean
           // Rebuild the whole renderer; the simulation is unaffected.
           setTimeout(() => setGeneration((g) => g + 1), 250);
         };
+        const hud = vitalsRef.current;
+        const label = hud?.querySelector<HTMLElement>(".vitals-label");
+        const fill = hud?.querySelector<HTMLElement>(".vitals-fill");
+        const ward = hud?.querySelector<HTMLElement>(".vitals-ward");
+        let lastText = "", lastWidth = "", lastWard = "";
+        let appearanceKey = "";
+        let appearanceProfile = session.getSnapshot().profile;
         unsubscribe = session.onFrame((frame) => {
+          const profile = session.getSnapshot().profile;
+          if (profile) {
+            // The current fight owns its build. A queued equip must not change its skin.
+            const build = frame.fight?.record.build;
+            const equipment = build?.equipment ?? profile.equipment;
+            const classId = build?.classId ?? profile.character.activeClassId;
+            const key = `${classId}:${GEAR_SLOTS.map(s => equipment[s] ?? "-").join("|")}`;
+            // A restored profile can reuse instance IDs for different gear.
+            if (profile !== appearanceProfile || key !== appearanceKey) {
+              renderer.setHeroAppearance(equippedAppearance(profile, session.content, equipment, classId));
+              appearanceKey = key;
+              appearanceProfile = profile;
+            }
+          }
           renderer.onFrame(frame);
+          if (!activeRef.current) return;
           const vitals = renderer.heroVitals();
-          const hud = vitalsRef.current;
           if (!hud || !vitals) return;
           const text = `${Math.ceil(vitals.hp100 / 100)} / ${Math.ceil(vitals.max100 / 100)} HP`;
-          const label = hud.querySelector<HTMLElement>(".vitals-label");
-          if (label && label.textContent !== text) label.textContent = text;
-          const fill = hud.querySelector<HTMLElement>(".vitals-fill");
-          if (fill) fill.style.width = `${Math.max(0, Math.min(100, vitals.hp100 / Math.max(1, vitals.max100) * 100))}%`;
-          const ward = hud.querySelector<HTMLElement>(".vitals-ward");
-          if (ward) { ward.hidden = vitals.wardCap100 === 0; ward.textContent = `Ward ${Math.ceil(vitals.ward100 / 100)} / ${Math.ceil(vitals.wardCap100 / 100)}`; ward.title = "Arcane Ward absorbs damage before health. Blue shield numbers show ward gained."; }
+          if (label && lastText !== text) label.textContent = lastText = text;
+          const width = `${Math.max(0, Math.min(100, vitals.hp100 / Math.max(1, vitals.max100) * 100))}%`;
+          if (fill && lastWidth !== width) fill.style.width = lastWidth = width;
+          if (ward) {
+            const hidden = vitals.wardCap100 === 0;
+            if (ward.hidden !== hidden) ward.hidden = hidden;
+            const text = `Ward ${Math.ceil(vitals.ward100 / 100)} / ${Math.ceil(vitals.wardCap100 / 100)}`;
+            if (lastWard !== text) ward.textContent = lastWard = text;
+          }
         });
         setFailed(null);
       })
@@ -120,6 +145,6 @@ export function CombatView({ active, heroSprite, background }: { active: boolean
           </button>
         </div>
       )}
-    </div><div className="combat-vitals" ref={vitalsRef}><span className="vitals-label">HP</span><span className="vitals-track"><i className="vitals-fill"/></span><span className="vitals-ward" hidden/></div></>
+    </div><div className="combat-vitals" ref={vitalsRef}><span className="vitals-label">HP</span><span className="vitals-track"><i className="vitals-fill"/></span><span className="vitals-ward" hidden title="Arcane Ward absorbs damage before health. Blue shield numbers show ward gained."/></div></>
   );
 }
