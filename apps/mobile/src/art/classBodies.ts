@@ -22,16 +22,16 @@ export interface ClassBody {
 }
 
 export const CLASS_BODIES: Record<HeroClass, ClassBody> = {
-  monk: { shoulders: -30, hips: -16, width: 0.95, headWidth: 0.9, armWidth: 3, legWidth: 5, feet: [-11, 4],
-    skin: "#ad7853", skinLight: "#d6a67a", skinShade: "#754b39", hair: "#40372e", hairLight: "#77634a",
-    cloth: "#c4b99b", clothLight: "#e2d8b9", clothShade: "#81765f", trousers: "#918369", reach: 26 },
-  warrior: { shoulders: -31, hips: -15, width: 1.28, headWidth: 1.08, armWidth: 5, legWidth: 6, feet: [-13, 5],
-    skin: "#c18c70", skinLight: "#e3b092", skinShade: "#8b5c4d", hair: "#49352c", hairLight: "#755340",
-    cloth: "#8f8472", clothLight: "#b4a58b", clothShade: "#5e574d", trousers: "#62605a", reach: 22 },
-  mage: { shoulders: -36, hips: -19, width: 0.76, headWidth: 0.87, armWidth: 2, legWidth: 3, feet: [-7, 2],
-    skin: "#b7a18c", skinLight: "#d9c7af", skinShade: "#82756b", hair: "#aaa99f", hairLight: "#dedbc8",
-    cloth: "#797d90", clothLight: "#a6a7b5", clothShade: "#4f5466", trousers: "#555866", reach: 24 },
-  ranger: { shoulders: -33, hips: -18, width: 0.83, headWidth: 0.86, armWidth: 3, legWidth: 4, feet: [-12, 6],
-    skin: "#b59368", skinLight: "#dac09a", skinShade: "#7d644d", hair: "#6b392b", hairLight: "#a3633b",
-    cloth: "#7e8b70", clothLight: "#aab496", clothShade: "#4b5b49", trousers: "#5c6350", reach: 27 },
+  monk: { shoulders: -32, hips: -18, width: 0.94, headWidth: 1, armWidth: 3, legWidth: 5, feet: [-10, 4],
+    skin: "#b78258", skinLight: "#e3b77d", skinShade: "#80533f", hair: "#37312d", hairLight: "#706048",
+    cloth: "#b9aa81", clothLight: "#e5d7ac", clothShade: "#756e56", trousers: "#726b56", reach: 26 },
+  warrior: { shoulders: -33, hips: -17, width: 1.16, headWidth: 1, armWidth: 4, legWidth: 5, feet: [-8, 5],
+    skin: "#bb8567", skinLight: "#e4b58a", skinShade: "#805449", hair: "#40332e", hairLight: "#77604a",
+    cloth: "#827761", clothLight: "#b5a488", clothShade: "#514e45", trousers: "#4c504b", reach: 22 },
+  mage: { shoulders: -36, hips: -19, width: 0.82, headWidth: 1, armWidth: 3, legWidth: 3, feet: [-5, 3],
+    skin: "#bea88e", skinLight: "#e5d1ac", skinShade: "#89786c", hair: "#aeb8ac", hairLight: "#e1dfc5",
+    cloth: "#64757c", clothLight: "#98a9a6", clothShade: "#3c4d59", trousers: "#3c454c", reach: 24 },
+  ranger: { shoulders: -33, hips: -18, width: 0.9, headWidth: 1, armWidth: 3, legWidth: 4, feet: [-9, 5],
+    skin: "#b79067", skinLight: "#ddbd8b", skinShade: "#7c604b", hair: "#643d2d", hairLight: "#a46d42",
+    cloth: "#6d8060", clothLight: "#a6b28a", clothShade: "#3e5749", trousers: "#494e3c", reach: 27 },
 };
