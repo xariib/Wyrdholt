@@ -51,6 +51,10 @@ Run `node --import tsx tools/smoke/online-check.mjs` against a build made with `
 
 ## Visual regression checks
 
+The four heroes use painted 2D character art in combat and portraits, with separate
+equipment layers. See the [painted character contract](docs/design/PAINTED_CHARACTERS.md)
+for source assets, rendering scale and animation details.
+
 After building, run `node --import tsx tools/visual/mobile-review.mjs` for disposable-fixture screenshots at six phone/tablet sizes, including short landscape, large balances, safe areas, equipment sheets and boss combat. Run `node tools/visual/combat-layout-check.mjs` to check all four classes and poses against the actual canvas clipping bounds in three backgrounds. Both tools start a local preview, accept `CHROMIUM_EXECUTABLE_PATH`, and keep evidence under ignored `tools/smoke/out`.
 
 Short browser viewports scroll instead of shrinking away the combat area. Android remains portrait. Browser screenshots do not replace physical-device visual acceptance.

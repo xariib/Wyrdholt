@@ -2,6 +2,8 @@ import { actorPack } from "./darkwood";
 import type { ArtAsset, Pose } from "./types";
 import { bareAppearance, heroAttackName, type GearSkin, type HeroAppearance, type HeroClass } from "./gearSkins";
 import { CLASS_BODIES, type ClassBody } from "./classBodies";
+import { paintedReady, paintedAtlas, paintedIcon } from "./paintedHeroes";
+import { asset as findAsset } from "./manifest";
 
 // Original, composable pixel art. Body and each equipment slot are separate drawing
 // passes, so taking off a helmet or swapping a weapon cannot leave baked-in armor.
@@ -362,6 +364,7 @@ function drawHero(ctx: CanvasRenderingContext2D, look: HeroAppearance, pose: Pos
 
 /** Geometry/timing comes from the existing animation contract, pixels from the equipped layers. */
 export function gearAtlas(asset: ArtAsset, appearance: HeroAppearance): HTMLCanvasElement {
+  if (paintedReady(appearance.classId)) return paintedAtlas(asset, appearance);
   const canvas = document.createElement("canvas"); canvas.width = asset.atlasWidth; canvas.height = asset.atlasHeight;
   const ctx = canvas.getContext("2d")!; ctx.imageSmoothingEnabled = false;
   const pose = (asset.id.split("/")[2] ?? "idle") as Pose | "flash";
@@ -375,6 +378,7 @@ export function gearAtlas(asset: ArtAsset, appearance: HeroAppearance): HTMLCanv
 }
 
 export function portraitAtlas(classId: HeroClass, appearance = bareAppearance(classId)): HTMLCanvasElement {
+  if (paintedReady(classId)) return paintedAtlas(findAsset(`characters/${classId}`)!, appearance);
   const clip = actorPack[classId]!.animations.idle;
   const canvas = document.createElement("canvas"); canvas.width = clip.frame[0]! * clip.ms.length; canvas.height = clip.frame[1]!;
   const ctx = canvas.getContext("2d")!;
@@ -384,6 +388,7 @@ export function portraitAtlas(classId: HeroClass, appearance = bareAppearance(cl
 
 /** Inventory art uses the same equipment shapes and materials as the worn layers. */
 export function gearIcon(s: GearSkin): HTMLCanvasElement {
+  if (paintedReady(s.classId)) return paintedIcon(s);
   const canvas = document.createElement("canvas"); canvas.width = 32; canvas.height = 32;
   const ctx = canvas.getContext("2d")!, p = new Pixels(ctx);
   ctx.translate(16, 28);

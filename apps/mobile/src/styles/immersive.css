@@ -513,7 +513,9 @@
 
 /* Logical body rows 12–59 never crop the visual frame, plume, staff or bow. */
 .production-portrait{display:block;position:relative;box-sizing:content-box;width:192px;height:192px;padding:8px;overflow:visible;flex:none}
-.production-portrait img{display:block;max-width:none!important;max-height:none!important;object-fit:initial!important;image-rendering:pixelated}
+.production-portrait img{display:block;max-width:none!important;max-height:none!important;object-fit:initial!important;image-rendering:auto}
+.painted-art{image-rendering:auto!important}
+.combat-canvas{image-rendering:auto!important}
 .portrait-window{display:block;overflow:hidden}
 .loadout-hero{left:50%;width:208px;transform:translateX(-50%);top:48px}
 .class-card .class-head{flex-wrap:wrap}

@@ -20,8 +20,8 @@ import { attackStyle, drawAttackImpact, drawAttackTrail, type EffectPoint } from
  *
  * - Reads CombatFrames from the session and plays the fight's authoritative
  *   event log up to the frame's playback time. It never computes outcomes.
- * - Renders at a low logical resolution with an integer device-pixel scale,
- *   nearest-neighbour sampling and pixel-snapped positions.
+ * - Keeps the original logical grid, rendering painted heroes at two screen
+ *   pixels per logical pixel while legacy world textures retain nearest sampling.
  * - Uses one render call per session frame (no separate Pixi ticker).
  * - Can be destroyed and recreated at any time (tab switches, WebGL context loss).
  */
@@ -188,7 +188,7 @@ export class CombatRenderer {
       autoStart: false,
       sharedTicker: false,
       autoDensity: false,
-      resolution: 1,
+      resolution: 2,
       roundPixels: true,
       backgroundAlpha: 1,
       background: "#10182a",

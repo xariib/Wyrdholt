@@ -38,6 +38,8 @@ try {
     const { gearAtlas, portraitAtlas, gearIcon } = await import('/src/art/gearArt.ts');
     const { gearSkin } = await import('/src/art/gearSkins.ts');
     const { asset } = await import('/src/art/manifest.ts');
+    const { loadPaintedHero, HERO_RESOLUTION: R } = await import('/src/art/paintedHeroes.ts');
+    await Promise.all(['monk','warrior','mage','ranger'].map(loadPaintedHero));
     document.body.style.cssText = 'margin:20px;background:#101d23;color:#dfddc7;font:14px system-ui;display:grid;grid-template-columns:repeat(6,1fr);gap:12px';
     const hash = canvas => {
       let h = 2166136261;
@@ -50,9 +52,9 @@ try {
       const id = `characters/${look.classId}`;
       const idle = gearAtlas(asset(id), look);
       if (hash(idle) !== hash(portraitAtlas(look.classId, look))) throw new Error(`Portrait differs from combat: ${label}`);
-      const first = document.createElement('canvas'); first.width = asset(id).width; first.height = asset(id).height;
+      const first = document.createElement('canvas'); first.width = asset(id).width * R; first.height = asset(id).height * R;
       first.getContext('2d').drawImage(idle, 0, 0);
-      first.style.cssText = 'width:100%;image-rendering:pixelated;background:#182a30';
+      first.style.cssText = 'width:100%;image-rendering:auto;background:#182a30';
       const figure = document.createElement('div'); figure.textContent = label; figure.append(first); document.body.append(figure);
       for (const pose of ['idle', 'attack', 'hit', 'death', 'flash']) {
         const a = asset(pose === 'idle' ? id : `${id}/${pose}`), atlas = gearAtlas(a, look);
@@ -60,9 +62,9 @@ try {
         for (const f of a.frames) {
           frames++;
           let edge = false;
-          for (let y = 0; y < a.height; y++) for (let x = 0; x < a.width; x++) {
-            if (x > 0 && x < a.width - 1 && y > 0 && y < a.height - 1) continue;
-            if (data[((f.y + y) * atlas.width + f.x + x) * 4 + 3]) edge = true;
+          for (let y = 0; y < a.height * R; y++) for (let x = 0; x < a.width * R; x++) {
+            if (x > 0 && x < a.width * R - 1 && y > 0 && y < a.height * R - 1) continue;
+            if (data[((f.y * R + y) * atlas.width + f.x * R + x) * 4 + 3]) edge = true;
           }
           if (edge) clipping.push(`${label}/${pose}/${a.frames.indexOf(f)}`);
         }
@@ -92,6 +94,7 @@ try {
   const identity = await page.evaluate(async looks => {
     const { gearAtlas } = await import('/src/art/gearArt.ts');
     const { asset } = await import('/src/art/manifest.ts');
+    const { HERO_RESOLUTION: R } = await import('/src/art/paintedHeroes.ts');
     document.body.replaceChildren();
     document.body.style.gridTemplateColumns = 'repeat(4, 1fr)';
     const result = [];
@@ -103,7 +106,7 @@ try {
         const canvas = document.createElement('canvas'); canvas.width = 72; canvas.height = 64;
         const ctx = canvas.getContext('2d');
         const f = a.frames[attack ? 1 : 0];
-        ctx.drawImage(atlas, f.x, f.y, a.width, a.height, 36 - a.anchor.x, 60 - a.anchor.y, a.width, a.height);
+        ctx.drawImage(atlas, f.x * R, f.y * R, a.width * R, a.height * R, 36 - a.anchor.x, 60 - a.anchor.y, a.width, a.height);
         if (row === 'Silhouette') {
           ctx.globalCompositeOperation = 'source-in'; ctx.fillStyle = '#ddd8c5'; ctx.fillRect(0, 0, 72, 64);
           const data = ctx.getImageData(0, 0, 72, 64).data;
@@ -141,6 +144,9 @@ try {
     const baseId = `cinder_crown_${cls}`;
     await app.evaluate(async baseId => {
       const { session } = await import('/src/game/session.ts');
+      // Keep the fixture in continuous combat while navigating the equipment UI;
+      // a completed Push can otherwise cover the navigation with its result modal.
+      session.dispatch({ type: 'startFarm', zoneId: 'greenfields' });
       const granted = session.dispatch({ type: 'devGrant', baseIds: [baseId] });
       if (!granted.ok) throw new Error(granted.error);
     }, baseId);
@@ -178,6 +184,7 @@ try {
     await app.waitForFunction(id => document.querySelector('.loadout-hero [data-appearance]')?.dataset.appearance.includes(id), baseId);
     await app.getByRole('navigation').getByRole('button', { name: 'Adventure', exact: true }).click();
     await app.waitForFunction(id => window.__emberRenderer.heroAppearance.slots.head?.id.endsWith(id), baseId);
+    await app.waitForFunction(() => window.__emberRenderer.actors.get('hero')?.tex.normal.source.resolution === 4);
     const after = await app.evaluate(() => {
       clearInterval(window.skinSampleTimer);
       return { look: window.__emberRenderer.heroAppearance, samples: window.skinSamples,

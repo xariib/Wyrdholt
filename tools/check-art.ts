@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { productionAssets, environments } from "../apps/mobile/src/art/manifest";
 import { validateArt, ART_BUDGET } from "../apps/mobile/src/art/types";
+import { PAINTED_SHEETS } from "../apps/mobile/src/art/paintedSources";
 
 const errors = validateArt(productionAssets);
 const pack = JSON.parse(readFileSync("docs/art/darkwood-production-v1/MANIFEST.json", "utf8")) as { approved_production_files: { path: string; sha256: string; bytes: number }[] };
@@ -29,5 +30,13 @@ for (const [zone, layers] of Object.entries(environments)) {
     if (!Number.isFinite(layer.opacity) || layer.opacity < 0 || layer.opacity > 1) errors.push(`${zone}: invalid layer opacity`);
   }
 }
+for (const sheet of Object.values(PAINTED_SHEETS)) {
+  try {
+    const png = readFileSync(resolve("apps/mobile/public", sheet.file));
+    if (png.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a" || png.toString("ascii", 12, 16) !== "IHDR") throw new Error("not a PNG");
+    if (png.readUInt32BE(16) !== sheet.width || png.readUInt32BE(20) !== sheet.height) throw new Error("dimensions differ from painted source contract");
+    if (![4, 6].includes(png[25]!)) throw new Error("painted source requires transparency");
+  } catch (error) { errors.push(`${sheet.file}: ${String(error)}`); }
+}
 if (errors.length) { console.error(errors.join("\n")); process.exitCode = 1; }
-else console.log(`Art validation PASS: ${productionAssets.length} approved assets. Zero means placeholder-only, not approved production art.`);
+else console.log(`Art validation PASS: ${productionAssets.length} approved assets and ${Object.keys(PAINTED_SHEETS).length} painted character sheets.`);
