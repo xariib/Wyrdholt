@@ -4,16 +4,19 @@ import "pixi.js/unsafe-eval";
 import { Application, Container, Graphics, Sprite, Texture, TextureSource } from "pixi.js";
 import type { CombatEvent } from "@emberbound/shared-types";
 import type { CombatFrame } from "../game/session";
-import { actorPack, attackDurations, fxPack, productionActorId, sequenceIndex } from "../art/darkwood";
+import { attackDurations, fxPack, sequenceIndex } from "../art/darkwood";
+import { actorPack, productionActorId } from "../art/actors";
 import { ProductionMotion } from "./productionMotion";
 import { characterOffset, unarmedApproach, UNARMED_ATTACK } from "./characterMotion";
 import { heroAttackName, type HeroAppearance } from "../art/gearSkins";
+import { heroAttackFrame } from "../art/heroAnimation";
+import { refinedReleasePoint } from "../art/refinedPixelArt";
 import { EnvironmentArt } from "./environmentArt";
 import { drawBackground, groundY } from "./background";
 import { GLYPHS, glyphCanvas } from "./pixelArt";
 import { animationFrame, ART_BUDGET, type Pose } from "../art/types";
 import { TextureBank, type SpriteTextures } from "./textures";
-import { attackStyle, drawAttackImpact, drawAttackTrail, type EffectPoint } from "./attackEffects";
+import { attackStyle, drawAttackCharge, drawAttackImpact, drawAttackTrail, type EffectPoint } from "./attackEffects";
 
 /**
  * PixiJS combat presentation.
@@ -52,7 +55,7 @@ const PIP_COLORS: Record<string, number> = {
 };
 const FAST_FORWARD_MS = 450;
 /** Travel time of approved projectiles (arcane bolt, arrow, venom glob). Presentation only. */
-const PROJECTILE_MS = 160;
+const PROJECTILE_MS = 240;
 /** How far ahead the renderer looks for attacks to wind up. Longer than any approved lead. */
 const PREROLL_WINDOW_MS = 700;
 const PROJECTILE_ACTORS = new Set(["mage", "ranger", "spider"]);
@@ -67,6 +70,7 @@ interface ActorView {
   root: Container;
   hud: Container;
   body: Sprite;
+  charge?: Graphics;
   flash: Sprite;
   aura: Sprite;
   bar: Graphics;
@@ -382,7 +386,7 @@ export class CombatRenderer {
     x = Math.round(Math.max(leftWidth + 2, Math.min(this.W - 2 - (tex.width * displayScale - leftWidth), x)));
     if (actorPack[spriteName]) {
       for (const pose of ["attack", "hit", "death", "flash"]) this.sprites.optional(`${productionActorId(spriteName)}/${pose}`);
-      const effects = attackName === "unarmed" ? [] : attackName === "mage" ? ["arcane_bolt", "arcane_bolt_hit"] : attackName === "ranger" ? ["arrow", "arrow_hit"] : attackName === "monk" ? ["monk_impact", "monk_impact_crit"] : attackName === "warrior" ? ["warrior_impact", "warrior_impact_crit", "warrior_slash"] : attackName === "wolf" ? ["wolf_bite"] : ["venom_glob", "venom_splash"];
+      const effects = attackName === "unarmed" ? [] : attackName === "mage" ? ["arcane_bolt", "arcane_bolt_hit"] : attackName === "ranger" ? ["arrow", "arrow_hit"] : attackName === "monk" ? ["monk_impact", "monk_impact_crit"] : attackName === "warrior" ? ["warrior_impact", "warrior_impact_crit", "warrior_slash"] : attackName === "wolf" ? ["wolf_bite"] : attackName === "spider" ? ["venom_glob", "venom_splash"] : [];
       if (spriteName === "mage") effects.push("arcane_ward_back", "arcane_ward_front");
       for (const fx of effects) this.sprites.optional(`vfx/${fx}`);
     }
@@ -391,8 +395,9 @@ export class CombatRenderer {
     let maxX = this.W - 2 - (tex.width * displayScale - leftWidth);
     if (production) {
       const clips = Object.values(production.animations);
-      const left = Math.max(...clips.map(c => c.anchor[0]!));
-      const right = Math.max(...clips.map(c => c.frame[0]! - c.anchor[0]!));
+      const extra = isHero ? 8 : 0; // Composed attack keys have eight pixels of weapon clearance per side.
+      const left = Math.max(...clips.map(c => c.anchor[0]!)) + extra;
+      const right = Math.max(...clips.map(c => c.frame[0]! - c.anchor[0]!)) + extra;
       minX = left + 2; maxX = this.W - right - 2;
       x = Math.round(Math.max(minX, Math.min(maxX, x)));
     }
@@ -446,10 +451,10 @@ export class CombatRenderer {
       spriteName,
       attackName,
       motion: production ? new ProductionMotion({ ...production, animations: { ...production.animations,
-        attack: attackName === "unarmed" ? UNARMED_ATTACK : actorPack[attackName]!.animations.attack } }, attackName === "unarmed") : undefined,
+        attack: attackName === "unarmed" ? UNARMED_ATTACK : actorPack[attackName]!.animations.attack } }, isHero) : undefined,
       targetId: "", emittedAttack: -1, lastAttack: -10000,
-      barOffset: -Math.round(tex.anchorY * displayScale) - 5,
-      groundOffset: !isHero && this.enemyCount === 3 ? THREE_ENEMY_FORMATION[this.actors.size - 1]!.rise : 0,
+      barOffset: 8,
+      groundOffset: 0,
       wardPhase: "off", wardAt: 0,
     };
     this.actors.set(id, view);
@@ -742,8 +747,7 @@ export class CombatRenderer {
           a.root.alpha = 1;
         }
       }
-      // idle bob
-      if (a.alive) y -= Math.round((Math.sin(now / 320 + a.phase) + 1) * 0.5);
+      // Feet stay on the ground; breathing belongs inside the illustrated pose.
       // lunge
       if (a.lungeAt > 0) {
         const p = (now - a.lungeAt) / 180;
@@ -814,7 +818,7 @@ export class CombatRenderer {
   // ------------------------------------------------------------- drawing
 
   private drawBar(a: ActorView): void {
-    const width = a.motion ? 30 : a.isHero ? 22 : Math.max(14, Math.min(24, a.tex.width));
+    const width = a.isHero ? 28 : 20;
     const x = -Math.floor(width / 2);
     const y = a.barOffset;
     const fill = a.max100 > 0 ? Math.max(0, Math.round((a.shownHp100 / a.max100) * (width - 2))) : 0;
@@ -831,8 +835,8 @@ export class CombatRenderer {
     g.rect(x, y, width, 4).fill(0x14121a);
     g.rect(x + 1, y + 1, width - 2, 2).fill(0x3a2a30);
     if (fill > 0) {
-      g.rect(x + 1, y + 1, fill, 2).fill(low ? 0xf08a3a : 0xd8434a);
-      g.rect(x + 1, y + 1, fill, 1).fill(low ? 0xffb070 : 0xf06a6a);
+      g.rect(x + 1, y + 1, fill, 2).fill(low ? 0xf08a3a : a.isHero ? 0x499d80 : 0xd8434a);
+      g.rect(x + 1, y + 1, fill, 1).fill(low ? 0xffb070 : a.isHero ? 0x8ed7ac : 0xf06a6a);
     }
     if (hasWard) {
       // Ward: a thin pale-blue bar just above the HP bar, filled as a share of the ward's cap.
@@ -1027,8 +1031,9 @@ export class CombatRenderer {
     const sample = motion.sample(now);
     let [step, lift] = characterOffset(a.spriteName, sample.pose, sample.index, now - motion.start, a.phase, a.attackName);
     const target = this.actors.get(a.targetId);
-    if (a.attackName === "unarmed" && sample.pose === "attack" && target) {
-      step = unarmedApproach(target.baseX - a.baseX, now - motion.start, motion.attackTiming, a.spriteName);
+    if (["unarmed", "warrior", "monk"].includes(a.attackName) && sample.pose === "attack" && target && a.isHero) {
+      const weaponReach = a.attackName === "warrior" ? 18 : a.attackName === "monk" ? 5 : 0;
+      step = unarmedApproach(target.baseX - a.baseX - weaponReach, now - motion.start, motion.attackTiming, a.spriteName);
     }
     a.root.position.set(
       Math.round(Math.max(a.minX, Math.min(a.maxX, a.baseX + step * (a.isHero ? 1 : -1)))),
@@ -1038,7 +1043,9 @@ export class CombatRenderer {
     const tex = sample.pose === "idle" ? this.sprites.get(a.spriteName) : this.sprites.optional(`${id}/${sample.pose}`);
     if (tex?.asset) {
       a.tex = tex;
-      a.body.texture = tex.frames[sample.index]?.normal ?? tex.normal;
+      const frame = a.isHero && sample.pose === "attack" && tex.frames.length === 8
+        ? heroAttackFrame(sample.index, now - motion.start, motion.attackTiming) : sample.index;
+      a.body.texture = tex.frames[frame]?.normal ?? tex.normal;
       a.body.anchor.set(tex.anchorX / tex.width, tex.anchorY / tex.height);
       a.body.scale.set(1); a.displayScale = 1;
       a.body.position.set(0, 0);
@@ -1051,6 +1058,18 @@ export class CombatRenderer {
       a.flash.scale.set(1); a.flash.alpha = 1;
     }
     for (const node of a.vfx.values()) node.visible = false;
+    if (a.isHero && (a.attackName === "mage" || a.attackName === "ranger" || a.attackName === "monk")) {
+      a.charge ??= a.root.addChild(new Graphics());
+      a.charge.visible = sample.pose === "attack" && sample.index === 0;
+      if (a.charge.visible) {
+        const p = Math.max(0, Math.min(1, (now - motion.start) / Math.max(1, motion.windupMs)));
+        // Keep gathering magic outside the face; it resolves into the staff-tip release.
+        const key = heroAttackFrame(0, now - motion.start, motion.attackTiming);
+        const point: EffectPoint = (a.attackName === "mage" && this.heroAppearance ? refinedReleasePoint(this.heroAppearance, key) : undefined)
+          ?? (a.attackName === "ranger" ? [15, -36] : [8, -30]);
+        drawAttackCharge(a.charge, p, attackStyle(a.attackName), point);
+      }
+    } else if (a.charge) a.charge.visible = false;
     if (sample.pose === "attack" && a.attackName === "warrior" && (sample.index === 1 || sample.index === 2)) this.artOverlay(a, "warrior_slash", sample.index - 1);
     if (sample.impact && !this.events.length && a.emittedAttack !== motion.attackSerial) {
       a.emittedAttack = motion.attackSerial;
@@ -1086,9 +1105,11 @@ export class CombatRenderer {
     if (projectile) {
       const clip = src.motion!.actor.animations.attack;
       const point = clip.fx_projectile_spawn!;
-      const start: [number, number] = [src.baseX + point[0]! - clip.anchor[0]!, this.ground() + src.groundOffset + point[1]! - clip.anchor[1]!];
+      const release = src.isHero && this.heroAppearance ? refinedReleasePoint(this.heroAppearance) : undefined;
+      const start: [number, number] = [src.baseX + (release?.[0] ?? point[0]! - clip.anchor[0]!), this.ground() + src.groundOffset + (release?.[1] ?? point[1]! - clip.anchor[1]!)];
       this.attackTrail(src, target, start, contact, now);
-      this.artBurst(projectile, start, contact, now, PROJECTILE_MS, scheduled ? undefined : projectile === "arcane_bolt" ? "arcane_bolt_hit" : projectile === "arrow" ? "arrow_hit" : "venom_splash");
+      // The authored arrow points horizontally; procedural arrows follow the shot's angle.
+      if (projectile !== "arrow") this.artBurst(projectile, start, contact, now, PROJECTILE_MS, scheduled ? undefined : projectile === "arcane_bolt" ? "arcane_bolt_hit" : "venom_splash");
     } else {
       const name = src.attackName === "wolf" ? "wolf_bite" : `${src.attackName}_impact${crit ? "_crit" : ""}`;
       if (fxPack[name]) this.artBurst(name, contact, contact, now);
@@ -1126,17 +1147,11 @@ export class CombatRenderer {
 
   /** Stable headroom from all production poses; same collision rule for fallback art. */
   private layoutEnemyHud(): void {
-    const placed: { x: number; y: number; width: number }[] = [];
-    let enemySlot = 0;
+    // A shared footer line keeps each bar close to its owner regardless of the
+    // silhouette's height, transparent frame padding, or current attack pose.
     for (const a of this.actors.values()) {
-      const lane = !a.isHero && this.enemyCount === 3 ? THREE_ENEMY_FORMATION[enemySlot++]!.barLift : 0;
-      const pack = actorPack[a.spriteName];
-      const headroom = pack ? Math.max(...Object.values(pack.animations).map(c => c.anchor[1]!)) : a.tex.anchorY * a.displayScale;
-      let y = a.groundOffset - Math.round(headroom) - 5 - lane;
-      const width = a.motion ? 30 : a.isHero ? 22 : Math.max(14, Math.min(24, a.tex.width));
-      while (placed.some(p => Math.abs(p.x - a.baseX) < (p.width + width) / 2 + 3 && Math.abs(p.y - y) < 10)) y -= 10;
-      a.barOffset = y - a.groundOffset;
-      placed.push({ x: a.baseX, y, width }); this.drawBar(a);
+      a.barOffset = 8;
+      this.drawBar(a);
     }
   }
 
@@ -1165,14 +1180,14 @@ export class CombatRenderer {
   }
 
   presentationSnapshot(): unknown {
-    return { cssScale: 2, width: this.W, height: this.H, background: this.backgroundId, actors: [...this.actors.values()].map(a => ({
-      id: a.id, name: a.spriteName, attack: a.attackName, production: !!a.tex.asset?.file.startsWith("art/darkwood/"), pose: a.motion?.pose,
+    return { cssScale: 2, width: this.W, height: this.H, ground: this.ground(), background: this.backgroundId, actors: [...this.actors.values()].map(a => ({
+      id: a.id, name: a.spriteName, attack: a.attackName, production: !!a.tex.asset && !!actorPack[a.spriteName], pose: a.motion?.pose,
       anchor: [a.body.anchor.x * a.body.texture.width, a.body.anchor.y * a.body.texture.height],
       frame: [a.body.texture.width, a.body.texture.height], scale: [a.body.scale.x, a.body.scale.y],
       world: [a.root.x, a.root.y], left: a.root.x - a.body.anchor.x * a.body.texture.width,
       right: a.root.x + (1 - a.body.anchor.x) * a.body.texture.width,
       top: a.root.y - a.body.anchor.y * a.body.texture.height,
-      wardPhase: a.wardPhase, barY: a.hud.y + a.barOffset,
+      wardPhase: a.wardPhase, barY: a.hud.y + a.barOffset, barX: a.hud.x, barWidth: a.isHero ? 28 : 20,
     })) };
   }
 
@@ -1195,17 +1210,14 @@ export class CombatRenderer {
   }
 }
 
-// Presentation layout metadata, shared by every species and the DEV preview.
-const THREE_ENEMY_FORMATION = [
-  { x: 111, rise: 0, barLift: 0 },
-  { x: 150, rise: -12, barLift: 6 },
-  { x: 179, rise: 0, barLift: 12 },
-] as const;
+// Grounded formations share one baseline in combat and the DEV preview.
 function slotPositions(count: number, width: number): number[] {
   const offset = (width - 224) / 2;
   if (count <= 1) return [Math.round(offset + 145)];
   if (count === 2) return [Math.round(offset + 119), Math.round(offset + 171)];
-  return THREE_ENEMY_FORMATION.map(slot => Math.round(offset + slot.x));
+  const first = Math.max(76, offset + 108);
+  const last = Math.min(width - 38, offset + 185);
+  return [first, (first + last) / 2, last].map(Math.round);
 }
 
 export interface ArtPreviewScene {

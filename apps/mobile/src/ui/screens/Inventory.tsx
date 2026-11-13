@@ -57,7 +57,7 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
   const filterControls = (
       <div className="gear-filters">
         <label className="gear-search"><span>Search inventory</span>
-          <input type="search" value={filters.search} placeholder="Item name or effect" onChange={e => changeFilters({ ...filters, search: e.target.value })} />
+          <input type="search" value={filters.search} placeholder="Name, effect or build trait" onChange={e => changeFilters({ ...filters, search: e.target.value })} />
         </label>
         <label><span>Slot</span><select aria-label="Slot" value={filters.slot} onChange={e => changeFilters({ ...filters, slot: e.target.value as InventoryFilters["slot"] })}>
           <option value="">All slots</option>

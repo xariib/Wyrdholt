@@ -1,4 +1,5 @@
 import type { ItemDef } from "@emberbound/shared-types";
+import { createBuildGear } from "./buildGear";
 
 /**
  * Class gear across five rarities and six slots; archived shared definitions retain old IDs.
@@ -297,13 +298,15 @@ const DEFINITIONS: ItemDef[] = [
 // Each former shared item has one mechanically identical version for every class.
 // Keep archived definitions for pinned fights; they never enter new loot/Forge pools.
 const classNames = { monk: "Monk", mage: "Mage", warrior: "Warrior", ranger: "Ranger" };
-export const ITEMS: ItemDef[] = DEFINITIONS.flatMap(item => {
+const CLASS_ITEMS: ItemDef[] = DEFINITIONS.flatMap(item => {
   if (item.classId) return [item];
   const variants = Object.entries(classNames).map(([classId, label]): ItemDef => ({
     ...item, id: `${item.id}_${classId}`, name: `${label}'s ${item.name}`, classId,
   }));
   return [{ ...item, classVariants: Object.fromEntries(variants.map(v => [v.classId!, v.id])) }, ...variants];
 });
+
+export const ITEMS: ItemDef[] = [...CLASS_ITEMS, ...createBuildGear(CLASS_ITEMS)];
 
 export const STARTER_ITEMS = ["linen_hood", "trail_tunic", "worn_grips", "road_boots", "copper_band"];
 

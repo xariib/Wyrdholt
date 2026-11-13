@@ -26,7 +26,8 @@ try {
     const weapon = CONTENT.items.find(i => i.classId === cls && i.slot === 'weapon' && i.rarity === 'common');
     // Earned loot stays in inventory until the player explicitly equips it.
     createInstance(p, weapon.id, { isNew: true, provenance: { source: 'test-reward' } });
-    startRun(p, content, 'greenfields', 'trail', 0);
+    // Continuous fixture combat keeps run-completion dialogs out of the equip/reload flow.
+    startRun(p, content, 'greenfields', 'farm', 0);
     await page.evaluate(async raw => {
       const db = await new Promise((ok, fail) => {
         const req = indexedDB.open('Disc', 1);
@@ -59,7 +60,7 @@ try {
         if (actor?.attackName === 'unarmed') {
           if (actor !== lastActor) { generation++; lastActor = actor; }
           if (probe.samples.length < 2000) probe.samples.push({ now, generation, serial: actor.motion.attackSerial,
-            pose: actor.motion.pose, frame: actor.tex.frames.findIndex(f => f.normal === actor.body.texture),
+            pose: actor.motion.pose, frame: Math.floor(actor.tex.frames.findIndex(f => f.normal === actor.body.texture) / (actor.tex.frames.length === 8 ? 2 : 1)),
             x: actor.root.x - actor.baseX, timing: [...actor.motion.attackTiming] });
           probe.maxApproach = Math.max(probe.maxApproach, actor.root.x - actor.baseX);
           probe.hudMoved ||= actor.hud.x !== actor.baseX;

@@ -33,6 +33,7 @@ try{
       assert(actor.cssLeft>=-1&&actor.cssRight<=result.host.width+1,`${width}/${background}/${hero}/${pose}: horizontal crop ${JSON.stringify(actor)}`);
       assert(actor.cssTop>=-1&&actor.cssBottom<=result.host.height+1,`${width}/${background}/${hero}/${pose}: vertical crop ${JSON.stringify(actor)}`);
       assert(actor.cssBarY>=0,`${width}/${hero}/${pose}: clipped health bar`);
+      assert(actor.cssBarY+12<=result.host.height+1,`${width}/${hero}/${pose}: clipped health bar footer`);
      }
      cases.push({width,height,background,hero,pose});
     }

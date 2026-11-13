@@ -649,6 +649,92 @@ h3 {
   color: var(--blue);
 }
 
+.active-effect-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+.active-effect {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--gold-deep);
+  border-radius: var(--radius-m);
+  background: var(--panel);
+  overflow-wrap: anywhere;
+}
+.active-effect-source {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.active-effect.class-effect {
+  border-left-color: var(--blue);
+}
+.active-effect-source:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+.active-effect-title {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.active-effect-open {
+  color: var(--gold);
+  font-size: 24px;
+}
+.active-effect p {
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+.loadout-overview,
+.gear-effects-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.slot-effect {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.build-summary-heading {
+  display: grid;
+  gap: 4px;
+}
+.build-traits .chips {
+  margin-top: 6px;
+}
+.gear-effects-heading {
+  margin-top: 16px;
+}
+.effects-empty {
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+.build-queue-note {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 2px solid var(--gold);
+  background: var(--panel);
+  color: var(--gold);
+}
+
 .list {
   display: flex;
   flex-direction: column;

@@ -40,9 +40,29 @@ describe("new gear differences", () => {
     expect(gearDifferences(crown, hood).lostEffect).toEqual(crown.effect);
     expect(gearDifferences(crown, crown)).toEqual({ stats: [], gainedEffect: null, lostEffect: null });
   });
+
+  it("shows stat tradeoffs while retaining the same effect between build variants", () => {
+    const source = content.item("iron_palm_wraps");
+    const candidate = content.item("precision_iron_palm_wraps");
+    const differences = gearDifferences(source, candidate);
+    expect(differences.gainedEffect).toBeNull();
+    expect(differences.lostEffect).toBeNull();
+    expect(differences.stats.find(row => row.key === "attack")?.delta).toBeGreaterThan(0);
+    expect(differences.stats.find(row => row.key === "crit")?.delta).toBeGreaterThan(0);
+  });
 });
 
 describe("combined inventory view", () => {
+  it("finds build traits across every slot without merging distinct specialized copies", () => {
+    const { p } = fixture(), groups = inventoryGroups(p, content);
+    const matching = filterInventoryGroups(groups, { ...EMPTY_INVENTORY_FILTERS, search: "tempo fast attacks" });
+    expect(matching).toHaveLength(18);
+    expect(new Set(matching.map(group => group.item.slot)).size).toBe(6);
+    for (const group of matching) {
+      expect(group.baseId.startsWith("tempo_")).toBe(true);
+      expect(group.totalCount).toBe(2);
+    }
+  });
   it("shows only the active class across slots, inventory and badges until a switch settles", () => {
     const { p } = fixture();
     for (const item of content.snapshot.items.filter(i => !canUseItem(i, "monk"))) createInstance(p, item.id, { isNew: true });
@@ -83,11 +103,13 @@ describe("combined inventory view", () => {
       const { p } = fixture(); const groups = inventoryGroups(p, content);
       const item = content.snapshot.items.find(i => i.slot === slot && i.rarity === rarity && i.classId === "monk");
       const search = `  ${item.name.toUpperCase()} ${item.effect?.name ?? ""}  `;
+      // Several stat specializations can legitimately share the searched effect.
+      const matchingTypes = new Set(filterInventoryGroups(groups, { ...EMPTY_INVENTORY_FILTERS, search }).map(group => group.baseId));
       for (const salvage of ["", "eligible", "protected"]) {
         const filtered = filterInventoryGroups(groups, { search, slot, rarityId: rarity, newOnly: true, salvage });
-        const expected = p.inventory.instances.filter(i => i.baseId === item.id && i.isNew
+        const expected = p.inventory.instances.filter(i => matchingTypes.has(i.baseId) && i.isNew
           && (!salvage || previewSalvage(p, content, i.id).ok === (salvage === "eligible"))).map(i => i.id);
-        expect(filtered.flatMap(g => g.ids)).toEqual(expected);
+        expect(filtered.flatMap(g => g.ids).sort((a, b) => a - b)).toEqual(expected);
       }
     });
   }

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CONTENT } from "@emberbound/game-content";
 import { REFINED_CLASSES, refinedGearFamilies } from "../src/art/refinedPixelSources";
+import { gearSkin } from "../src/art/gearSkins";
 
 beforeEach(() => vi.resetModules());
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
@@ -14,12 +15,12 @@ function fakeImages() {
   vi.stubGlobal("Image", FakeImage); return FakeImage.all;
 }
 describe("refined pixel artwork", () => {
-  it("maps every live class item to its own illustrated atlas cell", () => {
+  it("maps live class items to illustrated cells, retaining source cuts for build materials", () => {
     for (const cls of REFINED_CLASSES) {
       const families = refinedGearFamilies(cls);
       expect(families).toHaveLength(32); expect(new Set(families).size).toBe(32);
-      const items = CONTENT.items.filter(i => i.classId === cls).map(i => i.id.replace(/_(monk|warrior|mage|ranger)$/, ""));
-      expect([...families].sort()).toEqual(items.sort());
+      const items = CONTENT.items.filter(i => i.classId === cls).map(i => gearSkin(i, cls).family);
+      expect([...families].sort()).toEqual([...new Set(items)].sort());
     }
   });
   it("shares concurrent requests and releases failed source images", async () => {

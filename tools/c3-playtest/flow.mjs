@@ -121,10 +121,9 @@ try{
   await page.reload();await page.locator('.header').waitFor();const restored=await snapshot('restored');assert.deepEqual(state(restored),state(recovered));
   report.cases.push({step:'hidden-selection/all-or-nothing/readback-fault/recovery/reload',ids,reward:10,noFalseSuccess:true,noAutomaticRemovalOrReplacement:true,wholeAfterState:true,retryNoReward:true});
   sheet=await inventory();const sword=sheet.locator('[data-base-id="wayfarer_blade"]');
-  await expect(sword).toContainText('Warrior only');
-  await sword.getByRole('button',{name:'Compare Wayfarer Blade',exact:true}).click();
-  await expect(page.getByRole('button',{name:'Requires Warrior',exact:true})).toBeDisabled();
+  await expect(sword).toHaveCount(0);
+  assert((await profile()).inventory.instances.some(i=>i.baseId==='wayfarer_blade'));
   assert.equal((await profile()).equipment.weapon,restored.equipment.weapon);
-  report.cases.push({step:'class gear',legacySwordDisabled:true,forgeClass:content.item(receipt.outputBaseId).classId});
+  report.cases.push({step:'class gear',otherClassSwordHidden:true,otherClassOwnershipPreserved:true,forgeClass:content.item(receipt.outputBaseId).classId});
   assert.deepEqual(report.errors,[]);report.pass=true;console.log(JSON.stringify(report));
 }catch(e){report.failure={message:String(e),stack:e.stack};throw e;}finally{writeFileSync(join(out,'report.json'),JSON.stringify(report,null,2)+'\n');await ctx.close();await browser.close();server.close();}

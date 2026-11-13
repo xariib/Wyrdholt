@@ -20,7 +20,8 @@ function ready(): Profile {
   unlock(profile);
   setLevel(profile, 30);
   setMastery(profile, "mage", 20);
-  for (const item of CONTENT.items.filter(item => item.rarity === "legendary")) {
+  // Pin the original calibration loadout when the catalog gains alternatives.
+  for (const item of CONTENT.items.filter(item => item.rarity === "legendary" && !/^(precision|tempo|bulwark)_/.test(item.id))) {
     profile.equipment[item.slot] = createInstance(profile, item.id, { isNew: false }).id;
   }
   return profile;

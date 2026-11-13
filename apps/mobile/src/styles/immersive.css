@@ -335,6 +335,9 @@
   font-size:11px}
 .immersive .slot-card .slot-label{
   font-size:11px}
+.immersive .slot-card>.item-icon{
+  width:36px;
+  height:36px}
 .slot-card[data-slot=head]{
   grid-column:1;
   grid-row:1}
@@ -367,9 +370,14 @@
   padding-top:12px;
   border-top:1px solid var(--line)}
 .build-summary .stat{
-  background:none;
-  border:0;
-  padding:4px 0}
+  min-width:0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius-m);
+  padding:9px 10px}
+.build-summary .stat .value{
+  font-size:18px;
+  overflow-wrap:anywhere}
 .build-summary .stat-grid{
   grid-template-columns:repeat(3,1fr);
   gap:8px}

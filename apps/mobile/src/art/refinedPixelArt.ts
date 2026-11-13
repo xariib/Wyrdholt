@@ -2,6 +2,7 @@ import type { ArtAsset, Pose } from "./types";
 import type { GearSkin, HeroAppearance, HeroClass } from "./gearSkins";
 import { refinedBodies, refinedStrikes, refinedItems, pixelsOf, raster, type PixelRaster } from "./refinedPixelAssets";
 import { Pixels, type PixelPoint as Point } from "./pixels";
+import { HERO_ATTACK_KEYS } from "./heroAnimation";
 export { loadRefinedHero, refinedReady, refinedDecodedBytes } from "./refinedPixelAssets";
 export { REFINED_PIXEL_SCALE } from "./refinedPixelSources";
 type Layer = keyof HeroAppearance["slots"] | "body";
@@ -69,7 +70,31 @@ function item(s: GearSkin): PixelRaster {
     const result = refinedItems.get(`${s.classId}/${s.family}`);
     if (!result)
         throw new Error(`Missing refined item artwork: ${s.id}`);
-    return result;
+    if (!/\/(precision|tempo|bulwark)_/.test(s.id)) return result;
+    const key = `material:${s.id}`;
+    const cached = staticLayers.get(key);
+    if (cached) return cached;
+    // Share the source cut in icons, portraits and combat. Remap only its
+    // materials, retaining alpha, dark outlines and the painted shading detail.
+    const target = raster(result.width, result.height), ctx = ctxOf(target);
+    const data = ctx.createImageData(result.width, result.height);
+    const colors = [s.shade, s.base, s.light].map(hex => [1, 3, 5].map(start => parseInt(hex.slice(start, start + 2), 16)));
+    data.data.set(result.rgba);
+    for (let i = 0; i < data.data.length; i += 4) {
+        if (!data.data[i + 3]) continue;
+        const brightness = (data.data[i]! * 0.2126 + data.data[i + 1]! * 0.7152 + data.data[i + 2]! * 0.0722) / 255;
+        if (brightness < 0.15) continue;
+        const ramp = Math.min(1.999, Math.max(0, (brightness - 0.15) / 0.85 * 2));
+        const low = Math.floor(ramp), blend = ramp - low;
+        for (let channel = 0; channel < 3; channel++) {
+            data.data[i + channel] = Math.round(colors[low]![channel]! * (1 - blend) + colors[low + 1]![channel]! * blend);
+        }
+    }
+    ctx.putImageData(data, 0, 0);
+    const ready = pixelsOf(target.canvas);
+    if (staticLayers.size >= MAX_LAYERS) staticLayers.delete(staticLayers.keys().next().value!);
+    staticLayers.set(key, ready);
+    return ready;
 }
 function paste(target: PixelRaster, source: PixelRaster, x: number, y: number, width: number, height: number) {
     ctxOf(target).drawImage(source.canvas, Math.round(64 + x * 2), Math.round(120 + y * 2), Math.round(width * 2), Math.round(height * 2));
@@ -156,45 +181,30 @@ function outfit(look: HeroAppearance, layer: Layer | undefined, strike: boolean)
     }
     return opaque(result);
 }
-function posePoint(x: number, y: number, _look: HeroAppearance, pose: Pose | "flash", frame: number): Point {
+function posePoint(x: number, y: number, look: HeroAppearance, pose: Pose | "flash", frame: number): Point {
     const upper = Math.max(0, Math.min(1, (-y - 5) / 35));
-    const lean = pose === "attack" ? [-.5, .5, 0, .25][frame % 4]! : 0;
+    const key = pose === "attack" ? HERO_ATTACK_KEYS[look.classId][frame] : undefined;
+    const lean = key?.lean ?? 0;
     const breath = pose === "idle" ? [0, .25, .5, .25][frame % 4]! : 0;
     const recoil = pose === "hit" || pose === "flash" ? (frame ? 1 : 2) : 0;
-    return [x + upper * (lean - recoil), y + upper * (breath + recoil * .25)];
+    return [x + upper * (lean - recoil), y + upper * (breath + recoil * .25 + (key?.sink ?? 0))];
 }
 function warped(ctx: CanvasRenderingContext2D, source: PixelRaster, look: HeroAppearance, pose: Pose | "flash", frame: number) {
     // Whole illustrated pose: only a tiny row-wise lean/breathing shift, never limb stretching.
-    const d = source.rgba, colors = new Map<number, string>();
     for (let y = 0; y < 128; y++) {
         const top = posePoint(-32, y / 2 - 60, look, pose, frame), bottom = posePoint(-32, (y + 1) / 2 - 60, look, pose, frame);
         const dx = Math.round(top[0] * 2), dy = Math.round(top[1] * 2), height = Math.round(bottom[1] * 2) - dy;
         if (height <= 0)
             continue;
-        for (let x = 0; x < 128;) {
-            const n = (y * 128 + x) * 4;
-            if (!d[n + 3]) {
-                x++;
-                continue;
-            }
-            const rgb = (d[n]! << 16) | (d[n + 1]! << 8) | d[n + 2]!, start = x++;
-            while (x < 128) {
-                const k = (y * 128 + x) * 4;
-                if (!d[k + 3] || ((d[k]! << 16) | (d[k + 1]! << 8) | d[k + 2]!) !== rgb)
-                    break;
-                x++;
-            }
-            let color = colors.get(rgb);
-            if (!color) {
-                color = "#" + rgb.toString(16).padStart(6, "0");
-                colors.set(rgb, color);
-            }
-            ctx.fillStyle = color;
-            ctx.fillRect(dx + start, dy, x - start, height);
-        }
+        // Copy an opaque/transparent native row at integer coordinates. This matches
+        // the pixel runs without thousands of tiny draw calls for each composed key.
+        ctx.drawImage(source.canvas, 0, y, 128, 1, dx, dy, 128, height);
     }
 }
+const grips = new WeakMap<PixelRaster, Point>();
 function grip(source: PixelRaster, cls: HeroClass): Point {
+    const cached = grips.get(source);
+    if (cached) return cached;
     const y = Math.round(source.height * (cls === "warrior" ? .86 : .5));
     let bestX = source.width / 2, best = 0;
     for (let x = 1; x < source.width - 1; x++) {
@@ -208,27 +218,48 @@ function grip(source: PixelRaster, cls: HeroClass): Point {
             bestX = x;
         }
     }
-    return [bestX, y];
+    const result: Point = [bestX, y]; grips.set(source, result); return result;
+}
+function weaponScale(source: PixelRaster, cls: HeroClass, family: string): number {
+    const height = cls === "warrior" ? 25 : cls === "mage" ? 38 : 29;
+    // Broad focus crowns need a width limit as well as a shaft-height limit.
+    return Math.min(height / source.height, cls === "mage" ? (family === "willow_focus" ? 14 : 20) / source.width : Infinity);
+}
+/** Release landmark from the same wrist, grip, rotation and scale as the held art. */
+export function refinedReleasePoint(look: HeroAppearance, frame = 2): Point | undefined {
+    const s = look.slots.weapon;
+    if (!s || !refinedItems.has(`${s.classId}/${s.family}`)) return;
+    const cls = look.classId, key = HERO_ATTACK_KEYS[cls][frame]!, r = rigFor(cls, key.strike), p = posePoint(...(cls === "ranger" ? r.far : r.near), look, "attack", frame);
+    if (cls === "ranger") return [p[0] + 12, p[1]];
+    if (cls !== "mage") return;
+    const source = item(s), anchor = grip(source, cls), scale = weaponScale(source, cls, s.family);
+    const angle = key.angle;
+    const dx = (source.width / 2 - anchor[0]) * scale, dy = (2 - anchor[1]) * scale;
+    return [p[0] + dx * Math.cos(angle) - dy * Math.sin(angle), p[1] + dx * Math.sin(angle) + dy * Math.cos(angle)];
 }
 function held(ctx: CanvasRenderingContext2D, look: HeroAppearance, pose: Pose | "flash", frame: number, layer?: Layer) {
     const s = look.slots.weapon;
     if (!s || look.classId === "monk")
         return;
-    const strike = pose === "attack" && (frame === 1 || frame === 2), r = rigFor(look.classId, strike), hand = look.classId === "ranger" ? r.far : r.near, p = posePoint(...hand, look, pose, frame);
+    const key = pose === "attack" ? HERO_ATTACK_KEYS[look.classId][frame] : undefined;
+    const strike = key?.strike ?? false, r = rigFor(look.classId, strike), hand = look.classId === "ranger" ? r.far : r.near, p = posePoint(...hand, look, pose, frame);
     const source = item(s), anchor = grip(source, look.classId);
-    const h = look.classId === "warrior" ? 25 : look.classId === "mage" ? (s.family === "willow_focus" ? 37 : 38) : 29, scale = h * 2 / source.height;
-    const angle = look.classId === "warrior" ? (strike ? Math.PI / 3 - .12 : .12) : look.classId === "mage" ? (strike ? -.95 : .5) : 0;
+    const scale = weaponScale(source, look.classId, s.family) * 2;
+    const angle = key?.angle ?? (look.classId === "warrior" ? .12 : look.classId === "mage" ? pose === "death" ? .5 : 1.2 : 0);
     const w = raster(144, 144), wc = ctxOf(w);
     wc.translate(Math.round(72 + p[0] * 2), Math.round(128 + p[1] * 2));
     wc.rotate(angle);
     wc.drawImage(source.canvas, -anchor[0] * scale, -anchor[1] * scale, source.width * scale, source.height * scale);
     ctx.drawImage(opaque(w).canvas, -72, -128);
     if (look.classId === "ranger" && strike) {
-        const draw = posePoint(...r.near, look, pose, frame), pen = new Pixels(ctx);
+        const drawn = frame < 2;
+        const draw = drawn ? posePoint(...r.near, look, pose, frame) : [p[0] - 4 + (frame === 2 ? 2 : 0), p[1]] as Point, pen = new Pixels(ctx);
         pen.line("#d5c5a0", [p[0] * 2 - 8, p[1] * 2 - 27], [draw[0] * 2, draw[1] * 2]);
         pen.line("#d5c5a0", [draw[0] * 2, draw[1] * 2], [p[0] * 2 - 8, p[1] * 2 + 27]);
-        pen.line("#b99b65", [draw[0] * 2, draw[1] * 2], [p[0] * 2 + 20, draw[1] * 2]);
-        pen.poly("#dadbd0", [[p[0] * 2 + 19, draw[1] * 2 - 2], [p[0] * 2 + 24, draw[1] * 2], [p[0] * 2 + 19, draw[1] * 2 + 2]]);
+        if (drawn) {
+            pen.line("#b99b65", [draw[0] * 2, draw[1] * 2], [p[0] * 2 + 20, draw[1] * 2]);
+            pen.poly("#dadbd0", [[p[0] * 2 + 19, draw[1] * 2 - 2], [p[0] * 2 + 24, draw[1] * 2], [p[0] * 2 + 19, draw[1] * 2 + 2]]);
+        }
     }
     if (!layer) {
         const pen = new Pixels(ctx), color = look.slots.gloves?.base ?? (look.classId === "warrior" ? "#dca17f" : look.classId === "mage" ? "#e7b7a0" : "#dfad89");
@@ -241,6 +272,7 @@ export function refinedAtlas(asset: ArtAsset, look: HeroAppearance, layer?: Laye
     const c = raster(asset.atlasWidth * 2, asset.atlasHeight * 2), ctx = ctxOf(c);
     const pose = (asset.id.split("/")[2] ?? "idle") as Pose | "flash";
     for (const [i, f] of asset.frames.entries()) {
+        const visualFrame = pose === "attack" && asset.frames.length === 4 ? i * 2 : i;
         ctx.save();
         ctx.beginPath();
         ctx.rect(f.x * 2, f.y * 2, asset.width * 2, asset.height * 2);
@@ -254,9 +286,12 @@ export function refinedAtlas(asset: ArtAsset, look: HeroAppearance, layer?: Laye
             else
                 ctx.translate(-i * 4, i * 3);
         }
-        warped(ctx, outfit(look, layer, pose === "attack" && (i === 1 || i === 2)), look, pose, i);
+        const drawnBow = look.classId === "ranger" && look.slots.weapon;
+        const strike = pose === "attack" && HERO_ATTACK_KEYS[look.classId][visualFrame]!.strike
+            && (look.classId !== "ranger" || drawnBow || visualFrame >= 2);
+        warped(ctx, outfit(look, layer, !!strike), look, pose, visualFrame);
         if (!layer || layer === "weapon")
-            held(ctx, look, pose, i, layer);
+            held(ctx, look, pose, visualFrame, layer);
         ctx.restore();
     }
     if (pose === "flash") {

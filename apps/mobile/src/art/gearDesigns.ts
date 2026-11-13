@@ -78,10 +78,18 @@ export const NAMED_GEAR: Record<string, NamedDesign> = {
     stillwater_fists: piece("weapon", ["#72a0a0", "#3c5d72", "#bde0d1", "#d8c795"]),
 };
 export const CLASS_CUT = { monk: 0, warrior: 1, mage: 2, ranger: 3 } as const;
+// Specializations retain the source piece's cut, with distinct authored materials.
+const BUILD_MATERIALS: Record<string, Palette> = {
+    precision: ["#a5b5c2", "#485867", "#e2edf2", "#cb6d67"],
+    tempo: ["#679d92", "#354f55", "#b8d9bd", "#e0c38a"],
+    bulwark: ["#a18b63", "#504a43", "#dacbaa", "#819bb2"],
+};
 export function namedGearDesign(family: string, cls: HeroClass, slot: SlotId): GearDesign {
-    const entry = NAMED_GEAR[family];
+    const specialization = /^(precision|tempo|bulwark)_(.+)$/.exec(family);
+    const shape = specialization?.[2] ?? family;
+    const entry = NAMED_GEAR[shape];
     if (!entry || entry.slot !== slot)
         throw new Error(`Missing pixel gear design: ${cls}/${family}/${slot}`);
-    const [base, shade, light, trim] = entry.colors;
-    return { shape: family, cut: cls, variant: CLASS_CUT[cls], base, shade, light, trim };
+    const [base, shade, light, trim] = (specialization ? BUILD_MATERIALS[specialization[1]!] : undefined) ?? entry.colors;
+    return { shape, cut: cls, variant: CLASS_CUT[cls], base, shade, light, trim };
 }

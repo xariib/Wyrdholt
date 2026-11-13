@@ -31,7 +31,10 @@ Catalog definitions and owned copies are separate types.
 - **Tables per zone (C1):** `<zone>_farm` (1.5%), `<zone>_boss` (4%) and `<zone>_cache` (100%). Rarity weights follow PROGRESSION_BALANCE. The max rarity is Rare (Greenfields), Epic (Darkwood) and Legendary (Ashen). Values are in [GAME_DESIGN.md](../GAME_DESIGN.md#zones).
 - **Completion cache:** `zone.cacheLootTableId` (falls back to the boss table). The first clear always rolls; repeat clears roll with `cache.repeatRollChanceBp` on their own seed stream (`cache/gate`).
 
-**Catalog (C1):** five rarities × six slots = 30 items.
+**Catalog:** the original C1 catalog had five rarities × six slots = 30 items.
+The current catalog has 344 live class-specific items, including 216 Rare–Legendary
+stat specializations across all four classes and six slots, plus archived shared
+definitions retained for compatibility. [Build options](../design/GEAR_BUILD_OPTIONS.md).
 
 - Common, Uncommon and Rare come from PROGRESSION_BALANCE.
 - ITEM-EFFECTS-006 supplies the remaining four Epic and six Legendary effects.

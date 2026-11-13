@@ -43,6 +43,23 @@ function ring(g: Graphics, x: number, y: number, radius: number, color: number, 
   }
 }
 
+/** Gathering energy stays beside the weapon, below the HUD and outside the face. */
+export function drawAttackCharge(g: Graphics, p: number, style: AttackStyle, point: EffectPoint): void {
+  g.clear(); g.alpha = 1;
+  const [color, core] = PALETTES[style], [x, y] = point;
+  if (style === "arrow") {
+    for (let i = -1; i <= 1; i++) line(g, x - 7 - p * 3, y + i * 4, x - 3, y + i * 2, color, 1, p * .65);
+    return;
+  }
+  const r = 8 - p * 5;
+  for (let i = 0; i < 4; i++) {
+    const angle = i * Math.PI / 2 + p * 1.5;
+    pixel(g, x + Math.cos(angle) * r, y + Math.sin(angle) * r, 1, color, .35 + p * .65);
+  }
+  pixel(g, x - 2, y - 2, 4, color, p * .22);
+  pixel(g, x - 1, y - 1, 2, core, p);
+}
+
 /** Neutral travel trail: no critical/proc information is revealed before the logged HIT. */
 export function drawAttackTrail(g: Graphics, p: number, style: AttackStyle, from: EffectPoint, to: EffectPoint): void {
   g.clear();
@@ -62,6 +79,16 @@ export function drawAttackTrail(g: Graphics, p: number, style: AttackStyle, from
     line(g, x - ux * 3 - uy * 2, y - uy * 3 + ux * 2, x, y, core);
     line(g, x - ux * 3 + uy * 2, y - uy * 3 - ux * 2, x, y, core);
   } else {
+    if (style === "arcane") {
+      // A tapered comet with two orbiting ribbons; its bright core leads the motion.
+      for (let i = 5; i >= 1; i--) {
+        const tail = Math.min(length * p, i * 4), wave = Math.sin(p * 10 - i * .65) * 2;
+        pixel(g, x - ux * tail - uy * wave, y - uy * tail + ux * wave, 2, color, .65 - i * .07);
+        pixel(g, x - ux * tail + uy * wave, y - uy * tail - ux * wave, 1, core, .6 - i * .07);
+      }
+      pixel(g, x - 3, y - 3, 6, color, .16);
+      line(g, x - ux * 5, y - uy * 5, x + ux * 2, y + uy * 2, core, 2);
+    }
     pixel(g, x - 2, y - 2, 4, color, 0.4);
     pixel(g, x - 1, y - 1, 2, core);
     if (style === "arcane") ring(g, from[0], from[1], 3 + p * 7, color, (1 - p) * 0.7, 1.3);
@@ -105,11 +132,15 @@ export function drawAttackImpact(
       line(g, x - direction * (18 - p * 6), y + i * 4, x - direction * 3, y + i * 2, core, 1, 0.7);
     }
   } else if (style === "arcane") {
-    ring(g, x, y, (5 + p * 15) * strength, color, 0.85);
-    const r = (6 + p * 9) * strength;
-    line(g, x - r, y, x + r, y, core);
-    line(g, x, y - r, x, y + r, core);
-    ring(g, x, y, (3 + p * 8) * strength, core, 0.8);
+    const r = (3 + Math.sqrt(p) * 16) * strength;
+    ring(g, x, y, r, color, 0.75, .8);
+    if (p < .5) ring(g, x, y, r * .55, core, .8, .8);
+    // Four outward fragments replace the static cross and communicate the burst.
+    for (let i = 0; i < 4; i++) {
+      const angle = Math.PI / 4 + i * Math.PI / 2;
+      const xx = x + Math.cos(angle) * r, yy = y + Math.sin(angle) * r * .8;
+      line(g, xx, yy, xx + Math.cos(angle) * (4 - p * 3), yy + Math.sin(angle) * (4 - p * 3), core, 2);
+    }
   } else if (style === "arrow") {
     // A tapered streak through the contact point reads as arrow momentum.
     line(g, x - direction * 13, y + 3, x + direction * (6 + p * 13), y - 4, color, 2, 0.7);

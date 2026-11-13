@@ -51,6 +51,12 @@ Run `node --import tsx tools/smoke/online-check.mjs` against a build made with `
 
 ## Visual regression checks
 
+All 16 enemy types use matching detailed pixel art, with distinct idle and attack
+illustrations. See the [enemy art contract](docs/design/REFINED_PIXEL_ENEMIES.md).
+Run `node --import tsx tools/visual/enemy-art-check.mjs` to check all enemy poses,
+native-scale formations, shared textures and disposal in a real browser. Evidence
+stays in ignored `tools/smoke/out/enemy-art`.
+
 The four heroes use detailed pixel artwork in combat and portraits, with separate
 illustrated idle/attack poses and 128 individually illustrated class items.
 See the [refined pixel character contract](docs/design/REFINED_PIXEL_CHARACTERS.md)
@@ -61,6 +67,11 @@ After building, run `node --import tsx tools/visual/mobile-review.mjs` for dispo
 Short browser viewports scroll instead of shrinking away the combat area. Android remains portrait. Browser screenshots do not replace physical-device visual acceptance.
 
 Run `node --import tsx tools/visual/character-animation-check.mjs` to verify empty starting inventories and equipment, unarmed attack movement, steady health labels, animated portraits and reduced-motion support for all four classes.
+
+Run `node --import tsx tools/visual/attack-readability-check.mjs` to check eight visual
+attack keys per class, all weapon variants, mage staff/face clearance, Pixi playback
+and texture memory. It starts a local Vite server and saves a frame sheet and animation
+video under ignored `tools/smoke/out/attack-readability`.
 
 Run `node --import tsx tools/visual/gear-skins-check.mjs` to check equipped appearances:
 all four classes from empty slots through Legendary gear and mixed outfits, distinct
@@ -84,10 +95,22 @@ six slots, copy counts, class switching, preserved ownership and reload. It star
 a local Vite server and writes disposable-fixture evidence to
 `tools/smoke/out/class-gear`.
 
+Run `node --import tsx tools/visual/build-gear-check.mjs` after building to check
+Precision, Tempo and Bulwark on all four classes: all 216 added item icons,
+trait/rarity search, all six slots through the real comparison/equip UI, distinct
+materials, mobile widths and reload. Evidence stays in ignored
+`tools/smoke/out/build-gear`. New build tuning still needs human balance testing.
+
 Run `node --import tsx tools/visual/hunt-regressions.mjs` after building to check
 repeated backup restores with reused item IDs (combat stats, skins and health bars)
 and the living, healed pose during rest after a defeat. It uses disposable saves;
 reports and screenshots stay in ignored `tools/smoke/out/hunt-regressions`.
+
+Run `node --import tsx tools/visual/active-effects-check.mjs` after building to check
+equipment effect descriptions and sources, the Build summary shortcut, effect
+inspection and class effect descriptions for all four classes at three
+viewport sizes, including scrolling and reload. It uses
+disposable browser saves; evidence stays in ignored `tools/smoke/out/active-effects`.
 
 ## Mobile performance checks
 

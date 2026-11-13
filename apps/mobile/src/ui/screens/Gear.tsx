@@ -2,7 +2,7 @@ import { CopyControls } from "./GearCopies";
 import { InventorySheet, type InventorySelection } from "./Inventory";
 import { ForgeSheet } from "./Forge";
 import { SalvageConfirmation, BulkSalvageConfirmation } from "./Salvage";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ItemDef, SlotId } from "@emberbound/shared-types";
 import { canUseItem, findInstance, isFightActive, isItemLocked, previewSalvage, previewBulkSalvage, type BulkSalvageReceipt, type Profile, type SalvageReceipt } from "@emberbound/game-core";
 import { session } from "../../game/session";
@@ -29,6 +29,9 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
   const slots = slotViews(profile, content);
   const summary = buildSummary(profile, content);
   const s = summary.stats.display;
+  const summaryRef = useRef<HTMLElement>(null);
+  const equippedCount = slots.filter(slot => slot.equipped).length;
+  const hasQueuedChanges = !!profile.pending?.activeClassId || Object.keys(profile.pending?.equipment ?? {}).length > 0;
 
   useEffect(() => {
     if (!focus) return;
@@ -54,6 +57,11 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
         </div>
         {!inventory && !forgeOpen && !openSlot && retryAction}
         <button className="btn gold block inventory-entry" onClick={() => setInventory({ newOnly: false, key: 0 })}>Inventory · {number(classInventory(profile, content).length)} copies · {content.classDef(profile.character.activeClassId).name}</button>
+        <div className="loadout-overview">
+          <span className="small muted">{equippedCount} / {slots.length} slots equipped</span>
+          <button className="btn small ghost" onClick={() => summaryRef.current?.scrollIntoView({ block: "start" })}>Build summary ↓</button>
+        </div>
+        <p className="small muted">From Rare onward, mix Precision for critical hits, Tempo for faster attacks, and Bulwark for health and armor. Compare each piece's tradeoffs.</p>
         <div className="loadout-stage">
           <svg className="loadout-links" viewBox="0 0 360 320" preserveAspectRatio="none" aria-hidden="true"><g stroke="currentColor" fill="none"><path d="M95 55H145L180 85 M265 55H215L195 120 M95 155H145L165 160 M265 155H215L200 160 M95 265H145L180 230 M265 265H225L204 178"/></g></svg>
           <div className="loadout-hero"><SpriteImage name={content.classDef(profile.character.activeClassId).sprite} profile={profile} portrait/><span>Lv. {profile.character.level} · {content.classDef(profile.character.activeClassId).name}</span></div>
@@ -71,7 +79,7 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
                   setOpenSlot(v.slot);
                 }}
               >
-                {item ? <ItemIcon item={item} icon={item.icon} rarityColor={rarityColor(content, item.rarity)} />
+                {item ? <ItemIcon item={item} icon={item.icon} rarityColor={rarityColor(content, item.rarity)} size={36} />
                   : <span className="item-icon item-icon-empty" aria-hidden="true">+</span>}
                 <span style={{ minWidth: 0 }}>
                   <div className="slot-label">{SLOT_LABELS[v.slot]}</div>
@@ -81,6 +89,7 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
                       {content.rarity(item.rarity).name}
                     </div>
                   )}
+                  {item?.effect && <div className="slot-effect" title={item.effect.name}>{item.effect.name}</div>}
                   {v.queued && <div className="queued-slot" title={v.queued.item.name}>Change queued</div>}
                   {v.equipped && isItemLocked(profile, v.equipped.instance.id) && <span className="tag locked">Locked</span>}
                 </span>
@@ -92,33 +101,66 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
         </div>
       </section>
 
-      <section className="build-summary stack">
-        <div className="panel-title">Build summary</div>
+      <section className="build-summary stack" ref={summaryRef} aria-label="Build summary">
+        <div className="build-summary-heading">
+          <h2 className="panel-title">Build summary</h2>
+          <span className="small muted">{content.classDef(profile.character.activeClassId).name} · Current loadout</span>
+        </div>
         <div className="stat-grid">
-          <Stat label="Health" value={String(s.hp)} />
-          <Stat label="Attack" value={String(s.attack)} />
-          <Stat label="Armor" value={String(s.armor)} />
+          <Stat label="Health" value={number(s.hp)} />
+          <Stat label="Attack" value={number(s.attack)} />
+          <Stat label="Armor" value={number(s.armor)} />
           <Stat label="Attack rate" value={rate(s.attackRateMilli)} />
           <Stat label="Crit" value={pct(s.critBp)} />
           <Stat label="Mastery" value={`M${summary.stats.masteryRank}`} />
         </div>
-        <div className="small muted">Active effects</div>
-        <div className="chips">
-          {summary.stats.activeEffects.map((e) => (
-            <span key={`${e.source}-${e.name}`} className={`tag ${e.source === "item" ? "gold" : ""}`}>
-              {e.name}
-            </span>
-          ))}
-        </div>
+        {hasQueuedChanges && <p className="build-queue-note small">Showing current equipment. Queued changes apply after this fight.</p>}
         {summary.tags.length > 0 && (
-          <div className="chips">
-            {summary.tags.map((t) => (
-              <span key={t} className="tag">
-                {t}
-              </span>
-            ))}
+          <div className="build-traits">
+            <h3 className="small muted">Gear traits</h3>
+            <div className="chips">
+              {summary.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
+            </div>
           </div>
         )}
+        <section className="active-effects" aria-label="Active effects">
+          <h3 className="small muted">Active effects</h3>
+          <ul className="active-effect-list class-effect-list" aria-label="Class effects">
+            {summary.classEffects.map(effect => (
+              <li key={effect.id} className="active-effect class-effect" data-source="class">
+                <strong>{effect.name}</strong>
+                <p className="small muted">{effect.description}</p>
+              </li>
+            ))}
+          </ul>
+          <div className="gear-effects-heading">
+            <h3 className="small">Gear effects</h3>
+            <span className="small muted">{summary.activeEffects.length} active</span>
+          </div>
+          {summary.activeEffects.length === 0 && <p className="small muted effects-empty">No gear effects equipped yet. Inspect gear in Inventory to find effects for your build.</p>}
+          <ul className="active-effect-list" aria-label="Gear effects">
+            {summary.activeEffects.map(effect => {
+              const item = content.item(effect.baseId);
+              return (
+                <li key={effect.id} className="active-effect" data-source={effect.source}>
+                  <button className="active-effect-source" aria-label={`Inspect ${effect.sourceLabel}`} onClick={() => {
+                    setInitialBase(effect.baseId);
+                    setInitialInstance(undefined);
+                    setOpenSlot(effect.slot);
+                  }}>
+                    <ItemIcon item={item} icon={item.icon} rarityColor={rarityColor(content, item.rarity)} size={36} />
+                    <span className="active-effect-title">
+                      <strong className="gold">{effect.name}</strong>
+                      <span className="small muted">{effect.sourceLabel}</span>
+                    </span>
+                    <span className="active-effect-open" aria-hidden="true">›</span>
+                  </button>
+                  <p className="small muted">{effect.description}</p>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       </section>
 
       {inventory && <InventorySheet key={inventory.key} profile={profile} initiallyNewOnly={inventory.newOnly} retryAction={retryAction}
@@ -238,7 +280,7 @@ function SlotSheet({ profile, slot, initialBaseId, initialInstanceId, selection,
         <div className="gear-filters">
           <label className="gear-search">
             <span>Search gear</span>
-            <input type="search" value={filters.search} placeholder="Item name or effect" onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
+            <input type="search" value={filters.search} placeholder="Name, effect or build trait" onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
           </label>
           <label>
             <span>Rarity</span>

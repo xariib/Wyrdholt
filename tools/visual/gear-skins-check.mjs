@@ -45,7 +45,9 @@ try {
   const report = await page.evaluate(async ({ looks, items, slots }) => {
     const { gearAtlas, portraitAtlas, gearIcon } = await import('/src/art/gearArt.ts');
     const { gearSkin } = await import('/src/art/gearSkins.ts');
-    const { asset } = await import('/src/art/manifest.ts');
+    const { asset: sourceAsset } = await import('/src/art/manifest.ts');
+    const { heroAnimationAsset } = await import('/src/art/heroAnimation.ts');
+    const asset = id => heroAnimationAsset(sourceAsset(id));
     const { loadRefinedHero, REFINED_PIXEL_SCALE: R } = await import('/src/art/refinedPixelArt.ts');
     await Promise.all(['monk', 'warrior', 'mage', 'ranger'].map(loadRefinedHero));
     document.body.style.cssText = 'margin:20px;background:#101d23;color:#dfddc7;font:14px system-ui;display:grid;grid-template-columns:repeat(6,1fr);gap:12px';
@@ -146,7 +148,9 @@ try {
   await page.screenshot({ path: resolve(out, 'equipment-progression.png'), fullPage: true });
   const identity = await page.evaluate(async looks => {
     const { gearAtlas } = await import('/src/art/gearArt.ts');
-    const { asset } = await import('/src/art/manifest.ts');
+    const { asset: sourceAsset } = await import('/src/art/manifest.ts');
+    const { heroAnimationAsset } = await import('/src/art/heroAnimation.ts');
+    const asset = id => heroAnimationAsset(sourceAsset(id));
     const { loadRefinedHero, REFINED_PIXEL_SCALE: R } = await import('/src/art/refinedPixelArt.ts');
     await Promise.all(['monk', 'warrior', 'mage', 'ranger'].map(loadRefinedHero));
     document.body.replaceChildren();
@@ -159,7 +163,7 @@ try {
         const a = asset(`characters/${cls}${attack ? '/attack' : ''}`), atlas = gearAtlas(a, look);
         const canvas = document.createElement('canvas'); canvas.width = 72; canvas.height = 64;
         const ctx = canvas.getContext('2d');
-        const f = a.frames[attack ? 1 : 0];
+        const f = a.frames[attack ? 2 : 0];
         ctx.drawImage(atlas, f.x * R, f.y * R, a.width * R, a.height * R, 36 - a.anchor.x, 60 - a.anchor.y, a.width, a.height);
         if (row === 'Silhouette') {
           ctx.globalCompositeOperation = 'source-in'; ctx.fillStyle = '#ddd8c5'; ctx.fillRect(0, 0, 72, 64);

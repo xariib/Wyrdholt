@@ -21,7 +21,7 @@ describe("approved Darkwood presentation", () => {
     const m = new ProductionMotion({ ...actorPack.monk!, animations: { ...actorPack.monk!.animations, attack: UNARMED_ATTACK } }, true);
     m.scheduledAttack(1000, 1000);
     const frames = new Set<number>(), positions: number[] = [];
-    for (let now = 1000; now < 1780; now += 20) {
+    for (let now = 1000; now < 1960; now += 20) {
       if (now % 100 === 0) m.hit(now, false);
       const sample = m.sample(now);
       expect(sample.pose).toBe("attack");
@@ -30,9 +30,9 @@ describe("approved Darkwood presentation", () => {
     }
     expect([...frames]).toEqual([0, 1, 2, 3]);
     expect(positions.at(-1)).toBeLessThan(1);
-    expect(m.sample(1780).pose).toBe("hit");
-    m.death(1790);
-    expect(m.sample(1800).pose).toBe("death");
+    expect(m.sample(1960).pose).toBe("hit");
+    m.death(1970);
+    expect(m.sample(1980).pose).toBe("death");
   });
   it("adapts variable frames without cropping or anchor shifts", () => {
     expect(validateArt(darkwoodAssets)).toEqual([]);
@@ -43,30 +43,45 @@ describe("approved Darkwood presentation", () => {
     expect(actorPack.wolf!.animations.attack.frame).toEqual([72, 56]);
     expect(darkwoodAssets.some(a => a.id.includes("ranger_poison"))).toBe(false);
   });
-  it("compresses recovery then anticipation then hold, preserving impact minimum", () => {
+  it("compresses proportionally while keeping contact and a visible recovery", () => {
     const clip = actorPack.monk!.animations.attack;
-    expect(attackDurations(clip, 280)).toEqual([120, 60, 100, 0]);
-    expect(attackDurations(clip, 180)).toEqual([60, 60, 60, 0]);
-    expect(attackDurations(clip, 1)).toEqual([60, 60, 60, 0]);
+    for (const interval of [280, 350, 500, 714, 1000]) {
+      const durations = attackDurations(clip, interval);
+      expect(durations.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(interval);
+      expect(durations.every(t => t >= 60)).toBe(true);
+    }
+    expect(attackDurations(clip, 180)).toEqual([60, 60, 60, 60]);
+    expect(attackDurations(clip, 1)).toEqual([60, 60, 60, 60]);
+  });
+  it("gives every hero a measured idle loop and a full attack at normal cadence", () => {
+    for (const cls of ["monk", "mage", "warrior", "ranger"]) {
+      const actor = actorPack[cls]!;
+      expect(actor.animations.idle.ms.reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(1800);
+      const attack = attackDurations(actor.animations.attack, 1000);
+      expect(attack.reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(800);
+      expect(attack[0]).toBeGreaterThanOrEqual(240);
+      expect(attack[3]).toBeGreaterThanOrEqual(250);
+    }
   });
   it("does not skip impact when a render frame is late", () => {
     const m = new ProductionMotion(actorPack.monk!);
     m.attack(1000, 1000);
     expect(m.sample(1500)).toEqual({ pose: "attack", index: 1, impact: true });
     expect(m.sample(1559).index).toBe(1);
-    expect(m.sample(1560).index).toBe(2);
+    expect(m.sample(1619).index).toBe(1);
+    expect(m.sample(1620).index).toBe(2);
   });
   it("defers hit until impact finishes and ward uses hit_01", () => {
     const m = new ProductionMotion(actorPack.mage!);
-    m.attack(1000, 1000); m.sample(1160); m.hit(1180, true);
-    expect(m.sample(1200).pose).toBe("attack");
-    expect(m.sample(1220)).toEqual({ pose: "hit", index: 1, impact: false });
+    m.attack(1000, 1000); m.sample(1320); m.hit(1340, true);
+    expect(m.sample(1360).pose).toBe("attack");
+    expect(m.sample(1380)).toEqual({ pose: "hit", index: 1, impact: false });
   });
   it("protects impact even when hit arrives before that render sample", () => {
     const m = new ProductionMotion(actorPack.monk!);
-    m.attack(1000, 1000); m.hit(1125, false);
-    expect(m.sample(1125)).toEqual({ pose: "attack", index: 1, impact: true });
-    expect(m.sample(1185).pose).toBe("hit");
+    m.attack(1000, 1000); m.hit(1245, false);
+    expect(m.sample(1245)).toEqual({ pose: "attack", index: 1, impact: true });
+    expect(m.sample(1305).pose).toBe("hit");
   });
   it("death has priority and holds the final approved frame", () => {
     const m = new ProductionMotion(actorPack.warrior!);

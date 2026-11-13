@@ -35,7 +35,7 @@ export function gearSkin(item: ItemDef, classId: HeroClass): GearSkin {
   const tier = tiers[item.rarity] ?? 0;
   const family = item.id.replace(/_(monk|mage|warrior|ranger)$/, "");
   const design = namedGearDesign(family, classId, item.slot);
-  return { id: classId + "/" + item.id, slot: item.slot, classId, tier, family, design, base: design.base, shade: design.shade, light: design.light, trim: design.trim };
+  return { id: classId + "/" + item.id, slot: item.slot, classId, tier, family: design.shape, design, base: design.base, shade: design.shade, light: design.light, trim: design.trim };
 }
 
 export function bareAppearance(classId: HeroClass): HeroAppearance { return { classId, key: `${classId}:bare`, slots: {} }; }

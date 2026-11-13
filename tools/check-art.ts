@@ -7,10 +7,11 @@ import { PAINTED_SHEETS } from "../apps/mobile/src/art/paintedSources";
 import { CONTENT } from "@emberbound/game-content";
 import { gearSkin, isHeroClass } from "../apps/mobile/src/art/gearSkins";
 import { REFINED_CLASSES, REFINED_LINEUP, refinedGearSource, refinedGearFamilies } from "../apps/mobile/src/art/refinedPixelSources";
+import { ENEMY_SOURCES } from "../apps/mobile/src/art/refinedEnemies";
 
 const errors = validateArt(productionAssets);
 const classItems = CONTENT.items.filter(item => item.classId && isHeroClass(item.classId));
-for (const source of [REFINED_LINEUP, ...REFINED_CLASSES.map(refinedGearSource)]) {
+for (const source of [REFINED_LINEUP, ...REFINED_CLASSES.map(refinedGearSource), ...Object.values(ENEMY_SOURCES)]) {
   try {
     const png = readFileSync(resolve("apps/mobile/public", source.file));
     if (png.subarray(0,8).toString("hex") !== "89504e470d0a1a0a" || png[25] !== 6 || png.readUInt32BE(16) !== source.width || png.readUInt32BE(20) !== source.height) throw new Error("Invalid refined pixel PNG contract");

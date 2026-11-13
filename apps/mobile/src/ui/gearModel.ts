@@ -2,6 +2,7 @@ import { SLOT_ORDER, type ItemDef, type ItemInstance, type SlotId } from "@ember
 import { canUseItem, canonicalJson, findInstance, heroStatsFor, type ContentIndex, type Profile } from "@emberbound/game-core";
 
 import { pct, rate } from "./format";
+import { activeEffectDetails, classEffectDetails } from "./activeEffects";
 
 export interface SlotView {
   slot: SlotId;
@@ -31,7 +32,7 @@ export function filterGearGroups(groups: ItemGroup[], filters: GearFilters): Ite
   return groups.filter((group) => {
     if (filters.rarityId && group.item.rarity !== filters.rarityId) return false;
     if (filters.newOnly && group.newCount === 0) return false;
-    const text = [group.item.name, group.item.effect?.name, group.item.effect?.description].join(" ").toLowerCase();
+    const text = [group.item.name, group.item.effect?.name, group.item.effect?.description, ...group.item.tags].join(" ").toLowerCase();
     return terms.every((term) => text.includes(term));
   });
 }
@@ -150,7 +151,11 @@ export function gearDifferences(current: ItemDef | null, candidate: ItemDef) {
     });
   const wornEffect = current?.effect ?? null;
   const newEffect = candidate.effect ?? null;
-  const effectChanged = canonicalJson(wornEffect) !== canonicalJson(newEffect);
+  // Mechanic IDs identify event sources; a new source ID alone is no effect change.
+  const effectValue = (effect: ItemDef["effect"] | null) => effect ? {
+    ...effect, mechanics: effect.mechanics.map(({ id: _sourceId, ...parameters }) => parameters),
+  } : null;
+  const effectChanged = canonicalJson(effectValue(wornEffect)) !== canonicalJson(effectValue(newEffect));
   return {
     stats,
     gainedEffect: effectChanged ? newEffect : null,
@@ -167,5 +172,5 @@ export function buildSummary(profile: Profile, content: ContentIndex) {
     const inst = findInstance(profile, id);
     if (inst) for (const t of content.item(inst.baseId).tags) tags.add(t);
   }
-  return { stats, tags: [...tags] };
+  return { stats, tags: [...tags], activeEffects: activeEffectDetails(profile, content), classEffects: classEffectDetails(content, stats) };
 }

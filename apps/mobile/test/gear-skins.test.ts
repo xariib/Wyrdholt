@@ -13,7 +13,7 @@ const fixture = (classId = "warrior") => createProfile(content, { name: "Skins",
 describe("equipment-driven appearances", () => {
   it("covers every live class item with a named design independent of rarity", () => {
     const items = CONTENT.items.filter(i => HERO_CLASSES.includes(i.classId as typeof HERO_CLASSES[number]));
-    expect(items).toHaveLength(128);
+    expect(items).toHaveLength(344);
     for (const item of items) {
       const cls = item.classId as typeof HERO_CLASSES[number], skin = gearSkin(item, cls);
       expect(skin.design.shape).toBe(skin.family);
@@ -49,20 +49,20 @@ describe("equipment-driven appearances", () => {
   it("closes the distance during unarmed anticipation and returns after the strike", () => {
     expect(unarmedApproach(100, 0, UNARMED_ATTACK.ms)).toBe(0);
     expect(unarmedApproach(100, 130, UNARMED_ATTACK.ms)).toBeGreaterThan(0);
-    expect(unarmedApproach(100, 260, UNARMED_ATTACK.ms)).toBe(74);
-    expect(unarmedApproach(100, 780, UNARMED_ATTACK.ms)).toBe(0);
-    expect(unarmedApproach(12, 260, UNARMED_ATTACK.ms)).toBe(0);
+    expect(unarmedApproach(100, 320, UNARMED_ATTACK.ms)).toBe(74);
+    expect(unarmedApproach(100, 960, UNARMED_ATTACK.ms)).toBe(0);
+    expect(unarmedApproach(12, 320, UNARMED_ATTACK.ms)).toBe(0);
   });
   it.each(HERO_CLASSES)("keeps %s grounded at rest and reaches melee contact without overshooting", cls => {
     for (const time of [0, 125, 500, 1000]) expect(characterOffset(cls, "idle", 0, time)).toEqual([0, 0]);
     for (const distance of [12, 60, 180]) {
-      const contact = unarmedApproach(distance, 260, UNARMED_ATTACK.ms, cls);
-      const samples = [0, 65, 130, 195, 260].map(t => unarmedApproach(distance, t, UNARMED_ATTACK.ms, cls));
+      const contact = unarmedApproach(distance, 320, UNARMED_ATTACK.ms, cls);
+      const samples = [0, 80, 160, 240, 320].map(t => unarmedApproach(distance, t, UNARMED_ATTACK.ms, cls));
       expect(samples.at(-1)).toBe(contact);
       expect(samples).toEqual([...samples].sort((a, b) => a - b));
       expect(contact).toBeGreaterThanOrEqual(0);
       expect(contact).toBeLessThan(distance);
-      expect(unarmedApproach(distance, 780, UNARMED_ATTACK.ms, cls)).toBe(0);
+      expect(unarmedApproach(distance, 960, UNARMED_ATTACK.ms, cls)).toBe(0);
       for (const interval of [350, 520, 700, 1000]) {
         const timing = attackDurations(UNARMED_ATTACK, interval);
         const duration = timing.reduce((a, b) => a + b, 0);

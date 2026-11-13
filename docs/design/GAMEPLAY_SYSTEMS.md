@@ -33,6 +33,11 @@ and effects. Adventure drops and clear
 caches use the class that fought. Forge results use the active class. Encounter
 level gates and zone rarity ceilings still apply. [Effect contract](C3_ITEM_EFFECTS.md).
 
+From Rare onward, every class and slot also has Precision (attack/crit), Tempo
+(attack speed), and Bulwark (health/armor) alternatives. Pieces can be mixed;
+their stat tradeoffs retain the source item's effect behavior. This is provisional
+build-choice tuning, with human balance validation open. [Build options](GEAR_BUILD_OPTIONS.md).
+
 Gear includes name and effect search, rarity filters, and a NEW filter. A class
 only sees compatible gear in Loadout, Inventory, Forge and the gear encyclopedia;
 copy counts and NEW badges follow the same active-class view. Other classes' copies

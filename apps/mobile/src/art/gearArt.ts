@@ -203,7 +203,7 @@ export function gearAtlas(asset: ArtAsset, appearance: HeroAppearance, layer?: R
   asset.frames.forEach((f, i) => {
     ctx.save(); ctx.beginPath(); ctx.rect(f.x, f.y, asset.width, asset.height); ctx.clip();
     ctx.translate(f.x + asset.anchor.x, f.y + asset.anchor.y);
-    drawHero(ctx, appearance, pose, i, layer); ctx.restore();
+    drawHero(ctx, appearance, pose, pose === "attack" && asset.frames.length === 8 ? Math.floor(i / 2) : i, layer); ctx.restore();
   });
   if (pose === "flash") { ctx.globalCompositeOperation = "source-in"; ctx.fillStyle = "#fff5dc"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
   return canvas;

@@ -76,7 +76,7 @@ try {
         if (item.id === "last_light_vest") await page.screenshot({ path: join(out, `${width}-last-light.png`) });
         await sheet.getByRole("button", { name: "Close equipment", exact: true }).click();
       }
-      for (const item of CONTENT.items.filter(i => i.rarity === "legendary")) await expect(page.locator(".build-summary .chips").getByText(item.effect.name, { exact: true })).toBeVisible();
+      for (const item of CONTENT.items.filter(i => i.rarity === "legendary")) await expect(page.getByRole("region", { name: "Active effects", exact: true }).getByText(item.effect.name, { exact: true })).toBeVisible();
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Page overflow");
       await page.reload(); await page.locator(".header").waitFor();
       const restored = await exported(page); assert.deepEqual(restored.equipment, p.equipment);
