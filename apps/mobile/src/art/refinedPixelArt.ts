@@ -210,6 +210,20 @@ function posePoint(x: number, y: number, look: HeroAppearance, pose: Pose | "fla
     const recoil = pose === "hit" || pose === "flash" ? (frame ? 1 : 2) : 0;
     return [x + upper * (lean - recoil), y + upper * (breath + recoil * .25 + (key?.sink ?? 0))];
 }
+function useStrikeRig(look: HeroAppearance, pose: Pose | "flash", frame: number): boolean {
+    return pose === "attack" && !!HERO_ATTACK_KEYS[look.classId][frame]?.strike
+        && (look.classId !== "ranger" || !!look.slots.weapon || frame >= 2);
+}
+/** Combat text and impact FX share the visible illustration's pose and ground anchor. */
+export function refinedBodySocket(look: HeroAppearance, pose: Pose, frame: number, socket: "head" | "chest"): Point {
+    const r = rigFor(look.classId, useStrikeRig(look, pose, frame));
+    const [x, y, width, height] = r.chest;
+    const local = socket === "head" ? r.head : [x + width / 2, y + height / 3] as const;
+    const [px, py] = posePoint(...local, look, pose, frame);
+    if (pose !== "death") return [px, py];
+    // Same grounding transform as the atlas's fall.
+    return frame >= 2 ? [27 + py, -13 - px] : [px - frame * 2, py + frame * 1.5];
+}
 function warped(ctx: CanvasRenderingContext2D, source: PixelRaster, look: HeroAppearance, pose: Pose | "flash", frame: number) {
     // Whole illustrated pose: only a tiny row-wise lean/breathing shift, never limb stretching.
     for (let y = 0; y < 128; y++) {
@@ -328,10 +342,7 @@ export function refinedAtlas(asset: ArtAsset, look: HeroAppearance, layer?: Laye
             else
                 ctx.translate(-i * 4, i * 3);
         }
-        const drawnBow = look.classId === "ranger" && look.slots.weapon;
-        const strike = pose === "attack" && HERO_ATTACK_KEYS[look.classId][visualFrame]!.strike
-            && (look.classId !== "ranger" || drawnBow || visualFrame >= 2);
-        warped(ctx, outfit(look, layer, !!strike), look, pose, visualFrame);
+        warped(ctx, outfit(look, layer, useStrikeRig(look, pose, visualFrame)), look, pose, visualFrame);
         if (!layer || layer === "weapon")
             held(ctx, look, pose, visualFrame, layer);
         ctx.restore();

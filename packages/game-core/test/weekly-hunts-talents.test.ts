@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   activeBossAttempt, applyCommand, bossProgress, cloneProfile, currentBuild, huntResetAt, huntWeekAt,
-  parseSave, prepareBossFight, resolveHeroStats, rollLoot, serializeSave, simulateOffline,
+  parseSave, prepareBossFight, replayFight, resolveHeroStats, rollLoot, serializeSave, simulateOffline,
 } from "@emberbound/game-core";
 import { content, newProfile, run, setLevel, setMastery } from "./helpers";
 
@@ -46,6 +46,8 @@ describe("weekly Hunts", () => {
     expect(offline.inventory.instances.map(i => i.baseId)).toEqual([reward.rewards.warrior]);
     expect(summary).toMatchObject({ itemsFound: 1, notableInstanceIds: [offline.inventory.instances[0]!.id] });
     expect(saved.character.activeClassId).toBe("ranger");
+    expect(saved.character.huntTalentClasses).toEqual(["warrior"]);
+    expect(offline.character.huntTalentClasses).toEqual(["warrior"]);
     expect(bossProgress(reload(saved), bramble)?.huntCompletedWeek).toBe(huntWeekAt(sunday));
     expect(start(saved, sunday).ok).toBe(false);
     expect(start(saved, monday).ok).toBe(true);
@@ -109,5 +111,38 @@ describe("class skill trees", () => {
     const fight = prepareBossFight(content, attempt, false)!;
     applyCommand(saved, content, { type: "advance", ms: fight.summary.durationMs }, { contentTimeMs: monday });
     expect(currentBuild(reload(saved)).talentIds).toEqual([id]);
+  });
+
+  it("earns one permanent skill point per class and pins it in the next fight", () => {
+    const profile = newProfile(713, "warrior", "mage");
+    profile.adventure.zones.greenfields!.cleared = true;
+    setLevel(profile, 25);
+    setMastery(profile, "warrior", 12);
+    const ids = content.talentTrees.get("warrior")!.branches.flatMap(branch => branch.nodes.map(node => node.id)).slice(0, 5);
+    const spend = (p: typeof profile) => run(p, { type: "setTalents", classId: "warrior", talentIds: ids });
+    function win(p: typeof profile, at: number) {
+      const attempt = activeBossAttempt(p)!;
+      const fight = prepareBossFight(content, attempt, false)!;
+      expect(fight.summary.outcome).toBe("victory");
+      applyCommand(p, content, { type: "advance", ms: fight.summary.durationMs }, { contentTimeMs: at });
+    }
+    expect(spend(profile).ok).toBe(false);
+    expect(start(profile, sunday).ok).toBe(true);
+    expect(activeBossAttempt(profile)!.record.build.huntTalentPoint).toBeUndefined();
+    const restored = reload(profile);
+    win(restored, sunday);
+    expect(spend(restored).ok).toBe(true);
+    expect(currentBuild(reload(restored))).toMatchObject({ talentIds: [...ids].sort(), huntTalentPoint: true });
+    expect(start(restored, monday).ok).toBe(true);
+    const second = reload(restored);
+    const record = activeBossAttempt(second)!.record;
+    expect(record.build.huntTalentPoint).toBe(true);
+    const { huntTalentPoint: _point, ...withoutPoint } = record.build;
+    expect(() => replayFight(content, { ...record, build: withoutPoint })).toThrow("Invalid talent selection");
+    win(second, monday);
+    expect(second.character.huntTalentClasses).toEqual(["warrior"]);
+    setMastery(second, "mage", 12);
+    const mageIds = content.talentTrees.get("mage")!.branches.flatMap(branch => branch.nodes.map(node => node.id)).slice(0, 5);
+    expect(run(second, { type: "setTalents", classId: "mage", talentIds: mageIds }).ok).toBe(false);
   });
 });

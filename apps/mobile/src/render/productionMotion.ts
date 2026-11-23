@@ -53,6 +53,9 @@ export class ProductionMotion {
     // Damage, health labels and contact effects still update immediately from the log.
     if (this.pose === "attack" && this.completeAttack) { this.pendingHit = absorbed; return; }
     if (this.pose === "attack" && this.impactSeen && now < this.impactUntil) { this.pendingHit = absorbed; return; }
+    this.startHit(now, absorbed);
+  }
+  private startHit(now: number, absorbed: boolean): void {
     this.pose = "hit"; this.start = now; this.absorbed = absorbed;
   }
   death(now: number): void { this.pose = "death"; this.start = now; this.pendingHit = null; this.pendingAttack = null; }
@@ -70,7 +73,7 @@ export class ProductionMotion {
       if (this.impactSeen && now < this.impactUntil) return { pose: "attack", index: impact, impact: true };
       if (this.completeAttack && now - this.start < this.durations.reduce((a, b) => a + b, 0)) return { pose: "attack", index, impact: false };
       if (this.pendingHit !== null) {
-        const absorbed = this.pendingHit; this.pendingHit = null; this.hit(now, absorbed);
+        const absorbed = this.pendingHit; this.pendingHit = null; this.startHit(now, absorbed);
       } else if (this.pendingAttack !== null) {
         const interval = this.pendingAttack; this.pendingAttack = null; this.attack(now, interval);
         return { pose: "attack", index: 0, impact: false };
@@ -78,7 +81,13 @@ export class ProductionMotion {
       else { this.pose = "idle"; this.start = now; }
     }
     const c = this.actor.animations[this.pose];
-    if (this.pose === "hit" && now - this.start >= (this.absorbed ? c.ms[1]! : c.ms.reduce((a, b) => a + b, 0))) { this.pose = "idle"; this.start = now; }
+    if (this.pose === "hit" && now - this.start >= (this.absorbed ? c.ms[1]! : c.ms.reduce((a, b) => a + b, 0))) {
+      this.pose = "idle"; this.start = now;
+      if (this.pendingAttack !== null) {
+        const interval = this.pendingAttack; this.pendingAttack = null; this.attack(now, interval);
+        return { pose: "attack", index: 0, impact: false };
+      }
+    }
     const clip = this.actor.animations[this.pose];
     return { pose: this.pose, index: this.pose === "hit" && this.absorbed ? 1 : sequenceIndex(clip.ms, now - this.start, clip.loop), impact: false };
   }

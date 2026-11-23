@@ -10,7 +10,7 @@ import { ProductionMotion } from "./productionMotion";
 import { characterOffset, smoothAttackOffset, unarmedApproach, UNARMED_ATTACK } from "./characterMotion";
 import { heroAttackName, type HeroAppearance } from "../art/gearSkins";
 import { HERO_ATTACK_PADDING, heroAttackFrame } from "../art/heroAnimation";
-import { refinedReleasePoint } from "../art/refinedPixelArt";
+import { refinedBodySocket, refinedReleasePoint } from "../art/refinedPixelArt";
 import { EnvironmentArt } from "./environmentArt";
 import { drawBackground, groundY } from "./background";
 import { GLYPHS, glyphCanvas } from "./pixelArt";
@@ -52,6 +52,7 @@ const PIP_COLORS: Record<string, number> = {
   bleed: 0xd8404a,
   flow: 0x7fd4ff,
   wraps_flow: 0xb0f0ff,
+  haste: 0x8edaff,
 };
 const FAST_FORWARD_MS = 450;
 /** Brief recoil, then clear defeated enemies before the next formation arrives. */
@@ -64,7 +65,14 @@ const PROJECTILE_ACTORS = new Set(["mage", "ranger", "spider"]);
 /** Class technique hits (colour hint only). */
 const CLASS_PROCS = new Set(["combo_strike", "flowing_combo", "retaliation", "relentless_finish", "split_arrow", "venom_burst", "piercing_strike"]);
 /** Item-owned status lines are named `status:mechanic` (bleed:rend); colour by the family. */
-const statusFamily = (status: unknown): string => String(status).split(":")[0] ?? "";
+const STATUS_FAMILIES: Record<string, string> = {
+  nightshade: "poison", talent_ember_burn: "ember_burn", momentum_burn: "burn", splinter: "bleed",
+  quickening: "haste", iron_rhythm: "haste", silkstep: "haste", watercourse: "haste", ghost_step: "haste", stillwater_rhythm: "haste",
+};
+const statusFamily = (status: unknown): string => {
+  const base = String(status).split(":")[0] ?? "";
+  return STATUS_FAMILIES[base] ?? base;
+};
 
 interface ActorView {
   id: string;
@@ -93,6 +101,7 @@ interface ActorView {
   lungeAt: number;
   flashAt: number;
   flashAbsorbed: boolean;
+  bodySockets?: { head: EffectPoint; chest: EffectPoint };
   deathAt: number;
   spawnAt: number;
   phase: number;
@@ -578,8 +587,9 @@ export class CombatRenderer {
           break;
         }
         tgt.flashAt = now;
-        tgt.flashAbsorbed = Number(e.abs ?? 0) > 0;
-        tgt.motion?.hit(now, Number(e.abs ?? 0) > 0);
+        const absorbed = Number(e.abs ?? 0);
+        tgt.flashAbsorbed = absorbed > 0 && Number(e.eff) === 0;
+        tgt.motion?.hit(now, tgt.flashAbsorbed);
         if (Number(e.abs ?? 0) > 0) { tgt.wardPhase = tgt.ward100 > 0 ? "absorb_hit" : "break"; tgt.wardAt = now; }
         if (src?.motion && e.via === "basic" && this.events.includes(e)) this.contactArt(src, tgt, now, e.crit === 1);
         if (src) this.attackImpact(src, tgt, now, e.crit === 1, String(e.via));
@@ -588,12 +598,10 @@ export class CombatRenderer {
         let color = COLORS.heroHit;
         if (!src?.isHero) color = COLORS.taken;
         else if (crit) color = COLORS.crit;
-        else if (via === "spell_echo" || via === "wildfire" || via === "stormcall") color = COLORS.magicProc;
+        else if (via !== "basic" && e.dmg === "magic") color = COLORS.magicProc;
         else if (via === "venom_burst") color = COLORS.poison;
         else if (via !== "basic") color = CLASS_PROCS.has(via) ? COLORS.classProc : COLORS.itemProc;
-        // A hit fully absorbed by the ward shows in ward colour.
-        if (e.abs !== undefined && Number(e.eff) === 0 && Number(e.abs) > 0) color = COLORS.ward;
-        this.floatNumber(tgt, Math.round(Number(e.amt) / 100), color, crit ? 2 : 1, now, crit ? "!" : "");
+        this.floatDamage(tgt, Number(e.amt), absorbed, color, now, crit);
         if (crit) { tgt.critAt = now; src?.motion?.crit(); }
         if (crit && !src?.motion) this.shakeUntil = now + 120;
         if (via === "wildfire" && !src?.motion) this.ring(tgt, 0xff9a3a, now);
@@ -621,7 +629,7 @@ export class CombatRenderer {
           this.drawBar(tgt);
         }
         const color = (COLORS as Record<string, string>)[statusFamily(e.status)] ?? COLORS.burn;
-        if (!fastForward) this.floatNumber(tgt, Math.round(Number(e.amt) / 100), color, 1, now, "");
+        if (!fastForward) this.floatDamage(tgt, Number(e.amt), Number(e.abs ?? 0), color, now);
         else tgt.shownHp100 = tgt.hp100;
         break;
       }
@@ -873,12 +881,11 @@ export class CombatRenderer {
     a.paintedPips = { y, statuses: [...a.statuses] };
     const g = a.pips;
     g.clear();
-    let i = 0;
-    for (const s of a.statuses) {
-      const color = PIP_COLORS[statusFamily(s)] ?? 0xffffff;
-      g.rect(-6 + i * 4, y, 3, 2).fill(0x14121a);
-      g.rect(-6 + i * 4, y, 2, 2).fill(color);
-      i += 1;
+    const families = [...new Set([...a.statuses].map(statusFamily))].slice(0, 6);
+    for (const [index, family] of families.entries()) {
+      const x = index * 4 - Math.floor(families.length * 2);
+      g.rect(x, y, 3, 2).fill(0x14121a);
+      g.rect(x, y, 2, 2).fill(PIP_COLORS[family] ?? 0xffffff);
     }
   }
 
@@ -914,6 +921,12 @@ export class CombatRenderer {
       const old = this.floaters.shift();
       old?.node.destroy({ children: true });
     }
+  }
+
+  private floatDamage(a: ActorView, total: number, absorbed: number, color: string, now: number, crit = false): void {
+    const damage = total - absorbed;
+    if (damage > 0) this.floatNumber(a, Math.max(1, Math.round(damage / 100)), color, crit ? 2 : 1, now, crit ? "!" : "");
+    if (absorbed > 0) this.floatNumber(a, Math.ceil(absorbed / 100), COLORS.ward, 1, now, "", "◇");
   }
 
   private projectile(src: ActorView, tgt: ActorView, now: number): void {
@@ -1071,6 +1084,10 @@ export class CombatRenderer {
       a.body.anchor.set(tex.anchorX / tex.width, tex.anchorY / tex.height);
       a.body.scale.set(1); a.displayScale = 1;
       a.body.position.set(0, 0);
+      const look = a.isHero ? this.heroAppearance : undefined;
+      if (look && tex.normal.source.resolution === 2) {
+        a.bodySockets = { head: refinedBodySocket(look, pose, frame, "head"), chest: refinedBodySocket(look, pose, frame, "chest") };
+      } else a.bodySockets = undefined;
     }
     // Heroes react immediately, even during a protected attack. Reuse the exact
     // visible pose and equipment so a legacy silhouette cannot flash behind it.
@@ -1189,8 +1206,9 @@ export class CombatRenderer {
     const { asset, width, anchorX, anchorY, height } = a.tex;
     const socket = asset?.attachments[name];
     const units = asset ? width / asset.width : 1;
-    const x = socket ? socket.x * units - anchorX : 0;
-    const y = socket ? socket.y * units - anchorY : (name === "head" ? 0 : height / 2) - anchorY;
+    const local = a.bodySockets?.[name];
+    const x = local?.[0] ?? (socket ? socket.x * units - anchorX : 0);
+    const y = local?.[1] ?? (socket ? socket.y * units - anchorY : (name === "head" ? 0 : height / 2) - anchorY);
     return [a.root.x + a.body.x + x * a.body.scale.x, a.root.y + a.body.y + y * a.body.scale.y];
   }
 

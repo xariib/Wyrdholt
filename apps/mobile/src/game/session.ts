@@ -721,6 +721,15 @@ export class GameSession {
     });
   }
 
+  saveTalents(classId: string, talentIds: string[]): Promise<CommandResult> {
+    return this.saveProfileAction({
+      name: "Skill selection",
+      busy: "Saving skills…",
+      preserveLiveTime: true,
+      apply: candidate => applyCommand(candidate, this.content, { type: "setTalents", classId, talentIds }, { contentTimeMs: Date.now() }),
+    });
+  }
+
   private saveItemCommand(command: Extract<Command, { type: "forge" | "setItemLock" | "salvage" | "bulkSalvage" }>): Promise<CommandResult> {
     const forging = command.type === "forge";
     const salvaging = command.type === "salvage" || command.type === "bulkSalvage";
@@ -785,6 +794,7 @@ export class GameSession {
     if (command.type === "salvage" || command.type === "bulkSalvage") return { ok: false, error: "Use the saved salvage confirmation flow." };
     if (command.type === "setItemLock") return { ok: false, error: "Use the saved item lock flow." };
     if (command.type === "startBoss") return { ok: false, error: "Use the saved challenge entry flow." };
+    if (command.type === "setTalents") return { ok: false, error: "Use the saved skill selection flow." };
     if (!this.canPlay() || this.catchingUp) return { ok: false, error: "Save access or settlement is paused; no command was applied." };
     const profile = this.profile;
     if (!profile) return { ok: false, error: "No character." };

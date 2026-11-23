@@ -89,6 +89,19 @@ describe("approved Darkwood presentation", () => {
     expect(m.sample(1245)).toEqual({ pose: "attack", index: 1, impact: true });
     expect(m.sample(1305).pose).toBe("hit");
   });
+  it("plays a protected hit before starting a separately queued attack", () => {
+    const m = new ProductionMotion(actorPack.monk!);
+    m.attack(1000, 1000);
+    const impact = 1000 + m.windupMs;
+    m.sample(impact);
+    m.attack(impact + 1, 1000);
+    m.hit(impact + 2, false);
+    const recovery = impact + actorPack.monk!.animations.attack.min_ms![1]!;
+    expect(m.sample(recovery).pose).toBe("hit");
+    const next = recovery + actorPack.monk!.animations.hit.ms.reduce((a, b) => a + b, 0);
+    expect(m.sample(next)).toEqual({ pose: "attack", index: 0, impact: false });
+    expect(m.attackSerial).toBe(2);
+  });
   it("death has priority and holds the final approved frame", () => {
     const m = new ProductionMotion(actorPack.warrior!);
     m.attack(1000, 1000); m.death(1010); m.hit(1020, false); m.attack(1030, 1);

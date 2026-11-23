@@ -11,7 +11,7 @@ import { totalNew } from "./ui/gearModel";
 import { useUi } from "./ui/hooks";
 import { OfflineOverlay, RunResultOverlay } from "./ui/overlays/Overlays";
 import { AdventureScreen } from "./ui/screens/Adventure";
-import { ChallengesScreen } from "./ui/screens/Challenges";
+import { ChallengesScreen, type ChallengeSection } from "./ui/screens/Challenges";
 import { CharacterScreen } from "./ui/screens/Character";
 import { CreateCharacterScreen } from "./ui/screens/CreateCharacter";
 import { GearScreen, type GearFocus } from "./ui/screens/Gear";
@@ -59,6 +59,7 @@ export function App() {
   const [onlineOpen, setOnlineOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [saveToolsOpen, setSaveToolsOpen] = useState(false);
+  const [challengeSections, setChallengeSections] = useState<ChallengeSection[]>(["boss"]);
   const [overlay, setOverlayState] = useState(readOverlayPref);
   const [gearFocus, setGearFocus] = useState<GearFocus | "new" | null>(null);
   const clearFocus = useCallback(() => setGearFocus(null), []);
@@ -163,7 +164,8 @@ export function App() {
       )}
       {tab === "challenges" && (
         <main className="screen">
-          <ChallengesScreen profile={profile} active={!debugOpen} onReviewGear={() => openGear(null)} />
+          <ChallengesScreen profile={profile} active={!debugOpen} onReviewGear={() => openGear(null)}
+            sections={challengeSections} setSections={setChallengeSections} />
         </main>
       )}
       <main className="screen menu-screen" aria-labelledby="menu-title" hidden={tab !== "menu"}>

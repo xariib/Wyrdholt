@@ -91,9 +91,11 @@ export function checkRecordCompatibility(content: ContentIndex, record: CombatRe
     || (!boss && (format === "emberbound-fight-record/3") !== (promoted === true))) {
     throw new ReplayMismatchError("Invalid promotion for this fight record");
   }
-  const talents = record.build.talentIds;
-  if (talents !== undefined && (!Array.isArray(talents) || talents.length === 0 || !content.talentTrees.has(record.build.classId)
-    || selectedTalents(content.talentTrees.get(record.build.classId), masteryRank(content, record.build.classId, record.build.masteryXp), talents).length !== talents.length)) {
+  const { talentIds, huntTalentPoint, classId, masteryXp } = record.build;
+  const tree = content.talentTrees.get(classId);
+  if (huntTalentPoint !== undefined && (huntTalentPoint !== true || talentIds === undefined)
+    || talentIds !== undefined && (!Array.isArray(talentIds) || talentIds.length === 0 || !tree
+      || selectedTalents(tree, masteryRank(content, classId, masteryXp), talentIds, huntTalentPoint === true).length !== talentIds.length)) {
     throw new ReplayMismatchError("Invalid talent selection for this fight record");
   }
   if (season && boss) {

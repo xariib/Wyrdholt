@@ -55,7 +55,7 @@ export function resolveHeroStats(
     .filter((t) => t.unlockRank <= rank)
     .map((t) => ({ name: t.name, source: "class" as const }));
 
-  for (const talent of selectedTalents(content.talentTrees.get(cls.id), rank, build.talentIds ?? [])) {
+  for (const talent of selectedTalents(content.talentTrees.get(cls.id), rank, build.talentIds ?? [], build.huntTalentPoint === true)) {
     hp += talent.stats?.hp ?? 0;
     attack += talent.stats?.attack ?? 0;
     armor += talent.stats?.armor ?? 0;

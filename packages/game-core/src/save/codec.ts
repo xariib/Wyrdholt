@@ -4,7 +4,7 @@ import { canonicalJson } from "../hash/canonical";
 import { sha256Hex } from "../hash/sha256";
 import type { Profile } from "../profile/types";
 import { BOSS_SAVE_SCHEMA_VERSION, LONG_TERM_SAVE_SCHEMA_VERSION, RULES_VERSION, SAVE_SCHEMA_VERSION, TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION } from "../rules/version";
-import { MAX_TALENT_POINTS } from "../character/talents";
+import { MASTERY_TALENT_POINTS, MAX_TALENT_POINTS } from "../character/talents";
 import { ITEM_LOCK_SAVE_SCHEMA_VERSION } from "../items/locks";
 
 /**
@@ -363,10 +363,19 @@ function forgeProblem(profile: Profile): string | null {
   return receipt.inputKey === inputKey ? null : "forge-receipt";
 }
 
-function talentIdsValid(ids: unknown, classId: string): boolean {
-  return Array.isArray(ids) && ids.length <= MAX_TALENT_POINTS && ids.every((id, index) =>
+function talentIdsValid(ids: unknown, classId: string, huntPoint: boolean): boolean {
+  const cap = huntPoint ? MAX_TALENT_POINTS : MASTERY_TALENT_POINTS;
+  return Array.isArray(ids) && ids.length <= cap && ids.every((id, index) =>
     typeof id === "string" && id.length <= 80 && /^[a-z0-9_]+$/.test(id) && id.startsWith(`${classId}_`)
     && (index === 0 || ids[index - 1] < id));
+}
+
+function huntTalentClassesValid(profile: Profile): boolean {
+  const { activeClassId, alternateClassId, huntTalentClasses: classes } = profile.character;
+  if (classes === undefined) return true;
+  return profile.schema === TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION
+    && Array.isArray(classes) && classes.length >= 1 && classes.length <= 2
+    && classes.every((id, index) => (id === activeClassId || id === alternateClassId) && (index === 0 || classes[index - 1]! < id));
 }
 
 function talentsValid(profile: Profile, value: unknown): boolean {
@@ -374,7 +383,7 @@ function talentsValid(profile: Profile, value: unknown): boolean {
   if (profile.schema !== TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION || !isRecord(value)) return false;
   const { activeClassId, alternateClassId } = profile.character;
   return Object.entries(value).every(([id, ids]) =>
-    (id === activeClassId || id === alternateClassId) && talentIdsValid(ids, id));
+    (id === activeClassId || id === alternateClassId) && talentIdsValid(ids, id, profile.character.huntTalentClasses?.includes(id) ?? false));
 }
 
 function bossRecordProblem(record: unknown, bossId: string, tier: number, attemptIndex: number, profile: Profile): boolean {
@@ -392,8 +401,12 @@ function bossRecordProblem(record: unknown, bossId: string, tier: number, attemp
   const { build } = record;
   if (stateFieldsProblem(build, "build", [["characterLevel", "positive"], ["classId", "string"], ["masteryXp", "counter"]])) return true;
   if (build.promoted !== undefined && (build.promoted !== true || profile.schema < LONG_TERM_SAVE_SCHEMA_VERSION)) return true;
+  const hasHuntPoint = build.huntTalentPoint === true;
+  const classId = build.classId as string;
+  if (build.huntTalentPoint !== undefined && (!hasHuntPoint || build.talentIds === undefined
+    || !profile.character.huntTalentClasses?.includes(classId))) return true;
   if (build.talentIds !== undefined && (profile.schema !== TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION
-    || !talentIdsValid(build.talentIds, build.classId as string))) return true;
+    || !talentIdsValid(build.talentIds, classId, hasHuntPoint))) return true;
   if (bossId.startsWith("trial_") && (tier !== 1 || bossId !== `trial_${build.classId}` || build.promoted !== undefined)) return true;
   if (build.seasonRelicAttackBp !== undefined && (!season || tier < 2 || !Number.isSafeInteger(build.seasonRelicAttackBp)
     || (build.seasonRelicAttackBp as number) <= 0 || (build.seasonRelicAttackBp as number) > 10_000)) return true;
@@ -485,7 +498,8 @@ export function validateProfile(profile: Profile): string | null {
   if (!isRecord(profile.character) || typeof profile.character.activeClassId !== "string") return "character";
   if (!Number.isSafeInteger(profile.gold) || profile.gold < 0) return "gold";
   if (!Number.isSafeInteger(profile.inventory.nextInstanceId)) return "inventory";
-  if (!talentsValid(profile, profile.character.talents) || !talentsValid(profile, profile.pending?.talents)) return "talents";
+  if (!huntTalentClassesValid(profile) || !talentsValid(profile, profile.character.talents)
+    || !talentsValid(profile, profile.pending?.talents)) return "talents";
   let last = 0;
   for (const i of profile.inventory.instances) {
     if (!Number.isSafeInteger(i.id) || i.id <= last) return "instance-order";

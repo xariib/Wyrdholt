@@ -38,7 +38,8 @@ Enter manually from Challenges. Combat is automatic and victories award XP,
 Mastery XP, gold and the participating class's exclusive drop. Each Hunt can pay
 once per character per week. A loss can be retried and a run that spans the
 Monday 00:00 UTC reset pays against its entry week. Forge and Adventure cannot
-award Hunt drops.
+award Hunt drops. The first Hunt victory fought by each learned class also
+awards one permanent point for its skill tree.
 
 The first skill edit or Hunt entry uses save schema 7. Older saves keep earned
 items and progression. The loader still accepts and retires the discontinued

@@ -135,6 +135,10 @@ export function advanceBoss(profile: Profile, content: ContentIndex, deltaMs: nu
           result.huntRewardId = createInstance(profile, hunt.rewards[classId]!, { isNew: true, provenance: { source: bossId } }).id;
           profile.stats.itemsFound += 1;
           state.huntCompletedWeek = state.huntWeek;
+          const trained = profile.character.huntTalentClasses ?? [];
+          if (content.talentTrees.has(classId) && !trained.includes(classId)) {
+            profile.character.huntTalentClasses = [...trained, classId].sort();
+          }
         }
       } else {
         profile.stats.defeats += 1;

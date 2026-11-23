@@ -84,6 +84,7 @@ export interface CharacterState {
   alternateClassId: string;
   masteryXp: Record<string, number>;
   talents?: Record<string, string[]>;
+  huntTalentClasses?: string[];
 }
 
 export interface ProfileStats {

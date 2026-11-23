@@ -4,11 +4,13 @@ import type { Profile } from "../profile/types";
 import { TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION } from "../rules/version";
 import { masteryRank } from "./progression";
 
-export const MAX_TALENT_POINTS = 4;
-export const talentPoints = (mastery: number): number => Math.min(MAX_TALENT_POINTS, Math.floor(mastery / 3));
+export const MASTERY_TALENT_POINTS = 4;
+export const MAX_TALENT_POINTS = MASTERY_TALENT_POINTS + 1;
+export const talentPoints = (mastery: number, huntPoint = false): number =>
+  Math.min(MASTERY_TALENT_POINTS, Math.floor(mastery / 3)) + Number(huntPoint);
 
-export function selectedTalents(tree: TalentTreeDef | undefined, rank: number, ids: readonly string[]): TalentDef[] {
-  if (!tree || ids.length > talentPoints(rank) || ids.length !== new Set(ids).size) return [];
+export function selectedTalents(tree: TalentTreeDef | undefined, rank: number, ids: readonly string[], huntPoint = false): TalentDef[] {
+  if (!tree || ids.length > talentPoints(rank, huntPoint) || ids.length !== new Set(ids).size) return [];
   const wanted = new Set(ids);
   const selected: TalentDef[] = [];
   for (const { nodes } of tree.branches) {
@@ -26,7 +28,8 @@ export function setTalents(profile: Profile, content: ContentIndex, classId: str
   const tree = content.talentTrees.get(classId);
   if (!tree) return { error: "That class has no skill tree." };
   const rank = masteryRank(content, classId, character.masteryXp[classId] ?? 0);
-  if (!Array.isArray(ids) || ids.length > MAX_TALENT_POINTS || selectedTalents(tree, rank, ids).length !== ids.length) {
+  const huntPoint = character.huntTalentClasses?.includes(classId) ?? false;
+  if (!Array.isArray(ids) || ids.length > MAX_TALENT_POINTS || selectedTalents(tree, rank, ids, huntPoint).length !== ids.length) {
     return { error: "Spend available points in order along each branch." };
   }
   const ordered = [...ids].sort();

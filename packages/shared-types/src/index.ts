@@ -573,6 +573,8 @@ export interface BuildSnapshot {
   /** Relic Attack is locked to a seasonal attempt. */
   seasonRelicAttackBp?: Bp;
   talentIds?: Id[];
+  /** The first Hunt victory earned a bonus skill point for this class. */
+  huntTalentPoint?: true;
 }
 
 export interface EncounterRef {

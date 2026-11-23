@@ -147,6 +147,7 @@ export function currentBuild(profile: Profile): BuildSnapshot {
     ...(crown ? { artifactAttackBp: crown.attackBp } : {}),
     ...(promotionCleared(profile, classId) ? { promoted: true } as const : {}),
     ...(talentIds?.length ? { talentIds: [...talentIds] } : {}),
+    ...(talentIds?.length && profile.character.huntTalentClasses?.includes(classId) ? { huntTalentPoint: true } as const : {}),
   };
 }
 
@@ -170,6 +171,6 @@ export function equippedInstances(profile: Profile, build: BuildSnapshot): Map<n
  */
 export function buildKey(build: BuildSnapshot, masteryPart: number = build.masteryXp): string {
   const e = build.equipment;
-  const talents = build.talentIds?.length ? `|talents:${build.talentIds.join(",")}` : "";
+  const talents = build.talentIds?.length ? `|talents:${build.talentIds.join(",")}${build.huntTalentPoint ? "+hunt" : ""}` : "";
   return `${build.classId}|${build.characterLevel}|${masteryPart}|${build.artifactId ?? "-"}|${e.weapon ?? "-"}|${e.head ?? "-"}|${e.chest ?? "-"}|${e.gloves ?? "-"}|${e.boots ?? "-"}|${e.ring ?? "-"}${build.artifactAttackBp === undefined ? "" : `|${build.artifactAttackBp}`}${build.promoted ? "|promoted" : ""}${talents}`;
 }

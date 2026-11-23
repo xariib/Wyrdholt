@@ -6,6 +6,7 @@ import { Sheet } from "../components/Common";
 
 type Phase = "loading" | "checking" | "downloading" | "installing";
 const UPDATE_CHECK_INTERVAL = 30 * 60 * 1000;
+const AUTOMATIC_RETRY_INTERVAL = 60 * 1000;
 
 export function AppUpdates({ menuOpen }: { menuOpen: boolean }) {
   return hasAppUpdater() ? <UpdateControl menuOpen={menuOpen} /> : null;
@@ -20,6 +21,7 @@ function UpdateControl({ menuOpen }: { menuOpen: boolean }) {
   const [notice, setNotice] = useState("");
   const working = useRef(false);
   const lastCheck = useRef<number | null>(null);
+  const lastAttempt = useRef<number | null>(null);
 
   useEffect(() => {
     if (!menuOpen) setOpen(false);
@@ -38,6 +40,7 @@ function UpdateControl({ menuOpen }: { menuOpen: boolean }) {
     try {
       setState(await action());
       if (next === "checking") {
+        lastCheck.current = Date.now();
         setChecked(true);
         setNotice("");
       }
@@ -53,9 +56,12 @@ function UpdateControl({ menuOpen }: { menuOpen: boolean }) {
   }, []);
 
   const check = useCallback((automatic: boolean) => {
-    if (automatic && lastCheck.current !== null && Date.now() - lastCheck.current < UPDATE_CHECK_INTERVAL) return;
+    const now = Date.now();
+    if (automatic && ((lastCheck.current !== null && now >= lastCheck.current && now - lastCheck.current < UPDATE_CHECK_INTERVAL)
+      || (lastAttempt.current !== null && now >= lastAttempt.current && now - lastAttempt.current < AUTOMATIC_RETRY_INTERVAL))) return;
     void perform("checking", async () => {
-      lastCheck.current = Date.now();
+      lastAttempt.current = now;
+      if (!automatic) setChecked(false);
       if (automatic) {
         const current = await AppUpdater.getState();
         setState(current);
@@ -90,7 +96,7 @@ function UpdateControl({ menuOpen }: { menuOpen: boolean }) {
   if (!menuOpen) return null;
 
   const close = () => { if (!working.current) setOpen(false); };
-  const percent = progress ? Math.min(100, Math.floor(100 * progress.received / progress.total)) : 0;
+  const percent = progress && progress.total > 0 ? Math.max(0, Math.min(100, Math.floor(100 * progress.received / progress.total))) : 0;
   const status = phase === "loading" ? "Reading installed version…"
     : phase === "checking" ? "Checking for updates…"
     : phase === "downloading" ? (percent >= 100 ? "Verifying download…" : "Downloading update…")

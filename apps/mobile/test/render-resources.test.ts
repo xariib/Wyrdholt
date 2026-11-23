@@ -56,6 +56,18 @@ describe("recovery presentation", () => {
 });
 
 describe("weapon-driven attack playback", () => {
+  it("shows ward absorption and health damage as separate attached values", () => {
+    const target = {};
+    const renderer = Object.assign(Object.create(CombatRenderer.prototype), { floatNumber: vi.fn() });
+    renderer.floatDamage(target, 600, 250, "red", 1000, true);
+    expect(renderer.floatNumber.mock.calls).toEqual([
+      [target, 4, "red", 2, 1000, "!"],
+      [target, 3, "#8fd0ff", 1, 1000, "", "◇"],
+    ]);
+    renderer.floatNumber.mockClear();
+    renderer.floatDamage(target, 200, 200, "red", 1100);
+    expect(renderer.floatNumber.mock.calls).toEqual([[target, 2, "#8fd0ff", 1, 1100, "", "◇"]]);
+  });
   it("keeps an incoming impact on the moving character instead of its home slot", () => {
     const draw = vi.spyOn(attackEffects, "drawAttackImpact").mockImplementation(() => {});
     const body = { x: 0, y: 0, scale: { x: 1, y: 1 } };

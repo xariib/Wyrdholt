@@ -24,6 +24,7 @@ export function Hunts({ profile }: { profile: Profile }) {
   }
   return <section className="panel stack" aria-label="Weekly Hunts">
     <div className="row spread"><h2>Weekly Hunts</h2><span className="small muted">Resets {reset} · 00:00 UTC</span></div>
+    {!profile.character.huntTalentClasses?.includes(classId) && <p className="small muted">First win as {content.classDef(classId).name} earns a bonus skill point.</p>}
     {[...content.hunts.values()].map(({ boss, rewards, xp, mastery, gold }) => {
       const state = bossProgress(profile, boss.id);
       const zone = content.zone(boss.unlockZoneId);

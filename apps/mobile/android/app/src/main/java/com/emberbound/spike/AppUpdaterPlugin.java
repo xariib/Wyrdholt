@@ -19,6 +19,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -81,7 +82,24 @@ public class AppUpdaterPlugin extends Plugin {
     }
     private JSONObject pending() throws Exception {
         String data = prefs().getString("release", null);
-        return data == null ? null : new JSONObject(data);
+        if (data == null) return null;
+        try {
+            JSONObject release = new JSONObject(data);
+            String url = release.getString("url");
+            String tag = UpdatePolicy.apkTag(url);
+            Matcher version = UpdatePolicy.releaseTag(tag);
+            UpdatePolicy.validateSize(release.getLong("size"));
+            if (release.getLong("code") != Long.parseLong(version.group(2))
+                || !version.group(1).equals(release.getString("version"))
+                || !release.getString("sha256").matches("[a-f0-9]{64}")) {
+                throw new IllegalArgumentException("Invalid cached update details.");
+            }
+            return release;
+        } catch (JSONException | IllegalArgumentException invalid) {
+            prefs().edit().remove("release").remove("ready").apply();
+            apk().delete();
+            return null;
+        }
     }
     private JSObject state() throws Exception {
         new File(directory(), "update.part.apk").delete(); // Discard an interrupted previous process's download.
@@ -97,7 +115,16 @@ public class AppUpdaterPlugin extends Plugin {
         result.put("supported", supported(current));
         result.put("published", !prefs().getBoolean("noRelease", false));
         result.put("available", release != null);
-        result.put("ready", release != null && prefs().getString("ready", "").equals(release.toString()) && apk().isFile());
+        boolean ready = false;
+        if (release != null && prefs().getString("ready", "").equals(release.toString())) {
+            File download = apk();
+            ready = download.isFile() && download.length() == release.getLong("size");
+            if (!ready) {
+                prefs().edit().remove("ready").apply();
+                download.delete();
+            }
+        }
+        result.put("ready", ready);
         if (release != null) {
             result.put("version", release.getString("version"));
             result.put("bytes", release.getLong("size"));
@@ -134,7 +161,6 @@ public class AppUpdaterPlugin extends Plugin {
         return () -> call.resolve(result);
     }
     private static class NoRelease extends IOException {}
-    private static class RateLimited extends IOException {}
 
     private String message(Exception e) {
         return e instanceof IllegalArgumentException || e instanceof IOException ? e.getMessage() :
@@ -164,7 +190,14 @@ public class AppUpdaterPlugin extends Plugin {
     private HttpURLConnection open(String address, boolean api, String method) throws Exception {
         for (int redirects = 0; redirects < 6; redirects++) {
             HttpURLConnection c = request(address, api, method);
-            int status = c.getResponseCode();
+            int status;
+            try {
+                status = c.getResponseCode();
+            } catch (IOException e) {
+                c.disconnect();
+                connection = null;
+                throw e;
+            }
             if (status >= 300 && status <= 399) {
                 String location = c.getHeaderField("Location");
                 c.disconnect();
@@ -175,7 +208,6 @@ public class AppUpdaterPlugin extends Plugin {
             if (status != 200) {
                 c.disconnect();
                 if (api && status == 404) throw new NoRelease();
-                if (api && (status == 403 || status == 429)) throw new RateLimited();
                 throw new IOException(status == 403 || status == 429 ? "Update service is busy. Try again later." :
                     "Cannot reach the update service. Check your connection and try again.");
             }
@@ -255,8 +287,20 @@ public class AppUpdaterPlugin extends Plugin {
     }
 
     private JSONObject latestRelease(long installedCode) throws Exception {
-        try { return apiRelease(installedCode); }
-        catch (RateLimited e) { return downloadRelease(installedCode); }
+        try {
+            return apiRelease(installedCode);
+        } catch (NoRelease e) {
+            return downloadRelease(installedCode);
+        } catch (IOException apiFailure) {
+            // Try the official pinned download when API traffic is blocked or
+            // temporarily unavailable. An inconclusive fallback keeps the
+            // last verified download instead of clearing it.
+            try {
+                return downloadRelease(installedCode);
+            } catch (NoRelease unavailable) {
+                throw apiFailure;
+            }
+        }
     }
 
     @PluginMethod public void check(PluginCall call) {
@@ -339,7 +383,10 @@ public class AppUpdaterPlugin extends Plugin {
                 verify(partial, release);
                 if (cancelled) throw new IOException("Download cancelled.");
                 if (!partial.renameTo(apk())) throw new IOException("Cannot save the verified update.");
-                prefs().edit().putString("ready", release.toString()).commit();
+                if (!prefs().edit().putString("ready", release.toString()).commit()) {
+                    apk().delete();
+                    throw new IOException("The verified update could not be retained. Download it again.");
+                }
                 return resolveState(call);
             } finally {
                 if (c != null) c.disconnect();

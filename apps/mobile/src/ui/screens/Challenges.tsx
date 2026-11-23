@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { ASHEN_CROWN, ASHEN_KING_ID, activeBossAttempt, ashenCrownAt, type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
 import { registerBackAction } from "../../platform/backNavigation";
@@ -9,9 +9,15 @@ import { LongTermChallenges } from "./LongTermChallenges";
 import { Hunts } from "./Hunts";
 
 const SECTIONS = [["boss", "Solo boss"], ["hunts", "Hunts"], ["trials", "Trials"], ["seasons", "Seasons"]] as const;
-type Section = typeof SECTIONS[number][0];
+export type ChallengeSection = typeof SECTIONS[number][0];
 
-export function ChallengesScreen({ profile, active, onReviewGear }: { profile: Profile; active: boolean; onReviewGear: () => void }) {
+export function ChallengesScreen({ profile, active, onReviewGear, sections, setSections }: {
+  profile: Profile;
+  active: boolean;
+  onReviewGear: () => void;
+  sections: ChallengeSection[];
+  setSections: Dispatch<SetStateAction<ChallengeSection[]>>;
+}) {
   const [autoPush, setAutoPush] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState("");
@@ -21,14 +27,13 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
   const progress = profile.ashenKing;
   const currentAttempt = activeBossAttempt(profile);
   const currentBossId = currentAttempt?.record.encounter.bossId;
-  const [sections, setSections] = useState<Section[]>([currentBossId && session.content.hunts.has(currentBossId) ? "hunts" : "boss"]);
   const section = sections.at(-1)!;
-  function selectSection(next: Section) {
+  function selectSection(next: ChallengeSection) {
     setSections(previous => previous.at(-1) === next ? previous : [...previous.slice(-15), next]);
   }
   useEffect(() => registerBackAction(() => {
     if (sections.length <= 1) return false;
-    setSections(previous => previous.slice(0, -1));
+    setSections(previous => previous.length > 1 ? previous.slice(0, -1) : previous);
     return true;
   }, 1), [sections.length]);
   useEffect(() => {
@@ -53,10 +58,15 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
   async function start(): Promise<void> {
     setStarting(true);
     setError("");
-    const started = await session.startBoss(nextTier, autoPush);
-    if (!started.ok) setError(started.error);
-    else setAutoPush(false);
-    setStarting(false);
+    try {
+      const started = await session.startBoss(nextTier, autoPush);
+      if (!started.ok) setError(started.error);
+      else setAutoPush(false);
+    } catch {
+      setError("The challenge could not be started. Try again.");
+    } finally {
+      setStarting(false);
+    }
   }
 
   return (
