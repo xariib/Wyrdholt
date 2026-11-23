@@ -35,13 +35,13 @@ await new Promise((ok,fail)=>{server.once('error',fail);server.listen(0,'127.0.0
 const url=`http://127.0.0.1:${server.address().port}`;
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH || undefined});report.browser=browser.version();
 const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
-// Freeze presentation time to inspect a real queued equip before the safe boundary.
-// Existing session slow-save/time regression receipts cover elapsed time separately.
-await ctx.addInitScript(()=>{window.requestAnimationFrame=()=>1;window.cancelAnimationFrame=()=>{};
+// Freeze both live frames and the wall clock so explicit recovery cannot add
+// Adventure rewards to a transaction receipt. Elapsed settlement has its own checks.
+await ctx.addInitScript(wallMs=>{Date.now=()=>wallMs;window.requestAnimationFrame=()=>1;window.cancelAnimationFrame=()=>{};
   const put=IDBObjectStore.prototype.put,get=IDBObjectStore.prototype.get;
   IDBObjectStore.prototype.put=function(value,...args){const r=put.call(this,value,...args);if(window.__c3Fault&&value?.path==='/DATA/saves/profile.json')window.__c3Committed=true;return r;};
   IDBObjectStore.prototype.get=function(key,...args){if(window.__c3Fault&&window.__c3Committed&&key==='/DATA/saves/profile.json')throw new Error('Injected C3 main readback failure');return get.call(this,key,...args);};
-});
+},p.clock.lastSettledWallMs);
 const page=await ctx.newPage();page.on('pageerror',e=>report.errors.push(String(e)));
 async function storage(raw){return page.evaluate(async raw=>{const db=await new Promise((ok,fail)=>{const r=indexedDB.open('Disc',1);r.onupgradeneeded=()=>{const s=r.result.createObjectStore('FileStorage',{keyPath:'path'});s.createIndex('by_folder','folder');};r.onsuccess=()=>ok(r.result);r.onerror=()=>fail(r.error);});try{if(raw)await new Promise((ok,fail)=>{const tx=db.transaction('FileStorage','readwrite');tx.objectStore('FileStorage').put({path:'/DATA/saves/profile.json',folder:'/DATA/saves',type:'file',content:raw,size:raw.length,ctime:1,mtime:1});tx.oncomplete=ok;tx.onerror=()=>fail(tx.error);});return await new Promise((ok,fail)=>{const r=db.transaction('FileStorage','readonly').objectStore('FileStorage').getAll();r.onsuccess=()=>ok(r.result.filter(x=>x.path.startsWith('/DATA/saves/')).map(x=>[x.path,x.content]).sort());r.onerror=()=>fail(r.error);});}finally{db.close();}},raw);}
 async function profile(){const r=parseSave(await page.evaluate(()=>window.__ember.exportSave()));assert(r.ok);return r.profile;}
@@ -53,7 +53,7 @@ async function revealCopy(sheet,id){const row=sheet.locator(`[data-instance-id="
 async function lock(sheet,id,locked){await revealCopy(sheet,id);await sheet.getByRole('button',{name:`${locked?'Lock':'Unlock'} copy #${id}`,exact:true}).click();await expect(sheet.getByRole('status').filter({hasText:`Copy #${id} ${locked?'locked':'unlocked'} and saved.`})).toBeVisible();}
 function removed(before,after,ids,gold){assert.equal(after.gold,before.gold+gold);assert.deepEqual(after.inventory.instances,before.inventory.instances.filter(i=>!ids.includes(i.id)));assert.equal(after.inventory.nextInstanceId,before.inventory.nextInstanceId);for(const key of ['equipment','pending','itemLocks','forge','schema'])assert.deepEqual(after[key],before[key]);}
 try{
-  const raw=serializeSave(p,Date.now());assert(parseSave(raw).ok);writeFileSync(join(out,'fixture.json'),raw+'\n');
+  const raw=serializeSave(p,p.clock.lastSettledWallMs);assert(parseSave(raw).ok);writeFileSync(join(out,'fixture.json'),raw+'\n');
   report.fixture={controlledGold:500,controlledClear:'greenfields',lootSeeds:seeds,lootCopies:p.inventory.instances.length-6,startingSchema:p.schema,frozenRAF:true};
   await page.goto(url+'/observer');await storage(raw);await page.goto(url);await page.locator('.header').waitFor();
   const initial=await snapshot('initial');let sheet=await inventory();const bytes=await storage();
