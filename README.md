@@ -10,6 +10,11 @@ Open the downloaded APK on your Android device and follow the installation promp
 
 Open **Menu** for the encyclopedia, backup export, backup restore, or a confirmed restart. On Android 10 and later, **Back up save** exports a JSON file to **Downloads/Wyrdholt**. A backup can also be restored from the character creation screen.
 
+Open **Character → Skill tree** to spend points from your class Mastery. After
+clearing a region, open **Challenges → Hunts** for its weekly boss and exclusive
+gear. Android Back, including a system swipe from either edge, closes the top
+sheet or returns to the previous menu.
+
 This repository starts from the game snapshot identified as `81153feef35d1bad949fe11329ecfe4223b7ac59` in the source ZIP. The active branch is `main`.
 
 ## Build and test
@@ -51,6 +56,16 @@ Run `node --import tsx tools/smoke/online-check.mjs` against a build made with `
 
 ## Visual regression checks
 
+Menus use a compact six-slot Gear overview, separate build/appearance sheets,
+collapsed descriptions and category buttons in Challenges. Inventory and slot lists
+show six item types per page, copy management shows four copies, and Encyclopedia
+shows eight entries; paging controls sit above each list. Filters and manual salvage
+selections stay intact when changing pages or returning from comparison.
+Run `node --import tsx tools/visual/menu-navigation-check.mjs` after building to check
+these routes at four viewport sizes. Evidence stays in ignored
+`tools/smoke/out/menu-navigation`; browser checks do not replace device validation
+or human playtesting.
+
 All 16 enemy types use matching detailed pixel art, with distinct idle and attack
 illustrations. See the [enemy art contract](docs/design/REFINED_PIXEL_ENEMIES.md).
 Run `node --import tsx tools/visual/enemy-art-check.mjs` to check all enemy poses,
@@ -88,6 +103,14 @@ all four classes with empty Weapon slots: melee approach, fist hits without weap
 effects, all four attack poses with a smooth recovery, queued weapon equips, the
 restored weapon animation, and reload behavior.
 It uses disposable browser saves and keeps evidence in `tools/smoke/out/unarmed-combat`.
+
+Bare-handed full-body movement keeps a 960 ms step and return. Faster logged hits
+still apply damage and impact effects immediately while that movement finishes.
+Run `node tools/visual/damage-attachment-check.mjs` after building to check incoming
+damage during movement for all four classes: health updates, flashes matching the
+visible pose, and impacts following the moving character. Screenshots and reports
+stay in ignored `tools/smoke/out/damage-attachment`; physical-device acceptance
+and human animation review remain separate.
 
 Run `node --import tsx tools/visual/class-gear-check.mjs` to check mixed-class
 inventories through the actual Gear, Inventory and Forge screens, including all

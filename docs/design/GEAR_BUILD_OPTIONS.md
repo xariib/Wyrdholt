@@ -1,7 +1,7 @@
 # Gear build options
 
 Browser verified; balance and human playtesting remain open.
-Content version: `emberbound-content/0.9.0-build-gear`.
+Content version `emberbound-content/0.10.0-hunts-and-talents`.
 
 Every class has three additional gear choices in each of the six slots at Rare,
 Epic and Legendary. These 216 definitions supplement all existing gear. Players
@@ -13,12 +13,12 @@ can mix individual pieces freely; there are no mandatory sets or set bonuses.
 | Tempo | Attack speed, allowing more attacks and effect triggers | Critical-hit chance, gear defenses and some attack |
 | Bulwark | Health and armor | Gear attack speed, critical-hit chance and some attack |
 
-Each alternative retains its source piece's effect behavior, weapon family,
-rarity and encounter-level gate. Effects have unique source IDs for deterministic
-event attribution. One piece occupies a slot, so it cannot stack its effect with
-the source item in that same slot. Existing item definitions and effect values
-are unchanged. Materials distinguish the three styles while retaining the
-source piece's class cut and weapon animation.
+Each alternative retains the source weapon family, rarity and encounter-level
+gate and contributes its own combat effect. Precision weapons boost finishing
+damage, Tempo weapons grant haste, and Bulwark weapons retaliate. The other slots
+offer combinations of armor piercing, extra strikes, splash damage, healing, wards
+and damage over time. Effects have unique source IDs for deterministic event
+attribution. Materials distinguish the three styles and retain the source class cut.
 
 ## Provisional stat tuning
 
@@ -42,9 +42,9 @@ chance of any particular existing item within that pool.
 ## Integration and compatibility
 
 Adventure loot, caches and Forge use the existing class-compatible catalog pools.
-Gear and Inventory search accept style names and trait tags, and comparisons show
-stat tradeoffs without reporting a new source ID as a changed effect. Equipment
-continues to apply through the existing safe-boundary commands in game-core.
+Gear and Inventory search accept style names and trait tags. Comparisons show
+the stats and effects gained and lost by swapping a piece. Equipment applies
+through the existing safe-boundary commands in game-core.
 
 New gear uses ordinary item definitions and instances, with no save fields or
 schema migration. Older owned copies, equipment and pinned fight content retain

@@ -65,11 +65,16 @@ try {
         await expect(page.locator('.loadout-overview')).toContainText(`${rank === 20 ? 6 : 0} / 6 slots equipped`);
         await expect(page.locator('.slot-effect')).toHaveCount(expected.length);
         await page.screenshot({ path: resolve(out, `${classId}-m${rank}-loadout.png`) });
-        await page.getByRole('button', { name: 'Build summary ↓', exact: true }).click();
+        await page.getByRole('button', { name: 'Build summary', exact: true }).click();
         const buildRegion = page.getByRole('region', { name: 'Build summary', exact: true });
-        await expect(buildRegion.getByRole('heading', { name: 'Build summary', exact: true })).toBeInViewport();
+        await expect(page.getByRole('dialog', { name: 'Build summary', exact: true }).getByRole('heading', { name: 'Build summary', exact: true })).toBeInViewport();
         await page.screenshot({ path: resolve(out, `${classId}-m${rank}-summary.png`) });
         const region = page.getByRole('region', { name: 'Active effects', exact: true });
+        const openEffects = async () => {
+          await region.getByText(/^Class effects ·/).click();
+          await region.getByText(/^Gear effects ·/).click();
+        };
+        await openEffects();
         const classRows = region.getByRole('list', { name: 'Class effects', exact: true }).locator('li');
         const gearRows = region.getByRole('list', { name: 'Gear effects', exact: true }).locator('li');
         await expect(classRows).toHaveCount(classEffects.length);
@@ -96,6 +101,8 @@ try {
           const sheet = page.getByRole('dialog', { name: 'Equipment', exact: true });
           await expect(sheet.getByRole('region', { name: 'Equipped item effect', exact: true })).toContainText(first.description);
           await sheet.getByRole('button', { name: 'Close equipment', exact: true }).click();
+          await page.getByRole('button', { name: 'Build summary', exact: true }).click();
+          await openEffects();
         }
         for (const [width, height] of [[320, 568], [360, 640], [640, 360]]) {
           await page.setViewportSize({ width, height });
@@ -120,11 +127,15 @@ try {
         }
         await page.reload();
         await page.getByRole('navigation').getByRole('button', { name: 'Gear', exact: true }).click();
+        await page.getByRole('button', { name: 'Build summary', exact: true }).click();
+        await openEffects();
         await expect(gearRows).toHaveCount(expected.length);
         await expect(classRows.locator('strong')).toHaveText(classEffects.map(e => e.name));
         await expect(classRows.locator('p')).toHaveText(classEffects.map(e => e.description));
+        await page.getByRole('button', { name: 'Close build summary', exact: true }).click();
         await page.getByRole('navigation').getByRole('button', { name: 'Character', exact: true }).click();
         const masteryCard = page.locator(`.class-card[data-class="${classId}"][data-role="Active"]`);
+        await masteryCard.getByText('Techniques & combat effects', { exact: true }).click();
         const techniques = content.track(content.classDef(classId).masteryTrackId).techniques;
         await expect(masteryCard.locator('.technique')).toHaveCount(techniques.length);
         await expect(masteryCard.locator('.technique.unlocked')).toHaveCount(techniques.filter(t => t.unlockRank <= rank).length);

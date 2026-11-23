@@ -386,6 +386,7 @@ try {
   await c5Page.goto(base);
   await c5Page.getByRole("button", { name: "Challenges", exact: true }).tap();
   const trials = c5Page.getByRole("region", { name: "Promotion trials" });
+  await c5Page.getByRole("group", { name: "Challenge categories" }).getByRole("button", { name: "Trials", exact: true }).tap();
   assert(await trials.getByRole("button", { name: "Enter Ascendant Trial" }).isDisabled());
   await trials.getByRole("button", { name: "Enter Arcanist Trial" }).tap();
   await c5Page.getByRole("region", { name: "Arcanist Trial combat" }).waitFor();
@@ -400,6 +401,7 @@ try {
 
   await c5Page.getByRole("button", { name: "Challenges", exact: true }).tap();
   const seasons = c5Page.getByRole("region", { name: "Seasons" });
+  await c5Page.getByRole("group", { name: "Challenge categories" }).getByRole("button", { name: "Seasons", exact: true }).tap();
   await seasons.getByRole("heading", { name: season.name }).waitFor();
   await seasons.getByRole("button", { name: "Challenge seasonal Tier 1" }).tap();
   await c5Page.getByRole("region", { name: `${season.boss.name} combat` }).waitFor();
@@ -411,6 +413,7 @@ try {
   await c5Page.getByRole("button", { name: "Character", exact: true }).tap();
   await c5Page.clock.runFor(seasonDuration + 1000);
   await c5Page.getByRole("button", { name: "Challenges", exact: true }).tap();
+  await c5Page.getByRole("group", { name: "Challenge categories" }).getByRole("button", { name: "Seasons", exact: true }).tap();
   await seasons.getByText(`${season.relicName} · Rank 1 · +3% Attack in this ladder`, { exact: true }).waitFor();
   assert(await seasons.getByRole("button", { name: /Tier 2 opens/ }).isDisabled());
   // Model an absence, as in the boss reload check above. Moving Date.now while
@@ -426,6 +429,7 @@ try {
   const offlineModal = c5Page.locator(".modal").filter({ hasText: "While you were away" });
   await offlineModal.getByRole("button", { name: "Continue", exact: true }).tap();
   await c5Page.getByRole("button", { name: "Challenges", exact: true }).tap();
+  await c5Page.getByRole("group", { name: "Challenge categories" }).getByRole("button", { name: "Seasons", exact: true }).tap();
   await seasons.getByRole("heading", { name: nextSeason.name }).waitFor();
   await seasons.getByText(`${nextSeason.relicName} · Rank 0 · +0% Attack in this ladder`, { exact: true }).waitFor();
   await seasons.getByText(`${season.name} · ${season.titles[0]}`, { exact: true }).waitFor();
@@ -444,6 +448,7 @@ try {
   await menuPage.getByText("Online Play is temporarily disabled.", { exact: true }).waitFor();
   assert.equal(await navigation.getByRole("button", { name: "Menu", exact: true }).getAttribute("aria-current"), "page");
   const downloadPending = menuPage.waitForEvent("download");
+  await menuPage.getByRole("button", { name: "Save management", exact: true }).tap();
   await menuPage.getByRole("button", { name: "Back up save", exact: true }).tap();
   const downloaded = await downloadPending;
   assert.match(downloaded.suggestedFilename(), /^Wyrdholt-Backup-\d{4}-\d{2}-\d{2}\.json$/);
@@ -451,6 +456,7 @@ try {
   const decoded = parseSave(backup.toString("utf8"));
   assert(decoded.ok && decoded.profile.character.name === "Backup Tester");
 
+  await menuPage.getByRole("button", { name: "Close save management", exact: true }).tap();
   await menuPage.getByRole("button", { name: /^Encyclopedia/ }).tap();
   const encyclopedia = menuPage.getByRole("main", { name: "Encyclopedia" });
   await encyclopedia.getByText("Mage", { exact: true }).tap();
@@ -460,6 +466,7 @@ try {
   await encyclopedia.getByText("Field Wolf", { exact: true }).tap();
   await encyclopedia.getByText("Appears in Greenfields.", { exact: true }).waitFor();
   await encyclopedia.getByRole("button", { name: "Back to menu" }).tap();
+  await menuPage.getByRole("button", { name: "Save management", exact: true }).tap();
 
   await menuPage.getByText("Restore backup", { exact: true }).tap();
   await menuPage.getByLabel("Or paste backup text").fill(fixture("Restore Tester"));
@@ -473,6 +480,7 @@ try {
   assert(replaced.ok && replaced.profile.character.name === "Restore Tester");
   await navigation.getByRole("button", { name: "Menu", exact: true }).tap();
 
+  await menuPage.getByRole("button", { name: "Save management", exact: true }).tap();
   await menuPage.getByRole("button", { name: "Restart save", exact: true }).tap();
   await menuPage.getByRole("button", { name: "Cancel restart", exact: true }).tap();
   assert(parseSave((await storage(menu.observer, {}, true)).main).ok);

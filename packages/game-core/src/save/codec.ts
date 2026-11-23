@@ -3,7 +3,8 @@ import { ASHEN_KING_ID, bossFightSeed } from "../boss/attempt";
 import { canonicalJson } from "../hash/canonical";
 import { sha256Hex } from "../hash/sha256";
 import type { Profile } from "../profile/types";
-import { BOSS_SAVE_SCHEMA_VERSION, LONG_TERM_SAVE_SCHEMA_VERSION, RULES_VERSION, SAVE_SCHEMA_VERSION } from "../rules/version";
+import { BOSS_SAVE_SCHEMA_VERSION, LONG_TERM_SAVE_SCHEMA_VERSION, RULES_VERSION, SAVE_SCHEMA_VERSION, TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION } from "../rules/version";
+import { MAX_TALENT_POINTS } from "../character/talents";
 import { ITEM_LOCK_SAVE_SCHEMA_VERSION } from "../items/locks";
 
 /**
@@ -79,7 +80,8 @@ export function serializeSave(profile: Profile, savedAtWallMs: number): string {
   const payload = canonicalJson(encodeProfile(stripPlainProvenance(profile)));
   const envelope: SaveEnvelope = {
     format: SAVE_FORMAT,
-    schema: profile.longTerm ? LONG_TERM_SAVE_SCHEMA_VERSION
+    schema: profile.schema === TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION ? profile.schema
+      : profile.longTerm ? LONG_TERM_SAVE_SCHEMA_VERSION
       : profile.ashenKing ? BOSS_SAVE_SCHEMA_VERSION
       : profile.itemLocks ? ITEM_LOCK_SAVE_SCHEMA_VERSION
       : profile.forge ? FORGE_SAVE_SCHEMA_VERSION : SAVE_SCHEMA_VERSION,
@@ -266,7 +268,7 @@ export function parseSave(text: string): ParseResult {
   const envelope = rawEnvelope as unknown as SaveEnvelope;
   if (typeof envelope.payload !== "string") return { ok: false, reason: "missing-payload" };
   if (sha256Hex(envelope.payload) !== envelope.checksum) return { ok: false, reason: "checksum-mismatch" };
-  if (envelope.schema > LONG_TERM_SAVE_SCHEMA_VERSION && envelope.schema !== 6) return { ok: false, reason: "newer-schema" };
+  if (envelope.schema > TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION) return { ok: false, reason: "newer-schema" };
   let encoded: unknown;
   try {
     encoded = JSON.parse(envelope.payload);
@@ -303,8 +305,11 @@ export function parseSave(text: string): ParseResult {
     || envelope.schema === ITEM_LOCK_SAVE_SCHEMA_VERSION && migrated.schema !== ITEM_LOCK_SAVE_SCHEMA_VERSION)) {
     return { ok: false, reason: "invalid:item-locks-schema" };
   }
-  if ((envelope.schema === LONG_TERM_SAVE_SCHEMA_VERSION) !== (migrated.longTerm !== undefined)
-    || (envelope.schema === LONG_TERM_SAVE_SCHEMA_VERSION) !== (migrated.schema === LONG_TERM_SAVE_SCHEMA_VERSION)) {
+  if ((envelope.schema === TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION) !== (migrated.schema === TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION)) {
+    return { ok: false, reason: "invalid:talents-and-hunts-schema" };
+  }
+  if (envelope.schema <= LONG_TERM_SAVE_SCHEMA_VERSION && ((envelope.schema === LONG_TERM_SAVE_SCHEMA_VERSION) !== (migrated.longTerm !== undefined)
+    || (envelope.schema === LONG_TERM_SAVE_SCHEMA_VERSION) !== (migrated.schema === LONG_TERM_SAVE_SCHEMA_VERSION))) {
     return { ok: false, reason: "invalid:long-term-schema" };
   }
   if (envelope.schema < LONG_TERM_SAVE_SCHEMA_VERSION && ((envelope.schema === BOSS_SAVE_SCHEMA_VERSION) !== (migrated.ashenKing !== undefined)
@@ -322,7 +327,7 @@ export function parseSave(text: string): ParseResult {
 /** Old formats are read without rewriting them. First use of a new domain upgrades the save. */
 function migrate(encoded: EncodedProfile, schema: number): EncodedProfile | null {
   if (schema === SAVE_SCHEMA_VERSION || schema === FORGE_SAVE_SCHEMA_VERSION || schema === ITEM_LOCK_SAVE_SCHEMA_VERSION
-    || schema === BOSS_SAVE_SCHEMA_VERSION || schema === LONG_TERM_SAVE_SCHEMA_VERSION) return encoded;
+    || schema === BOSS_SAVE_SCHEMA_VERSION || schema === LONG_TERM_SAVE_SCHEMA_VERSION || schema === TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION) return encoded;
   return null;
 }
 
@@ -358,6 +363,20 @@ function forgeProblem(profile: Profile): string | null {
   return receipt.inputKey === inputKey ? null : "forge-receipt";
 }
 
+function talentIdsValid(ids: unknown, classId: string): boolean {
+  return Array.isArray(ids) && ids.length <= MAX_TALENT_POINTS && ids.every((id, index) =>
+    typeof id === "string" && id.length <= 80 && /^[a-z0-9_]+$/.test(id) && id.startsWith(`${classId}_`)
+    && (index === 0 || ids[index - 1] < id));
+}
+
+function talentsValid(profile: Profile, value: unknown): boolean {
+  if (value === undefined) return true;
+  if (profile.schema !== TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION || !isRecord(value)) return false;
+  const { activeClassId, alternateClassId } = profile.character;
+  return Object.entries(value).every(([id, ids]) =>
+    (id === activeClassId || id === alternateClassId) && talentIdsValid(ids, id));
+}
+
 function bossRecordProblem(record: unknown, bossId: string, tier: number, attemptIndex: number, profile: Profile): boolean {
   const season = bossId.startsWith("season_");
   if (!isRecord(record) || record.format !== "emberbound-boss-fight-record/1" || record.startHp100 !== null
@@ -372,7 +391,9 @@ function bossRecordProblem(record: unknown, bossId: string, tier: number, attemp
 
   const { build } = record;
   if (stateFieldsProblem(build, "build", [["characterLevel", "positive"], ["classId", "string"], ["masteryXp", "counter"]])) return true;
-  if (build.promoted !== undefined && (build.promoted !== true || profile.schema !== LONG_TERM_SAVE_SCHEMA_VERSION)) return true;
+  if (build.promoted !== undefined && (build.promoted !== true || profile.schema < LONG_TERM_SAVE_SCHEMA_VERSION)) return true;
+  if (build.talentIds !== undefined && (profile.schema !== TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION
+    || !talentIdsValid(build.talentIds, build.classId as string))) return true;
   if (bossId.startsWith("trial_") && (tier !== 1 || bossId !== `trial_${build.classId}` || build.promoted !== undefined)) return true;
   if (build.seasonRelicAttackBp !== undefined && (!season || tier < 2 || !Number.isSafeInteger(build.seasonRelicAttackBp)
     || (build.seasonRelicAttackBp as number) <= 0 || (build.seasonRelicAttackBp as number) > 10_000)) return true;
@@ -401,6 +422,14 @@ function ladderProblem(profile: Profile, value: unknown, bossId: string): string
   const cleared = value.highestClearedTier as number;
   const attempts = value.attemptCount as number;
   const { active, lastResult } = value;
+  const hunt = bossId.startsWith("hunt_");
+  const { huntWeek, huntCompletedWeek } = value;
+  if (hunt) {
+    if (profile.schema !== TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION || cleared !== 0
+      || typeof huntWeek !== "number" || !Number.isSafeInteger(huntWeek) || huntWeek < 0
+      || (huntCompletedWeek !== undefined && (typeof huntCompletedWeek !== "number" || !Number.isSafeInteger(huntCompletedWeek)
+        || huntCompletedWeek < 0 || huntCompletedWeek > huntWeek || (active !== null && huntCompletedWeek === huntWeek)))) return "hunt-progress";
+  } else if (huntWeek !== undefined || huntCompletedWeek !== undefined) return "hunt-progress";
   if (cleared > attempts - (active === null ? 0 : 1) || (bossId.startsWith("trial_") && cleared > 1)) return "solo-boss-progress";
   if (active !== null && (!isRecord(active) || stateFieldsProblem(active, "active", [["elapsedMs", "counter"], ["autoPush", "boolean"]])
     || profile.adventure?.activity !== "idle" || profile.adventure.run !== null
@@ -414,7 +443,17 @@ function ladderProblem(profile: Profile, value: unknown, bossId: string): string
   ]) || active !== null && attempts < 2) return "solo-boss-result";
   const hp = lastResult.enemyHp100 as number;
   const max = lastResult.enemyMaxHp100 as number;
-  if (lastResult.outcome === "victory") return lastResult.tier === cleared && hp === 0 && max > 0 ? null : "solo-boss-result";
+  const rewardId = lastResult.huntRewardId;
+  if (hunt && lastResult.outcome === "victory") {
+    if (typeof rewardId !== "number" || !Number.isSafeInteger(rewardId) || rewardId < 1 || rewardId >= profile.inventory.nextInstanceId) {
+      return "hunt-reward";
+    }
+  } else if (rewardId !== undefined) return "hunt-reward";
+  if (lastResult.outcome === "victory") {
+    return (hunt ? lastResult.tier === 1 && huntCompletedWeek !== undefined && (active !== null || huntCompletedWeek === huntWeek)
+      : lastResult.tier === cleared) && hp === 0 && max > 0 ? null : "solo-boss-result";
+  }
+  if (hunt && huntCompletedWeek === huntWeek) return "hunt-progress";
   if (lastResult.tier !== cleared + 1) return "solo-boss-result";
   if (lastResult.outcome === "interrupted") return hp === 0 && max === 0 ? null : "solo-boss-result";
   return hp > 0 && hp <= max ? null : "solo-boss-result";
@@ -428,14 +467,14 @@ function bossProgressProblem(profile: Profile): string | null {
   const permanentProblem = profile.ashenKing === undefined ? null : ladderProblem(profile, profile.ashenKing, ASHEN_KING_ID);
   if (permanentProblem) return permanentProblem;
   if (longTerm === undefined) return profile.schema === LONG_TERM_SAVE_SCHEMA_VERSION ? "long-term-schema" : null;
-  if (profile.schema !== LONG_TERM_SAVE_SCHEMA_VERSION || !isRecord(longTerm) || longTerm.version !== 1 || !isRecord(longTerm.ladders)) {
+  if (profile.schema < LONG_TERM_SAVE_SCHEMA_VERSION || !isRecord(longTerm) || longTerm.version !== 1 || !isRecord(longTerm.ladders)) {
     return "long-term-schema";
   }
   const ladders = Object.entries(longTerm.ladders);
   if (!ladders.length) return "long-term-progress";
   let active = profile.ashenKing?.active ? 1 : 0;
   for (const [id, value] of ladders) {
-    if (!/^(?:trial|season)_[a-z0-9_]+$/.test(id) || ladderProblem(profile, value, id)) return "long-term-progress";
+    if (!/^(?:trial|season|hunt)_[a-z0-9_]+$/.test(id) || ladderProblem(profile, value, id)) return "long-term-progress";
     if (isRecord(value) && value.active !== null) active += 1;
   }
   return active <= 1 ? null : "multiple-active-challenges";
@@ -446,6 +485,7 @@ export function validateProfile(profile: Profile): string | null {
   if (!isRecord(profile.character) || typeof profile.character.activeClassId !== "string") return "character";
   if (!Number.isSafeInteger(profile.gold) || profile.gold < 0) return "gold";
   if (!Number.isSafeInteger(profile.inventory.nextInstanceId)) return "inventory";
+  if (!talentsValid(profile, profile.character.talents) || !talentsValid(profile, profile.pending?.talents)) return "talents";
   let last = 0;
   for (const i of profile.inventory.instances) {
     if (!Number.isSafeInteger(i.id) || i.id <= last) return "instance-order";
@@ -454,7 +494,7 @@ export function validateProfile(profile: Profile): string | null {
   }
   if (profile.itemLocks !== undefined) {
     const locks: unknown = profile.itemLocks;
-    if (profile.schema < ITEM_LOCK_SAVE_SCHEMA_VERSION || profile.schema > LONG_TERM_SAVE_SCHEMA_VERSION) return "item-locks-schema";
+    if (profile.schema < ITEM_LOCK_SAVE_SCHEMA_VERSION || profile.schema > TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION) return "item-locks-schema";
     if (!isRecord(locks) || locks.version !== 1 || !Array.isArray(locks.lockedInstanceIds)) return "item-locks";
     let previous = 0;
     const owned = new Set(profile.inventory.instances.map(i => i.id));

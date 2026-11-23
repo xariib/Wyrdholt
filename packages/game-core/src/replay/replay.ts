@@ -1,6 +1,8 @@
 import type { BossFightRecord, CombatEvent, CombatRecord, FightRecord, ItemInstance } from "@emberbound/shared-types";
 import type { ContentIndex } from "../content";
 import { resolveHeroStats, type HeroStats } from "../character/stats";
+import { masteryRank } from "../character/progression";
+import { selectedTalents } from "../character/talents";
 import { ArraySink, NULL_SINK, simulateFight, type FightSummary } from "../combat/engine";
 import { buildBossEncounter, buildEncounter, type BossEncounterSetup, type EncounterSetup } from "../encounter/budget";
 import { canonicalJson } from "../hash/canonical";
@@ -88,6 +90,11 @@ export function checkRecordCompatibility(content: ContentIndex, record: CombatRe
   if ((promoted !== undefined && (promoted !== true || !content.promotions.has(record.build.classId)))
     || (!boss && (format === "emberbound-fight-record/3") !== (promoted === true))) {
     throw new ReplayMismatchError("Invalid promotion for this fight record");
+  }
+  const talents = record.build.talentIds;
+  if (talents !== undefined && (!Array.isArray(talents) || talents.length === 0 || !content.talentTrees.has(record.build.classId)
+    || selectedTalents(content.talentTrees.get(record.build.classId), masteryRank(content, record.build.classId, record.build.masteryXp), talents).length !== talents.length)) {
+    throw new ReplayMismatchError("Invalid talent selection for this fight record");
   }
   if (season && boss) {
     const tier = record.encounter.tier;

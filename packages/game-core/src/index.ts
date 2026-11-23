@@ -126,3 +126,5 @@ export type { SalvageInput, SalvageReceipt, SalvageResult } from "./items/salvag
 
 export { previewBulkSalvage, salvageItems, BULK_SALVAGE_RULES_VERSION } from "./items/bulkSalvage";
 export type { BulkSalvageInput, BulkSalvageReceipt, BulkSalvageResult } from "./items/bulkSalvage";
+export { MAX_TALENT_POINTS, selectedTalents, talentPoints } from "./character/talents";
+export { huntResetAt, huntWeekAt } from "./boss/progress";

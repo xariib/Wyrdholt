@@ -70,7 +70,7 @@ function item(s: GearSkin): PixelRaster {
     const result = refinedItems.get(`${s.classId}/${s.family}`);
     if (!result)
         throw new Error(`Missing refined item artwork: ${s.id}`);
-    if (!/\/(precision|tempo|bulwark)_/.test(s.id)) return result;
+    if (!/\/(precision|tempo|bulwark|hunt)_/.test(s.id)) return result;
     const key = `material:${s.id}`;
     const cached = staticLayers.get(key);
     if (cached) return cached;
@@ -115,6 +115,23 @@ function cuff(target: PixelRaster, s: GearSkin, hand: Point, elbow: Point, fist 
     ctx.drawImage(source.canvas, -Math.round(w), -Math.round(h * 1.35), Math.round(w * 2), Math.round(h * 2));
     ctx.restore();
 }
+/** Measure the toe and ground contact of each painted foot in the current pose. */
+function bootSocket(body: PixelRaster, foot: number, split: number, left: boolean): { x: number; sole: number; width: number } {
+    const middle = Math.round(64 + split * 2);
+    const center = Math.round(64 + foot * 2);
+    const start = Math.max(center - 16, left ? 0 : middle);
+    const end = Math.min(center + 17, left ? middle : body.width);
+    let min = end, max = start, floor = 0;
+    for (let y = 112; y < 123; y++) for (let x = start; x < end; x++) {
+        if (!body.rgba[(y * body.width + x) * 4 + 3]) continue;
+        min = Math.min(min, x);
+        max = Math.max(max, x);
+        floor = y + 1;
+    }
+    return floor
+        ? { x: ((min + max) / 2 - 64) / 2, sole: (floor - 120) / 2, width: (max - min + 1) / 2 }
+        : { x: foot, sole: 0, width: 6 };
+}
 function clothingLayer(look: HeroAppearance, slot: Exclude<Layer, "body" | "weapon">, strike: boolean): PixelRaster {
     const s = look.slots[slot]!;
     const key = `${s.id}:${strike}`;
@@ -127,13 +144,17 @@ function clothingLayer(look: HeroAppearance, slot: Exclude<Layer, "body" | "weap
     if (slot === "head") {
         const hood = s.family.endsWith("hood") || s.family === "watch_helm";
         const [w, h] = fit(source, hood ? 15 : 14, hood ? 17 : s.family === "cinder_crown" ? 10 : 7);
-        paste(p, source, r.head[0] - w / 2 - .5, hood ? r.head[1] - 8 : r.head[1] - h + 2, w, h);
+        paste(p, source, r.head[0] - w / 2 - .5, hood ? r.head[1] - 8 : r.head[1] - h + 3, w, h);
     }
-    if (slot === "boots")
-        for (const foot of r.feet) {
-            const [w, h] = fit(source, 8, s.family === "road_boots" || s.family === "courtyard_sandals" ? 6 : 9);
-            paste(p, source, foot - 3, -h, w, h);
+    if (slot === "boots") {
+        const body = (strike ? refinedStrikes : refinedBodies).get(look.classId)!;
+        const middle = (r.feet[0] + r.feet[1]) / 2;
+        for (const [i, foot] of r.feet.entries()) {
+            const socket = bootSocket(body, foot, middle, i === 0);
+            const [w, h] = fit(source, Math.min(12, socket.width + 2), s.family === "road_boots" || s.family === "courtyard_sandals" ? 6 : 10);
+            paste(p, source, socket.x - w / 2, socket.sole - h, w, h);
         }
+    }
     if (slot === "gloves") {
         cuff(p, s, r.near, r.elbow);
         cuff(p, s, r.far, r.farElbow);
@@ -202,6 +223,15 @@ function warped(ctx: CanvasRenderingContext2D, source: PixelRaster, look: HeroAp
     }
 }
 const grips = new WeakMap<PixelRaster, Point>();
+function opaqueRowCenter(source: PixelRaster, y: number): number {
+    let total = 0, count = 0;
+    for (let x = 0; x < source.width; x++) {
+        if (!source.rgba[(y * source.width + x) * 4 + 3]) continue;
+        total += x;
+        count++;
+    }
+    return count ? total / count : source.width / 2;
+}
 function grip(source: PixelRaster, cls: HeroClass): Point {
     const cached = grips.get(source);
     if (cached) return cached;
@@ -225,38 +255,50 @@ function weaponScale(source: PixelRaster, cls: HeroClass, family: string): numbe
     // Broad focus crowns need a width limit as well as a shaft-height limit.
     return Math.min(height / source.height, cls === "mage" ? (family === "willow_focus" ? 14 : 20) / source.width : Infinity);
 }
-/** Release landmark from the same wrist, grip, rotation and scale as the held art. */
-export function refinedReleasePoint(look: HeroAppearance, frame = 2): Point | undefined {
+function weaponTransform(look: HeroAppearance, pose: Pose | "flash", frame: number) {
     const s = look.slots.weapon;
-    if (!s || !refinedItems.has(`${s.classId}/${s.family}`)) return;
-    const cls = look.classId, key = HERO_ATTACK_KEYS[cls][frame]!, r = rigFor(cls, key.strike), p = posePoint(...(cls === "ranger" ? r.far : r.near), look, "attack", frame);
-    if (cls === "ranger") return [p[0] + 12, p[1]];
-    if (cls !== "mage") return;
+    if (!s || look.classId === "monk" || !refinedItems.has(`${s.classId}/${s.family}`)) return;
+    const cls = look.classId;
+    const key = pose === "attack" ? HERO_ATTACK_KEYS[cls][frame] : undefined;
+    const r = rigFor(cls, key?.strike ?? false);
+    const hand = cls === "ranger" ? r.far : r.near;
+    const position = posePoint(...hand, look, pose, frame);
     const source = item(s), anchor = grip(source, cls), scale = weaponScale(source, cls, s.family);
-    const angle = key.angle;
-    const dx = (source.width / 2 - anchor[0]) * scale, dy = (2 - anchor[1]) * scale;
-    return [p[0] + dx * Math.cos(angle) - dy * Math.sin(angle), p[1] + dx * Math.sin(angle) + dy * Math.cos(angle)];
+    const angle = key?.angle ?? (cls === "warrior" ? .12 : cls === "mage" ? pose === "death" ? .5 : 1.2 : 0);
+    const point = (x: number, y: number): Point => {
+        const dx = (x - anchor[0]) * scale, dy = (y - anchor[1]) * scale;
+        return [position[0] + dx * Math.cos(angle) - dy * Math.sin(angle), position[1] + dx * Math.sin(angle) + dy * Math.cos(angle)];
+    };
+    return { position, source, anchor, scale, angle, point, r, strike: key?.strike ?? false };
+}
+/** Projectile origin and blade tip use the identical held-weapon transform. */
+export function refinedReleasePoint(look: HeroAppearance, frame = 2): Point | undefined {
+    const mount = weaponTransform(look, "attack", frame);
+    if (!mount) return;
+    if (look.classId === "ranger") return [mount.position[0] + 12, mount.position[1]];
+    const y = Math.min(2, mount.source.height - 1);
+    return mount.point(opaqueRowCenter(mount.source, y), y);
 }
 function held(ctx: CanvasRenderingContext2D, look: HeroAppearance, pose: Pose | "flash", frame: number, layer?: Layer) {
-    const s = look.slots.weapon;
-    if (!s || look.classId === "monk")
-        return;
-    const key = pose === "attack" ? HERO_ATTACK_KEYS[look.classId][frame] : undefined;
-    const strike = key?.strike ?? false, r = rigFor(look.classId, strike), hand = look.classId === "ranger" ? r.far : r.near, p = posePoint(...hand, look, pose, frame);
-    const source = item(s), anchor = grip(source, look.classId);
-    const scale = weaponScale(source, look.classId, s.family) * 2;
-    const angle = key?.angle ?? (look.classId === "warrior" ? .12 : look.classId === "mage" ? pose === "death" ? .5 : 1.2 : 0);
-    const w = raster(144, 144), wc = ctxOf(w);
-    wc.translate(Math.round(72 + p[0] * 2), Math.round(128 + p[1] * 2));
-    wc.rotate(angle);
-    wc.drawImage(source.canvas, -anchor[0] * scale, -anchor[1] * scale, source.width * scale, source.height * scale);
-    ctx.drawImage(opaque(w).canvas, -72, -128);
-    if (look.classId === "ranger" && strike) {
+    const mount = weaponTransform(look, pose, frame);
+    if (!mount) return;
+    const { position: p, source, anchor, scale, angle, point, r, strike } = mount;
+    ctx.save();
+    ctx.translate(Math.round(p[0] * 2), Math.round(p[1] * 2));
+    ctx.rotate(angle);
+    ctx.drawImage(source.canvas, -anchor[0] * scale * 2, -anchor[1] * scale * 2, source.width * scale * 2, source.height * scale * 2);
+    ctx.restore();
+    if (look.classId === "ranger") {
         const drawn = frame < 2;
-        const draw = drawn ? posePoint(...r.near, look, pose, frame) : [p[0] - 4 + (frame === 2 ? 2 : 0), p[1]] as Point, pen = new Pixels(ctx);
-        pen.line("#d5c5a0", [p[0] * 2 - 8, p[1] * 2 - 27], [draw[0] * 2, draw[1] * 2]);
-        pen.line("#d5c5a0", [draw[0] * 2, draw[1] * 2], [p[0] * 2 - 8, p[1] * 2 + 27]);
-        if (drawn) {
+        const top = 1, bottom = source.height - 2;
+        const limbTop = point(opaqueRowCenter(source, top), top), limbBottom = point(opaqueRowCenter(source, bottom), bottom);
+        const draw = strike && drawn ? posePoint(...r.near, look, pose, frame)
+            : [(limbTop[0] + limbBottom[0]) / 2, (limbTop[1] + limbBottom[1]) / 2] as Point;
+        const double = ([x, y]: Point): Point => [x * 2, y * 2];
+        const pen = new Pixels(ctx);
+        pen.line("#d5c5a0", double(limbTop), double(draw));
+        pen.line("#d5c5a0", double(draw), double(limbBottom));
+        if (strike && drawn) {
             pen.line("#b99b65", [draw[0] * 2, draw[1] * 2], [p[0] * 2 + 20, draw[1] * 2]);
             pen.poly("#dadbd0", [[p[0] * 2 + 19, draw[1] * 2 - 2], [p[0] * 2 + 24, draw[1] * 2], [p[0] * 2 + 19, draw[1] * 2 + 2]]);
         }
@@ -299,7 +341,7 @@ export function refinedAtlas(asset: ArtAsset, look: HeroAppearance, layer?: Laye
         ctx.fillStyle = "#fff5dc";
         ctx.fillRect(0, 0, c.width, c.height);
     }
-    return c.canvas;
+    return opaque(c).canvas;
 }
 export function refinedIcon(s: GearSkin): HTMLCanvasElement {
     const source = item(s), c = raster(64, 64), ctx = ctxOf(c), [w, h] = fit(source, 56, 56);

@@ -21,7 +21,7 @@ contains a juvenile spider study; it does not introduce an additional gameplay t
 `node --import tsx tools/art/build-enemy-art.mjs` extracts complete connected
 silhouettes, samples them onto the native grid, and builds one compact atlas per
 enemy. Both illustrated poses share a single scale. Idle weight shifts, hit recoil,
-whole-body falling and white hit flashes fill the existing animation contract.
+legacy fallen frames and white hit flashes fill the existing atlas contract.
 The build tool uses browser canvas and writes its review sheet to ignored
 `tools/smoke/out/enemy-art`.
 
@@ -38,6 +38,12 @@ sit beneath each combatant on a stable footer line: green for the hero, red for
 enemies, and amber at low health. Ward and status indicators stack above the bar.
 Formation spacing keeps the bars separate on narrow screens.
 
+On defeat, enemies use the grounded hit illustration with a two-logical-pixel
+recoil, then fade out over 360 ms, including a 60 ms hold for the final hit.
+Health and status bars disappear immediately. Combat playback does not show the
+rotated fallen frames or leave corpses between waves. Historical deaths settle
+invisibly when the renderer reconstructs the combat log.
+
 Run the README's standard type, art, build and test checks, plus
 `node --import tsx tools/visual/enemy-art-check.mjs`. The browser check verifies
 all 240 native frames for transparency, clipping and distinct silhouettes, shared
@@ -45,6 +51,8 @@ texture ownership and disposal, and 576 combat compositions at 320, 390 and 768
 CSS pixels wide with all four heroes and one-, two- and three-enemy formations.
 Ground contact and non-overlapping health bars are checked for every formation. Reports and
 screenshots remain in ignored `tools/smoke/out/enemy-art`.
+The check also samples enemy defeat through the event handler: upright recoil,
+fade completion, hidden enemy bars, historical deaths and fresh formations.
 
 Browser rendering checks and visual inspection do not constitute physical-device
 validation or human playtesting.

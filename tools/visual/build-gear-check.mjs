@@ -46,6 +46,7 @@ try {
       for (const style of ['precision', 'tempo', 'bulwark']) {
         await page.locator('.inventory-entry').click();
         const inventory = page.getByRole('dialog', { name: 'Gear inventory', exact: true });
+        await inventory.getByText(/^More filters/).click();
         await inventory.getByRole('searchbox').fill(style);
         for (const rarity of ['rare', 'epic', 'legendary']) {
           await inventory.getByRole('combobox', { name: 'Rarity', exact: true }).selectOption(rarity);

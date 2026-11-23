@@ -51,6 +51,11 @@ export function classEffectDetails(content: ContentIndex, stats: HeroStats): Cla
     }
     return { id: technique.id, name: technique.name, description };
   });
+  for (const talent of content.talentTrees.get(cls.id)?.branches.flatMap(branch => branch.nodes) ?? []) {
+    if (talent.mechanic && mechanics.some(mechanic => mechanic.id === talent.mechanic?.id)) {
+      effects.push({ id: talent.id, name: talent.name, description: talent.description });
+    }
+  }
   const promotion = content.promotions.get(cls.id);
   if (promotion && stats.activeEffects.some(effect => effect.source === "class" && effect.name === promotion.name)) {
     effects.push({

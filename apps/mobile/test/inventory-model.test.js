@@ -41,12 +41,12 @@ describe("new gear differences", () => {
     expect(gearDifferences(crown, crown)).toEqual({ stats: [], gainedEffect: null, lostEffect: null });
   });
 
-  it("shows stat tradeoffs while retaining the same effect between build variants", () => {
+  it("shows both stat tradeoffs and changed effects between build variants", () => {
     const source = content.item("iron_palm_wraps");
     const candidate = content.item("precision_iron_palm_wraps");
     const differences = gearDifferences(source, candidate);
-    expect(differences.gainedEffect).toBeNull();
-    expect(differences.lostEffect).toBeNull();
+    expect(differences.gainedEffect).toEqual(candidate.effect);
+    expect(differences.lostEffect).toEqual(source.effect);
     expect(differences.stats.find(row => row.key === "attack")?.delta).toBeGreaterThan(0);
     expect(differences.stats.find(row => row.key === "crit")?.delta).toBeGreaterThan(0);
   });
@@ -169,5 +169,11 @@ describe("combined inventory view", () => {
     expect(result.flatMap(g => g.ids)).toEqual(groups.filter(g => g.item.slot === "ring").flatMap(g => g.copies.filter(c => c.isNew).map(c => c.id)));
     const pages = Array.from({ length: Math.ceil(groups.length / 20) }, (_, n) => inventoryPage(groups, n).rows).flat();
     expect(pages).toEqual(groups); expect(selected.size).toBe(60);
+    for (const pageSize of [4, 6, 8]) {
+      const allPages = Array.from({ length: Math.ceil(groups.length / pageSize) }, (_, n) => inventoryPage(groups, n, pageSize).rows);
+      expect(allPages.flat()).toEqual(groups);
+      expect(allPages.every(page => page.length <= pageSize)).toBe(true);
+      expect(inventoryPage(groups, 999, pageSize).rows).toEqual(allPages.at(-1));
+    }
   });
 });

@@ -5,6 +5,8 @@ import { ItemIcon, NavIcon, SpriteImage } from "../components/icons";
 import { pct, rarityColor, rate, SLOT_LABELS } from "../format";
 import { statRows } from "../gearModel";
 import { TechniqueList } from "./Character";
+import { MenuPages } from "../components/Common";
+import { inventoryPage } from "../inventoryModel";
 
 const sections = ["Classes", "Gear", "Bestiary", "Regions", "Challenges"] as const;
 type Section = typeof sections[number];
@@ -22,6 +24,7 @@ function Entry({ name, detail, art, children }: { name: string; detail: string; 
 export function EncyclopediaScreen({ classId, onBack }: { classId: string; onBack: () => void }) {
   const [section, setSection] = useState<Section>("Classes");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
   const content = session.content;
   const zones = content.snapshot.zones.filter(zone => zone.implemented && !zone.hidden);
   const query = search.trim().toLowerCase();
@@ -52,7 +55,8 @@ export function EncyclopediaScreen({ classId, onBack }: { classId: string; onBac
         return <Entry key={item.id} name={item.name} detail={`${rarity.name} · ${slot}${className ? ` · ${className} only` : ""}`} art={<ItemIcon item={item} icon={item.icon} rarityColor={rarityColor(content, item.rarity)} size={34} />}>
           <div className="chips">{statRows(null, item, { pct, rate }).map(stat => <span className="tag" key={stat.key}>{stat.format(stat.candidate)} {stat.label}</span>)}</div>
           {item.effect && <p><b>{item.effect.name}</b> · {item.effect.description}</p>}
-          <p className="small muted">Minimum encounter level {item.minEncounterLevel}</p>
+          <p className="small muted">{item.huntId ? `Weekly Hunt reward · ${content.hunts.get(item.huntId)!.boss.name}`
+            : `Minimum encounter level ${item.minEncounterLevel}`}</p>
         </Entry>;
       });
       break;
@@ -81,28 +85,33 @@ export function EncyclopediaScreen({ classId, onBack }: { classId: string; onBac
         const region = content.zone(boss.unlockZoneId).name;
         const season = content.seasons.get(boss.id);
         const promotion = [...content.promotions.values()].find(path => path.boss.id === boss.id);
-        const type = season ? season.name : promotion ? "Promotion trial" : "Solo Boss";
+        const hunt = content.hunts.get(boss.id);
+        const type = hunt ? "Weekly Hunt" : season ? season.name : promotion ? "Promotion trial" : "Solo Boss";
         if (!matches(boss.name, region, type, season?.rule.name ?? "")) return [];
-        return <Entry key={boss.id} name={boss.name} detail={`${type} · ${boss.tiers.length} ${boss.tiers.length === 1 ? "tier" : "tiers"}`} art={<SpriteImage name={boss.sprite} />}>
+        return <Entry key={boss.id} name={boss.name} detail={hunt ? type : `${type} · ${boss.tiers.length} ${boss.tiers.length === 1 ? "tier" : "tiers"}`} art={<SpriteImage name={boss.sprite} />}>
           <p>Entry requires a {region} clear.</p>
           {promotion && <p className="small muted">Requires {content.classDef(promotion.classId).name} Mastery {promotion.mastery} and Character Level {promotion.level}.</p>}
           {season && <p className="small muted">{season.rule.name} · Relic {season.relicName}</p>}
+          {hunt && <p className="small muted">Win once per UTC week for {content.item(hunt.rewards[classId]!).name}, XP and Mastery XP.</p>}
         </Entry>;
       });
       break;
   }
 
+  const pagination = inventoryPage(entries, page, 8);
   return <main className="screen encyclopedia-screen" aria-labelledby="encyclopedia-title">
     <div className="row spread encyclopedia-title">
       <span className="row"><NavIcon name="book" /><h2 id="encyclopedia-title">Encyclopedia</h2></span>
       <button className="btn small" onClick={onBack}>Back to menu</button>
     </div>
     <div className="encyclopedia-filters" role="group" aria-label="Encyclopedia categories">
-      {sections.map(category => <button key={category} className="btn" aria-pressed={category === section} onClick={() => { setSection(category); setSearch(""); }}>{category}</button>)}
+      {sections.map(category => <button key={category} className="btn" aria-pressed={category === section} onClick={() => { setSection(category); setSearch(""); setPage(0); }}>{category}</button>)}
     </div>
     <label className="stack small">Search {section.toLowerCase()}
-      <input type="search" className="text-input" value={search} onChange={event => setSearch(event.target.value)} />
+      <input type="search" className="text-input" value={search} onChange={event => { setSearch(event.target.value); setPage(0); }} />
     </label>
-    <div className="stack" aria-label={`${section} entries`}>{entries.length ? entries : <p className="small muted">No entries match your search.</p>}</div>
+    <p className="small muted menu-result-count">{entries.length} entries</p>
+    <MenuPages page={pagination.page} pages={pagination.pages} onChange={setPage} noun="entries" />
+    <div className="stack" key={`${section}-${search}-${page}`} aria-label={`${section} entries`}>{entries.length ? pagination.rows : <p className="small muted">No entries match your search.</p>}</div>
   </main>;
 }

@@ -4,7 +4,8 @@ import { eligibleForgeIds, forgeCeiling, findInstance, isItemLocked, type Profil
 import { FORGE_V1 } from "@emberbound/game-content";
 import { session } from "../../game/session";
 import { DEV_TOOLS } from "../../platform/device";
-import { Sheet } from "../components/Common";
+import { MenuPages, Sheet } from "../components/Common";
+import { inventoryPage } from "../inventoryModel";
 import { ItemIcon } from "../components/icons";
 import { SLOT_LABELS, rarityColor, pct, rate } from "../format";
 import { classInventory, statRows } from "../gearModel";
@@ -18,6 +19,7 @@ export function ForgeSheet({ profile, onClose, onCompare }: { profile: Profile; 
   const [ids, setIds] = useState<number[]>([]), [mode, setMode] = useState<ForgeMode>("configured");
   const [confirmation, setConfirmation] = useState<ForgeInput | null>(null), [receipt, setReceipt] = useState<ForgeReceipt | null>(null);
   const [error, setError] = useState(""); const working = useRef(false);
+  const [page, setPage] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const recipe = FORGE_V1.recipes[rarity], index = FORGE_V1.rarities.indexOf(rarity), cap = forgeCeiling(profile, FORGE_V1);
   const classItems = classInventory(profile, content), classIds = new Set(classItems.map(i => i.id));
@@ -34,7 +36,8 @@ export function ForgeSheet({ profile, onClose, onCompare }: { profile: Profile; 
   const critical = index + 2 <= cap ? FORGE_V1.rarities[index + 2] : undefined;
   const gate = FORGE_V1.gates.find(g => FORGE_V1.rarities.indexOf(g.maxRarity) >= index + 1);
   const unlocked = !!recipe && cap >= index + 1;
-  const reset = () => { setIds([]); setConfirmation(null); setReceipt(null); setError(""); };
+  const pagination = inventoryPage([...groups], page, 6);
+  const reset = () => { setIds([]); setConfirmation(null); setReceipt(null); setError(""); setPage(0); };
   const close = () => { if (working.current) return; if (confirmation) setConfirmation(null); else onClose(); };
   const forge = async () => {
     if (!confirmation || working.current) return;
@@ -72,9 +75,11 @@ export function ForgeSheet({ profile, onClose, onCompare }: { profile: Profile; 
       <div className="forge-promise"><strong>Guaranteed: {rarityName(guaranteed!)} {SLOT_LABELS[slot]}</strong>{critical && <span>Critical bonus: {rarityName(critical)} ({recipe.criticalBp / 100}% test chance)</span>}<span>{recipe.count} {rarityName(rarity)} items + {recipe.gold.toLocaleString()} Gold</span></div>
       {!unlocked && <p role="status">{gate ? `Forge unlocks this tier after clearing ${content.zone(gate.zoneId).name}.` : "This Forge tier is unavailable."} <span className="small muted">Provisional test gate.</span></p>}
       <div className="row spread"><strong>Selected: {selected.length} / {recipe.count}</strong><span>Gold: {profile.gold.toLocaleString()}</span></div>
-      <p className="small muted">Locked, equipped and queued items are protected from Forge. Unlock a copy in Gear to use it as a material. Prices and odds are provisional test values.</p>
+      <details className="menu-disclosure"><summary>About Forge materials</summary><p className="small muted">Locked, equipped and queued items are protected from Forge. Unlock a copy in Gear to use it as a material. Prices and odds are provisional test values.</p></details>
       {lockedCount > 0 && <p className="small" data-testid="forge-locked-count">{lockedCount} locked {lockedCount === 1 ? "copy" : "copies"} excluded for this slot and rarity.</p>}
-      <div className="forge-items">{[...groups].map(([base, copies]) => { const item = content.item(base), chosen = copies.filter(id => selected.includes(id)); return <div className="forge-item" key={base}>
+      <button className="btn gold block" data-testid="forge-review" disabled={!unlocked || selected.length !== recipe.count || profile.gold < recipe.gold} onClick={() => { setError(""); setConfirmation({ transactionId: profile.forge?.nextTransactionId ?? 1, configVersion: FORGE_V1.version, slot, rarity, instanceIds: selected, mode }); }}>Review fusion</button>
+      <MenuPages page={pagination.page} pages={pagination.pages} onChange={setPage} noun="materials" />
+      <div className="forge-items">{pagination.rows.map(([base, copies]) => { const item = content.item(base), chosen = copies.filter(id => selected.includes(id)); return <div className="forge-item" key={base}>
         <div className="row"><ItemIcon item={item} icon={item.icon} rarityColor={rarityColor(content, rarity)} size={40}/><div className="forge-item-name"><strong>{item.name}</strong><div className="small">{copies.length} available · {chosen.length} selected</div></div></div>
         <details><summary>Inspect item</summary><ItemDetails item={item}/></details>
         <div className="row"><button className="btn" aria-label={`Remove ${item.name}`} disabled={!chosen.length} onClick={() => setIds(selected.filter(id => id !== chosen[chosen.length - 1]))}>−</button>
@@ -83,7 +88,6 @@ export function ForgeSheet({ profile, onClose, onCompare }: { profile: Profile; 
       </div>; })}</div>
       {!eligible.length && <p>No eligible {rarityName(rarity)} {SLOT_LABELS[slot]} items.</p>}
       {profile.gold < recipe.gold && <p role="status">Not enough Gold.</p>}
-      <button className="btn gold block" data-testid="forge-review" disabled={!unlocked || selected.length !== recipe.count || profile.gold < recipe.gold} onClick={() => { setError(""); setConfirmation({ transactionId: profile.forge?.nextTransactionId ?? 1, configVersion: FORGE_V1.version, slot, rarity, instanceIds: selected, mode }); }}>Review fusion</button>
       </>}
       {DEV_TOOLS && <details className="forge-dev"><summary>DEV · Forge testing</summary><div className="stack">
         <label>Outcome<select aria-label="Forge DEV outcome" value={mode} onChange={e => setMode(e.target.value as ForgeMode)}><option value="configured">Use Configured Chance</option><option value="normal">Force Normal</option><option value="critical">Force Critical</option></select></label>

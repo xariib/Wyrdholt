@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { darkwoodAssets, actorPack, attackDurations } from "../src/art/darkwood";
-import { heroAnimationAsset, heroAttackFrame } from "../src/art/heroAnimation";
+import { HERO_ATTACK_PADDING, heroAnimationAsset, heroAttackFrame } from "../src/art/heroAnimation";
 import { validateArt } from "../src/art/types";
 import { ProductionMotion } from "../src/render/productionMotion";
 
@@ -13,7 +13,7 @@ describe("hero attack presentation keys", () => {
       expect(visual.frames.slice(0, 2).reduce((sum, f) => sum + f.durationMs, 0)).toBe(actorPack[cls]!.animations.attack.ms[0]);
       expect(validateArt([visual])).toEqual([]);
       expect(visual.anchor.y).toBe(original.anchor.y);
-      expect(visual.width - visual.anchor.x).toBe(original.width - original.anchor.x + 8);
+      expect(visual.width - visual.anchor.x).toBe(original.width - original.anchor.x + HERO_ATTACK_PADDING.right);
     }
   });
   it.each([350, 500, 1000])("selects visual keys inside the fitted phases at %d ms cadence", interval => {

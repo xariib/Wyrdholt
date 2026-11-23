@@ -16,7 +16,7 @@ function eligibleItems(content: ContentIndex, rarityId: string, encounterLevel: 
   const key = `${rarityId}|${encounterLevel}|${classId}`;
   let list = byKey.get(key);
   if (!list) {
-    list = content.snapshot.items.filter(i => i.rarity === rarityId && i.minEncounterLevel <= encounterLevel && canUseItem(i, classId));
+    list = content.snapshot.items.filter(i => !i.huntId && i.rarity === rarityId && i.minEncounterLevel <= encounterLevel && canUseItem(i, classId));
     byKey.set(key, list);
   }
   return list;

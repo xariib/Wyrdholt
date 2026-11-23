@@ -2,11 +2,11 @@ import { useState, type Dispatch, type ReactNode, type SetStateAction } from "re
 import { SLOT_ORDER } from "@emberbound/shared-types";
 import { previewBulkSalvage, previewSalvage, type BulkSalvageReceipt, type Profile, type SalvageReceipt } from "@emberbound/game-core";
 import { session } from "../../game/session";
-import { Sheet } from "../components/Common";
+import { MenuPages, Sheet } from "../components/Common";
 import { ItemIcon } from "../components/icons";
 import { gearDifferences } from "../gearModel";
 import { number, rarityColor, SLOT_LABELS } from "../format";
-import { EMPTY_INVENTORY_FILTERS, filterInventoryGroups, inventoryGroups, inventoryPage, inventorySelectionCounts, INVENTORY_PAGE_SIZE, type InventoryFilters, type InventoryGroup } from "../inventoryModel";
+import { EMPTY_INVENTORY_FILTERS, filterInventoryGroups, inventoryGroups, inventoryPage, inventorySelectionCounts, type InventoryFilters, type InventoryGroup } from "../inventoryModel";
 import type { GearFocus } from "./Gear";
 import { CopyControls } from "./GearCopies";
 import { BulkSalvageConfirmation, SalvageConfirmation } from "./Salvage";
@@ -37,7 +37,7 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
   // coarse UI update so NEW/protection/hidden counts never use a stale identity cache.
   const groups = inventoryGroups(profile, content);
   const visible = filterInventoryGroups(groups, filters);
-  const pagination = inventoryPage(visible, page);
+  const pagination = inventoryPage(visible, page, 6);
   const counts = inventorySelectionCounts(ids, visible);
   const copyCount = visible.reduce((sum, group) => sum + group.ids.length, 0);
   const managed = visible.find(group => group.baseId === manageBase);
@@ -55,7 +55,7 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
   });
 
   const filterControls = (
-      <div className="gear-filters">
+      <div className="gear-filters inventory-toolbar">
         <label className="gear-search"><span>Search inventory</span>
           <input type="search" value={filters.search} placeholder="Name, effect or build trait" onChange={e => changeFilters({ ...filters, search: e.target.value })} />
         </label>
@@ -63,6 +63,9 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
           <option value="">All slots</option>
           {SLOT_ORDER.map(slot => <option key={slot} value={slot}>{SLOT_LABELS[slot]}</option>)}
         </select></label>
+      </div>
+  );
+  const advancedFilters = <div className="gear-filters">
         <label><span>Rarity</span><select aria-label="Rarity" value={filters.rarityId} onChange={e => changeFilters({ ...filters, rarityId: e.target.value })}>
           <option value="">All rarities</option>
           {content.raritiesByOrder.map(rarity => <option key={rarity.id} value={rarity.id}>{rarity.name}</option>)}
@@ -72,8 +75,7 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
         </select></label>
         <label className="gear-new-filter"><input type="checkbox" checked={filters.newOnly} onChange={e => changeFilters({ ...filters, newOnly: e.target.checked })} /><span>Only NEW</span></label>
         {hasFilters && <button className="btn ghost gear-clear" onClick={() => changeFilters({ ...EMPTY_INVENTORY_FILTERS })}>Clear filters</button>}
-      </div>
-  );
+      </div>;
 
   return <Sheet label="Gear inventory" onClose={onClose} scrollKey={bulkQuote ? "bulk" : singleQuote ? "single" : manageBase ?? `page-${pagination.page}`}>
     <div className="row spread">
@@ -90,16 +92,13 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
       setSingleQuote(null);
     }} /> : <>
       {retryAction}
-      <p className="small muted">{initiallyNewOnly
-        ? "Compare new drops with what you’re wearing before your next Push."
-        : `All six slots for your ${content.classDef(profile.character.activeClassId).name}. Switch class to view its gear.`}</p>
-      {initiallyNewOnly ? <details className="inventory-filters-disclosure" open={filtersOpen} onToggle={e => setFiltersOpen(e.currentTarget.open)}>
-        <summary>Inventory filters</summary>
-        {filterControls}
-      </details> : filterControls}
-      {(!initiallyNewOnly || ids.size > 0) && <section className="stack inventory-selection" aria-label="Inventory salvage selection">
+      {filterControls}
+      <details className="inventory-filters-disclosure menu-disclosure" open={filtersOpen} onToggle={e => setFiltersOpen(e.currentTarget.open)}>
+        <summary>More filters{hasFilters ? " · Active" : ""}</summary>
+        {advancedFilters}
+      </details>
+      {ids.size > 0 && <section className="stack inventory-selection" aria-label="Inventory salvage selection">
         <p className="small" role="status">{number(counts.total)} copies selected for salvage · {number(counts.hidden)} outside current filters.</p>
-        <p className="small muted">Choose exact copies manually in Manage copies. Selection stays across slots, item types, filters and pages. Review includes every selected ID.</p>
         <div className="gear-copy-actions">
           <button className="btn gold" disabled={!ids.size} onClick={() => {
             const result = previewBulkSalvage(profile, content, [...ids]);
@@ -122,10 +121,12 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
       </section>}
       {manageBase && !managed && <p className="small muted">This item has no copies matching the current filters. Your selection is kept.</p>}
       {!managed && <>
+        <MenuPages page={pagination.page} pages={pagination.pages} onChange={setPage} />
         <div className="list inventory-list" aria-label="Inventory item types">
           {pagination.rows.map(group => {
             const slot = group.item.slot;
-            const copy = group.copies.find(({ id, isNew }) => isNew && id !== profile.equipment[slot] && id !== profile.pending?.equipment?.[slot]);
+            const copy = group.copies.find(({ id, isNew }) => isNew && id !== profile.equipment[slot] && id !== profile.pending?.equipment?.[slot])
+              ?? group.copies.find(({ id }) => id !== profile.equipment[slot] && id !== profile.pending?.equipment?.[slot]) ?? group.copies[0];
             return <section className="inventory-item stack" key={group.baseId} data-base-id={group.baseId}>
               <InventoryItem group={group} />
               <div className={copy ? "gear-copy-actions" : "stack"}>
@@ -138,11 +139,6 @@ export function InventorySheet({ profile, onClose, initiallyNewOnly, retryAction
         </div>
         {groups.length === 0 && <p className="small muted gear-empty">No gear owned yet. Gear you earn will appear here across all six slots.</p>}
         {groups.length > 0 && visible.length === 0 && <p className="small muted gear-empty">No gear matches these filters. Change or clear filters to see your owned copies. Your selection is kept.</p>}
-        {visible.length > INVENTORY_PAGE_SIZE && <nav className="gear-copy-pages" aria-label="Inventory pages">
-          <button className="btn" disabled={pagination.page === 0} onClick={() => setPage(pagination.page - 1)}>Previous items</button>
-          <span className="small">Page {pagination.page + 1} of {pagination.pages} · {pagination.page * INVENTORY_PAGE_SIZE + 1}–{Math.min((pagination.page + 1) * INVENTORY_PAGE_SIZE, visible.length)} of {visible.length}</span>
-          <button className="btn" disabled={pagination.page + 1 === pagination.pages} onClick={() => setPage(pagination.page + 1)}>Next items</button>
-        </nav>}
       </>}
     </>}
   </Sheet>;
@@ -161,7 +157,7 @@ function InventoryItem({ group }: { group: InventoryGroup }) {
         </div>
       </div>
     </div>
-    <div className="small">{number(group.ids.length)} matching / {number(group.totalCount)} owned copies · {number(group.eligibleCount)} salvage eligible</div>
+    <div className="small muted">{number(group.ids.length)} / {number(group.totalCount)} copies · {number(group.eligibleCount)} salvage eligible</div>
     <div className="chips">
       {group.newCount > 0 && <span className="tag new">{number(group.newCount)} NEW matching</span>}
       {group.lockedCount > 0 && <span className="tag locked">{number(group.lockedCount)} locked</span>}
@@ -169,9 +165,12 @@ function InventoryItem({ group }: { group: InventoryGroup }) {
       {duplicates > 0 && <span className="tag" title="Same stats and effects as your equipped item">{number(duplicates)} {duplicates === 1 ? "duplicate" : "duplicates"} of equipped</span>}
       {group.queuedHere && <span className="tag queued">Queued</span>}
     </div>
+    <details className="menu-disclosure inventory-item-details">
+      <summary>{group.newCount > 0 ? "Stat changes & effects" : item.effect?.name ?? "Item details"}</summary>
     {group.newCount > 0 ? <NewGearDifferences group={group} /> : (
       <div className="small"><strong>{item.effect?.name ?? "No special effect"}</strong>{item.effect && <p className="muted">{item.effect.description}</p>}</div>
     )}
+    </details>
   </>;
 }
 

@@ -8,6 +8,7 @@ import {
 } from "../adventure/run";
 import { startBossAttempt } from "../boss/ladder";
 import { activeBossAttempt } from "../boss/progress";
+import { setTalents } from "../character/talents";
 import type { ContentIndex } from "../content";
 import { advanceGame, type AdvanceGameOptions } from "../game";
 import { fuse, forgeState } from "../items/forge";
@@ -32,6 +33,7 @@ export type Command =
   | { type: "startBoss"; tier: number; autoPush: boolean; bossId?: string }
   | { type: "equip"; slot: SlotId; instanceId: number }
   | { type: "setActiveClass"; classId: string }
+  | { type: "setTalents"; classId: string; talentIds: string[] }
   | { type: "cancelPending" }
   | { type: "markReviewed"; instanceIds: number[] }
   | { type: "advance"; ms: number }
@@ -101,6 +103,10 @@ export function applyCommand(
       return equip(profile, content, command.slot, command.instanceId);
     case "setActiveClass":
       return setActiveClass(profile, content, command.classId);
+    case "setTalents": {
+      const result = setTalents(profile, content, command.classId, command.talentIds, isFightActive(profile));
+      return "error" in result ? { ok: false, error: result.error } : result.queued ? QUEUED : OK;
+    }
     case "cancelPending":
       profile.pending = null;
       return OK;

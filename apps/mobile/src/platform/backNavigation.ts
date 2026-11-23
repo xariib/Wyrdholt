@@ -21,6 +21,6 @@ export function watchNativeBack(): () => void {
   }).then(listener => {
     if (disposed) void listener.remove();
     else remove = () => { void listener.remove(); };
-  });
+  }).catch(error => console.warn("Android Back listener could not be registered.", error));
   return () => { disposed = true; remove?.(); };
 }

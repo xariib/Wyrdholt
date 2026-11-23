@@ -140,6 +140,7 @@ export function simulateOffline(
       onTime,
       onBossResult: (result) => {
         if (boss) boss.result = result;
+        if (result.huntRewardId !== undefined) found.push(result.huntRewardId);
         if (result.outcome === "interrupted") return;
         summary.fights += 1;
         if (result.outcome === "victory") summary.victories += 1;

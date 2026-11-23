@@ -110,6 +110,24 @@ export function Sheet({ children, onClose, label = "Dialog", scrollKey }: { chil
   );
 }
 
+/** Put paging before long lists so the next page never requires a scroll to the end. */
+export function MenuPages({ page, pages, onChange, noun = "items" }: {
+  page: number; pages: number; onChange: (page: number) => void; noun?: string;
+}) {
+  const ref = useRef<HTMLElement>(null);
+  const previous = useRef(page);
+  useEffect(() => {
+    if (previous.current !== page) ref.current?.scrollIntoView({ block: "start" });
+    previous.current = page;
+  }, [page]);
+  if (pages <= 1) return null;
+  return <nav className="menu-pages" ref={ref} aria-label={`${noun} pages`}>
+    <button className="btn" disabled={page === 0} onClick={() => onChange(page - 1)}>Previous {noun}</button>
+    <span className="small" role="status">{page + 1} / {pages}</span>
+    <button className="btn" disabled={page + 1 >= pages} onClick={() => onChange(page + 1)}>Next {noun}</button>
+  </nav>;
+}
+
 export function Modal({ children, onClose }: { children: ReactNode; onClose?: () => void }) {
   const close = useRef(onClose); close.current = onClose;
   useEffect(() => registerBackAction(() => { close.current?.(); return true; }, 10), []);

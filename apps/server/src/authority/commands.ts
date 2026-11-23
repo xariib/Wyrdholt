@@ -21,6 +21,7 @@ export function isPlayerCommand(value: unknown): value is PlayerCommand {
     case "startBoss": return positive(value.tier) && typeof value.autoPush === "boolean" && (value.bossId === undefined || id(value.bossId));
     case "equip": return slot(value.slot) && positive(value.instanceId);
     case "setActiveClass": return id(value.classId);
+    case "setTalents": return id(value.classId) && Array.isArray(value.talentIds) && value.talentIds.length <= 4 && value.talentIds.every(id);
     case "cancelPending": return true;
     case "markReviewed": return ids(value.instanceIds);
     case "setItemLock": return positive(value.instanceId) && typeof value.locked === "boolean";

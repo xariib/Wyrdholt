@@ -11,3 +11,5 @@ export const LONG_TERM_RULES_VERSION = "emberbound-rules/0.4.0-c5";
 export const SAVE_SCHEMA_VERSION = 1;
 export const BOSS_SAVE_SCHEMA_VERSION = 4;
 export const LONG_TERM_SAVE_SCHEMA_VERSION = 5;
+// Schema 6 belongs to the retired 0.5.0 Hunt save format.
+export const TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION = 7;

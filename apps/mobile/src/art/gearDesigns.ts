@@ -84,12 +84,18 @@ const BUILD_MATERIALS: Record<string, Palette> = {
     tempo: ["#679d92", "#354f55", "#b8d9bd", "#e0c38a"],
     bulwark: ["#a18b63", "#504a43", "#dacbaa", "#819bb2"],
 };
+const HUNT_DESIGNS: Record<string, { shape: string; colors: Palette }> = {
+  hunt_brambleback: { shape: "amber_ring", colors: ["#b2764d", "#583927", "#f1bd81", "#e7c395"] },
+  hunt_gloamweaver: { shape: "windstep_boots", colors: ["#8176a8", "#39344e", "#c0b7da", "#a8e1cc"] },
+  hunt_cindermaw: { shape: "hands_of_the_dawn", colors: ["#8c5444", "#482d32", "#d99065", "#f2c884"] },
+};
 export function namedGearDesign(family: string, cls: HeroClass, slot: SlotId): GearDesign {
     const specialization = /^(precision|tempo|bulwark)_(.+)$/.exec(family);
-    const shape = specialization?.[2] ?? family;
+    const hunt = HUNT_DESIGNS[family];
+    const shape = hunt?.shape ?? specialization?.[2] ?? family;
     const entry = NAMED_GEAR[shape];
     if (!entry || entry.slot !== slot)
         throw new Error(`Missing pixel gear design: ${cls}/${family}/${slot}`);
-    const [base, shade, light, trim] = (specialization ? BUILD_MATERIALS[specialization[1]!] : undefined) ?? entry.colors;
+    const [base, shade, light, trim] = hunt?.colors ?? (specialization ? BUILD_MATERIALS[specialization[1]!] : undefined) ?? entry.colors;
     return { shape, cut: cls, variant: CLASS_CUT[cls], base, shade, light, trim };
 }

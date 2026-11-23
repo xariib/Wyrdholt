@@ -3,6 +3,17 @@ import type { ContentIndex } from "../content";
 import type { BossAttempt, BossProgress, Profile } from "../profile/types";
 
 export const ASHEN_KING_ID = "ashen_king";
+const DAY_MS = 86_400_000;
+const WEEK_MS = 7 * DAY_MS;
+
+/** Monday 00:00 UTC starts a new reward window. */
+export function huntWeekAt(atMs: number): number {
+  return Math.floor((atMs + 3 * DAY_MS) / WEEK_MS);
+}
+
+export function huntResetAt(week: number): number {
+  return (week + 1) * WEEK_MS - 3 * DAY_MS;
+}
 
 export function bossProgress(profile: Profile, bossId: string): BossProgress | undefined {
   return bossId === ASHEN_KING_ID ? profile.ashenKing : profile.longTerm?.ladders[bossId];

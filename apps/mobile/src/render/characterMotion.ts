@@ -3,10 +3,10 @@ import { CLASS_BODIES } from "../art/classBodies";
 import type { HeroClass } from "../art/gearSkins";
 import { actorPack, type ProductionClip } from "../art/darkwood";
 
-/** A readable step, contact, follow-through and return, fitted to the logged cadence. */
+/** A readable full-body step and return; haste never turns the travel into a flicker. */
 export const UNARMED_ATTACK: ProductionClip = {
   ...actorPack.monk!.animations.attack,
-  ms: [320, 140, 180, 320], min_ms: [80, 100, 60, 80], crit_hold_ms: 220,
+  ms: [320, 140, 180, 320], min_ms: [80, 100, 60, 80], crit_hold_ms: 220, min_cycle_ms: 960,
 };
 
 /** Pixel offsets only: attacks and damage still belong to the prepared combat log. */
@@ -25,13 +25,22 @@ export function characterOffset(name: string, pose: Pose, frame: number, elapsed
   return [0, 0];
 }
 
+export function smoothAttackOffset(name: string, attackName: string, frame: number, elapsed: number, timing: readonly number[]): readonly [number, number] {
+  const start = timing.slice(0, frame).reduce((total, ms) => total + ms, 0);
+  const linear = Math.max(0, Math.min(1, (elapsed - start) / Math.max(1, timing[frame] ?? 1)));
+  const t = linear * linear * (3 - 2 * linear);
+  const [x, y] = characterOffset(name, "attack", frame - 1, elapsed, 0, attackName);
+  const [nextX, nextY] = characterOffset(name, "attack", frame, elapsed, 0, attackName);
+  return [x + (nextX - x) * t, Math.round(y + (nextY - y) * t)];
+}
+
 /** Close the visual distance for a bare-handed strike; HUD and simulation positions stay fixed. */
 export function unarmedApproach(distance: number, elapsed: number, durations: readonly number[], classId: string = "monk"): number {
   const reach = Math.max(0, distance - (CLASS_BODIES[classId as HeroClass]?.reach ?? 26));
   const [windupMs = 320, contactMs = 140, followThroughMs = 180, returnMs = 320] = durations;
   const t = Math.min(1, Math.max(0, elapsed / Math.max(1, windupMs)));
   const weight = classId === "warrior" ? t * t : classId === "mage" ? t * t * (3 - 2 * t)
-    : classId === "ranger" ? 1 - (1 - t) * (1 - t) : t;
+    : classId === "ranger" ? 1 - (1 - t) * (1 - t) : t * t * (3 - 2 * t);
   if (elapsed < windupMs) return reach * weight;
   const recovery = Math.min(1, Math.max(0, (elapsed - windupMs - contactMs) / Math.max(1, followThroughMs + returnMs)));
   // Interpolate across both recovery poses instead of teleporting at frame boundaries.

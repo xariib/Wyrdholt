@@ -5,6 +5,8 @@ export interface ProductionClip {
   frame: number[]; anchor: number[]; ms: number[]; loop: boolean;
   frames: { file: string; ms: number }[]; sprite_strip: string;
   impact_frame?: number; hold_frame?: number; min_ms?: number[]; crit_hold_ms?: number;
+  /** Full-body travel may span several fast logged hits; impacts still play for every hit. */
+  min_cycle_ms?: number;
   fx_projectile_spawn?: number[];
 }
 export interface ProductionActor { animations: Record<Pose, ProductionClip>; hit_flash: string }
@@ -69,6 +71,7 @@ darkwoodAssets.push(entry("backgrounds/darkwood", bg.file, bg.size, [0, 0], [1],
 
 /** Presentation duration fitting; never changes attack or damage timestamps. */
 export function attackDurations(c: ProductionClip, interval: number, crit = false): number[] {
+  interval = Math.max(interval, c.min_cycle_ms ?? 0);
   const ms = [...c.ms];
   if (crit && c.hold_frame !== undefined) ms[c.hold_frame] = c.crit_hold_ms ?? ms[c.hold_frame]!;
   const total = ms.reduce((a, b) => a + b, 0);

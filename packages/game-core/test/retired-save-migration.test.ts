@@ -50,7 +50,7 @@ describe("retired Android 0.5.0 save compatibility", () => {
     expect(parseSave(oldSave(p, data => { delete data.hunts; }))).toMatchObject({ ok: false, reason: "newer-schema" });
     const raw = JSON.parse(oldSave(p)); raw.checksum = "bad";
     expect(parseSave(JSON.stringify(raw))).toMatchObject({ ok: false, reason: "checksum-mismatch" });
-    raw.schema = 7; raw.checksum = sha256Hex(raw.payload);
+    raw.schema = 8; raw.checksum = sha256Hex(raw.payload);
     expect(parseSave(JSON.stringify(raw))).toMatchObject({ ok: false, reason: "newer-schema" });
   });
 

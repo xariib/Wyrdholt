@@ -1,10 +1,10 @@
 import { activeBossAttempt } from "@emberbound/game-core";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { registerBackAction } from "./platform/backNavigation";
 import { session } from "./game/session";
 import { retryTarget } from "./game/attempts";
 import { DEV_TOOLS } from "./platform/device";
-import { Busy, Header, ToastView } from "./ui/components/Common";
+import { Busy, Header, Sheet, ToastView } from "./ui/components/Common";
 import { NavIcon } from "./ui/components/icons";
 import { DebugPanel, PerfOverlay } from "./ui/debug/DebugPanel";
 import { totalNew } from "./ui/gearModel";
@@ -43,9 +43,22 @@ function readOverlayPref(): boolean {
 
 export function App() {
   const ui = useUi();
-  const [tab, setTab] = useState<Tab>("adventure");
+  const [tab, showTab] = useState<Tab>("adventure");
+  const routes = useRef<Tab[]>(["adventure"]);
+  const setTab = useCallback((next: Tab) => {
+    if (routes.current.at(-1) === next) return;
+    routes.current = [...routes.current.slice(-31), next];
+    showTab(next);
+  }, []);
+  const goBack = useCallback(() => {
+    if (routes.current.length <= 1) return false;
+    routes.current.pop();
+    showTab(routes.current.at(-1)!);
+    return true;
+  }, []);
   const [onlineOpen, setOnlineOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
+  const [saveToolsOpen, setSaveToolsOpen] = useState(false);
   const [overlay, setOverlayState] = useState(readOverlayPref);
   const [gearFocus, setGearFocus] = useState<GearFocus | "new" | null>(null);
   const clearFocus = useCallback(() => setGearFocus(null), []);
@@ -55,10 +68,8 @@ export function App() {
       setOnlineOpen(false);
       return true;
     }
-    if (tab === "adventure") return false;
-    setTab(tab === "encyclopedia" ? "menu" : "adventure");
-    return true;
-  }), [tab, onlineOpen]);
+    return goBack();
+  }), [goBack, onlineOpen]);
 
   const setOverlay = (value: boolean) => {
     setOverlayState(value);
@@ -164,10 +175,14 @@ export function App() {
           </button>
           <AppUpdates menuOpen={tab === "menu"} />
         </section>
-        {tab === "menu" && <SaveTools onChanged={() => setTab("adventure")} />}
+        <button className="btn block" onClick={() => setSaveToolsOpen(true)}>Save management</button>
+        {tab === "menu" && saveToolsOpen && <Sheet label="Save management" onClose={() => setSaveToolsOpen(false)}>
+          <div className="row spread"><h2>Save management</h2><button className="btn ghost sheet-close" aria-label="Close save management" onClick={() => setSaveToolsOpen(false)}>×</button></div>
+          <SaveTools onChanged={() => { setSaveToolsOpen(false); setTab("adventure"); }} />
+        </Sheet>}
         {!ONLINE_PLAY_ENABLED && <p className="small muted">Online Play is temporarily disabled.</p>}
       </main>
-      {tab === "encyclopedia" && <EncyclopediaScreen classId={profile.character.activeClassId} onBack={() => setTab("menu")} />}
+      {tab === "encyclopedia" && <EncyclopediaScreen classId={profile.character.activeClassId} onBack={goBack} />}
 
       <nav className="nav" aria-label="Game navigation">
         {TABS.map(({ id, label }) => {

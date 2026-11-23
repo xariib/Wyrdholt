@@ -3,6 +3,8 @@ import { SOLO_BOSSES } from "./bosses";
 import { CLASSES, mageTrack, monkTrack, rangerTrack, warriorTrack } from "./classes";
 import { ENEMIES } from "./enemies";
 import { ITEMS } from "./items";
+import { HUNTS, HUNT_ITEMS } from "./hunts";
+import { TALENT_TREES } from "./talents";
 import { LONG_TERM } from "./longTerm";
 import { SOCIAL } from "./social";
 import { LEVEL_XP_STEPS } from "./progression";
@@ -24,7 +26,7 @@ export { DEV_SAMPLE_ITEMS } from "./items";
  * - Pacing (XP/mastery tables, budgets, drop chances): C1 design, docs/design/C1_ADVENTURE.md
  */
 
-export const CONTENT_VERSION = "emberbound-content/0.9.0-build-gear";
+export const CONTENT_VERSION = "emberbound-content/0.10.0-hunts-and-talents";
 
 const config: ContentConfig = {
   recoveryBp: 1_800, // 18% of max HP after non-final victories (ADVENTURE_MILESTONE)
@@ -78,7 +80,7 @@ export const CONTENT: ContentSnapshot = {
   rarities,
   classes: CLASSES,
   masteryTracks: [monkTrack, mageTrack, warriorTrack, rangerTrack],
-  items: ITEMS,
+  items: [...ITEMS, ...HUNT_ITEMS],
   enemies: ENEMIES,
   zones: ZONES,
   lootTables: LOOT_TABLES,
@@ -90,6 +92,8 @@ export const CONTENT: ContentSnapshot = {
   soloBosses: SOLO_BOSSES,
   longTerm: LONG_TERM,
   social: SOCIAL,
+  hunts: HUNTS,
+  talentTrees: TALENT_TREES,
 };
 
 export { FORGE_V1 } from "./forge";

@@ -46,7 +46,7 @@ try {
         const p = session.getSnapshot().profile;
         return p.inventory.instances.filter(i => session.content.item(i.baseId).classId === p.character.activeClassId).length;
       });
-      assert((await page.locator('.inventory-entry').innerText()).includes(`${expectedCount} copies`));
+      assert((await page.locator('.inventory-entry').getAttribute('aria-label')).includes(`${expectedCount} copies`));
       await page.locator('.inventory-entry').click();
       const ids = await checkVisibleSkins(page.getByRole('dialog'), active);
       await page.screenshot({ path: resolve(out, `${cls}-${active}-inventory.png`), animations: 'disabled' });

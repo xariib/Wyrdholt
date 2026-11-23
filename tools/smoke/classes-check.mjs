@@ -52,6 +52,7 @@ await page.getByRole("button", { name: "Close" }).first().tap();
 await page.getByRole("button", { name: /Character/ }).last().tap();
 const character = page.locator(".character-screen");
 await character.waitFor();
+for (const disclosure of await character.getByText('Techniques & combat effects', { exact: true }).all()) await disclosure.tap();
 const card = (cls) => character.locator(`.class-card[data-class="${cls}"]`);
 const cardInfo = async (cls) => ({
   role: await card(cls).getAttribute("data-role"),
@@ -71,6 +72,7 @@ await page.locator(".header").filter({ hasText: "Ranger" }).waitFor({ timeout: 9
 const afterSwitch = await page.locator(".header").innerText();
 await page.getByRole("button", { name: "Challenges", exact: true }).tap();
 const trials = page.getByRole("region", { name: "Promotion trials", exact: true });
+await page.getByRole("group", { name: "Challenge categories" }).getByRole("button", { name: "Trials", exact: true }).tap();
 await trials.waitFor();
 await page.getByRole("button", { name: /Adventure/ }).last().tap();
 await page.waitForTimeout(3_000);

@@ -2,6 +2,7 @@ import { SLOT_ORDER, type BuildSnapshot, type DamageType, type ItemInstance, typ
 import type { ContentIndex } from "../content";
 import { BP, HP_SCALE, mulDivRound } from "../math/fixed";
 import { masteryRank, resolveClassMechanics } from "./progression";
+import { selectedTalents } from "./talents";
 
 export interface HeroStats {
   classId: string;
@@ -53,6 +54,19 @@ export function resolveHeroStats(
   const activeEffects: HeroStats["activeEffects"] = track.techniques
     .filter((t) => t.unlockRank <= rank)
     .map((t) => ({ name: t.name, source: "class" as const }));
+
+  for (const talent of selectedTalents(content.talentTrees.get(cls.id), rank, build.talentIds ?? [])) {
+    hp += talent.stats?.hp ?? 0;
+    attack += talent.stats?.attack ?? 0;
+    armor += talent.stats?.armor ?? 0;
+    attackRateMilli += talent.stats?.attackRateMilli ?? 0;
+    critBp += talent.stats?.critBp ?? 0;
+    if (talent.mechanic) {
+      mechanics.push({ ...talent.mechanic });
+      mechanicSources.push("class");
+      activeEffects.push({ name: talent.name, source: "class" });
+    }
+  }
 
   for (const slot of SLOT_ORDER) {
     const instanceId = build.equipment[slot];

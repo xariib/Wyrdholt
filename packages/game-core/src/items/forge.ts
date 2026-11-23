@@ -57,7 +57,7 @@ export function fuse(profile: Profile, content: ContentIndex, config: ForgeConfi
   const critical = (mode === "critical" || (mode === "configured" && rolled)) && index + 2 <= Math.min(cap, config.rarities.length - 1);
   const outputRarity = config.rarities[index + (critical ? 2 : 1)]!;
   const pool = content.snapshot.items
-    .filter(i => i.slot === input.slot && i.rarity === outputRarity && canUseItem(i, profile.character.activeClassId))
+    .filter(i => !i.huntId && i.slot === input.slot && i.rarity === outputRarity && canUseItem(i, profile.character.activeClassId))
     .sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
   if (!pool.length) return fail("No valid output exists for this recipe. Nothing was spent.");
   const output = pool[rng.nextInt(pool.length)]!;

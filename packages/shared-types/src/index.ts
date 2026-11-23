@@ -290,6 +290,8 @@ export interface ItemDef {
   /** Descriptive build tags (FAST ATTACKS, CRIT, POISON...). */
   tags: string[];
   icon: string;
+  /** Awarded only by the named Hunt. */
+  huntId?: Id;
 }
 
 // ---------------------------------------------------------------------------
@@ -320,6 +322,27 @@ export interface SoloBossDef extends Omit<EnemyArchetypeDef, "hpWeight" | "damag
   unlockZoneId: Id;
   /** Tier 1 is the first entry. */
   tiers: SoloBossTierDef[];
+}
+
+export interface HuntDef {
+  boss: SoloBossDef;
+  xp: number;
+  mastery: number;
+  gold: number;
+  rewards: Record<Id, Id>;
+}
+
+export interface TalentDef {
+  id: Id;
+  name: string;
+  description: string;
+  stats?: StatBlock;
+  mechanic?: MechanicDef;
+}
+
+export interface TalentTreeDef {
+  classId: Id;
+  branches: { name: string; nodes: TalentDef[] }[];
 }
 
 export interface PromotionDef {
@@ -501,6 +524,8 @@ export interface ContentSnapshot {
   starterWeapons?: Record<Id, Id>;
   soloBosses?: SoloBossDef[];
   longTerm?: { promotions: PromotionDef[]; seasons: SeasonDef[] };
+  hunts?: HuntDef[];
+  talentTrees?: TalentTreeDef[];
   social?: { dungeons: DungeonDef[]; raids: RaidDef[] };
 }
 
@@ -547,6 +572,7 @@ export interface BuildSnapshot {
   promoted?: true;
   /** Relic Attack is locked to a seasonal attempt. */
   seasonRelicAttackBp?: Bp;
+  talentIds?: Id[];
 }
 
 export interface EncounterRef {

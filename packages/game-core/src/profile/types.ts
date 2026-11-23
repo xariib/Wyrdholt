@@ -73,6 +73,7 @@ export interface AdventureState {
 export interface PendingBuild {
   activeClassId?: string;
   equipment?: Partial<Record<SlotId, number | null>>;
+  talents?: Record<string, string[]>;
 }
 
 export interface CharacterState {
@@ -82,6 +83,7 @@ export interface CharacterState {
   activeClassId: string;
   alternateClassId: string;
   masteryXp: Record<string, number>;
+  talents?: Record<string, string[]>;
 }
 
 export interface ProfileStats {
@@ -105,6 +107,7 @@ export interface BossResult {
   outcome: FightOutcome | "interrupted";
   enemyHp100: number;
   enemyMaxHp100: number;
+  huntRewardId?: number;
 }
 
 export interface BossProgress {
@@ -113,6 +116,8 @@ export interface BossProgress {
   attemptCount: number;
   active: BossAttempt | null;
   lastResult: BossResult | null;
+  huntWeek?: number;
+  huntCompletedWeek?: number;
 }
 
 /**

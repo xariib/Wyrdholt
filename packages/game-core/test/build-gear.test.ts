@@ -41,18 +41,22 @@ describe("same-tier build choices", () => {
     }
   });
 
-  it("preserves existing effect parameters and IDs, with unique IDs for every new effect", () => {
+  it("gives each build choice a distinct mechanic and keeps equipment identity", () => {
     expect(added).toHaveLength(216);
     const ids: string[] = [];
     for (const item of added) {
       const source = content.item(sourceId(item));
       expect(item.icon).toBe(source.icon);
-      expect(item.effect?.description).toBe(source.effect?.description);
       const withoutIds = (definition: ItemDef) => definition.effect?.mechanics.map(({ id: _id, ...parameters }) => parameters);
-      expect(withoutIds(item)).toEqual(withoutIds(source));
+      expect(item.effect?.description).toBeTruthy();
+      expect(withoutIds(item)).not.toEqual(withoutIds(source));
       ids.push(...(item.effect?.mechanics.map(mechanic => mechanic.id) ?? []));
     }
     expect(new Set(ids).size).toBe(ids.length);
+    for (const classId of classes) for (const slot of SLOT_ORDER) for (const rarity of ["rare", "epic", "legendary"]) {
+      const choices = added.filter(item => item.classId === classId && item.slot === slot && item.rarity === rarity);
+      expect(new Set(choices.map(item => item.effect?.mechanics[0]?.kind)).size).toBe(3);
+    }
     expect(new Set(CONTENT.items.map(item => item.id)).size).toBe(CONTENT.items.length);
   });
 

@@ -271,6 +271,9 @@ export function applyPendingBuild(profile: Profile, content: ContentIndex): bool
     }
   }
   if (character.activeClassId !== previousClassId) reconcileEquipment(profile, content);
+  for (const [classId, ids] of Object.entries(pending.talents ?? {})) {
+    (character.talents ??= {})[classId] = ids;
+  }
   profile.pending = null;
   return true;
 }

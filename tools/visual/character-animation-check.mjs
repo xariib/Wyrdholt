@@ -60,7 +60,8 @@ try {
     assert.equal(await page.locator('.slot-card').count(), 6);
     assert.equal(await page.locator('.slot-card .item-icon-empty').count(), 6);
     assert.deepEqual(await page.locator('.slot-card .item-name').allTextContents(), Array(6).fill('Empty'));
-    const portrait = page.locator('.loadout-hero .portrait-window img');
+    await page.getByRole('button', { name: 'Appearance', exact: true }).click();
+    const portrait = page.locator('.gear-appearance .portrait-window img');
     await portrait.scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelector('.portrait-window img')?.getAnimations()[0]?.playState === 'running');
     const frames = await portrait.evaluate(async node => {

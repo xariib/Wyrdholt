@@ -7,6 +7,7 @@ import { actorPack } from "../src/art/darkwood";
 import { ProductionMotion } from "../src/render/productionMotion";
 import * as refinedArt from "../src/art/refinedPixelArt";
 import * as equippedArt from "../src/art/gearArt";
+import * as attackEffects from "../src/render/attackEffects";
 
 vi.mock("pixi.js/unsafe-eval", () => ({}));
 vi.mock("pixi.js", () => ({
@@ -55,6 +56,40 @@ describe("recovery presentation", () => {
 });
 
 describe("weapon-driven attack playback", () => {
+  it("keeps an incoming impact on the moving character instead of its home slot", () => {
+    const draw = vi.spyOn(attackEffects, "drawAttackImpact").mockImplementation(() => {});
+    const body = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const src = { root: { x: 150, y: 100 }, body, tex: { anchorY: 60, height: 60 }, attackName: "wolf" };
+    const target = { baseX: 40, root: { x: 105, y: 100 }, body, tex: { anchorY: 64, height: 64 } };
+    const renderer = Object.assign(Object.create(CombatRenderer.prototype), { effects: [], fxLayer: { addChild: vi.fn() } });
+    renderer.attackImpact(src, target, 1000, false, "basic");
+    renderer.effects[0].update({}, .1);
+    expect(draw.mock.calls[0][4]).toEqual([105, 68]);
+    target.root.x = 90;
+    renderer.effects[0].update({}, .2);
+    expect(draw.mock.calls[1][4]).toEqual([90, 68]);
+  });
+  it("flashes the actual attack pose immediately while the damage recoil waits for recovery", () => {
+    const point = () => ({ x: 0, y: 0, set: vi.fn(), copyFrom: vi.fn() });
+    const texture = {}, tex = { asset: {}, frames: [{ normal: texture }], normal: texture, anchorX: 32, anchorY: 56, width: 64, height: 64 };
+    const motion = new ProductionMotion(actorPack.monk!, true);
+    motion.attack(1000, 1000); motion.hit(1100, false);
+    const actor = { motion, isHero: true, alive: true, spriteName: "monk", attackName: "unarmed",
+      root: { position: point() }, body: { texture: {}, anchor: point(), scale: point(), position: point() },
+      flash: { alpha: 0, anchor: point(), scale: point(), position: point() }, flashAt: 1100, flashAbsorbed: false,
+      baseX: 50, minX: 0, maxX: 200, groundOffset: 0, vfx: new Map(), tex, wardPhase: "off" };
+    const renderer = Object.assign(Object.create(CombatRenderer.prototype), {
+      sprites: { get: () => tex, optional: () => tex }, actors: new Map(), ground: () => 100,
+    });
+    renderer.animateProduction(actor, 1110);
+    expect(motion.pose).toBe("attack");
+    expect(actor.flash).toMatchObject({ texture, tint: 0xffa69b });
+    expect(actor.flash.alpha).toBeGreaterThan(0);
+    expect(actor.flash.anchor.copyFrom).toHaveBeenCalledWith(actor.body.anchor);
+    actor.flashAbsorbed = true;
+    renderer.animateProduction(actor, 1120);
+    expect(actor.flash.alpha).toBe(0);
+  });
   it.each(["mage", "ranger", "warrior", "monk"])("does not preroll projectiles or weapon contacts for unarmed %s", spriteName => {
     const motion = new ProductionMotion(actorPack.monk!);
     const attack = vi.spyOn(motion, "scheduledAttack");

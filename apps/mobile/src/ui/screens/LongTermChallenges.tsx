@@ -16,7 +16,7 @@ function Result({ result }: { result: BossResult | null | undefined }) {
   );
 }
 
-export function LongTermChallenges({ profile, active }: { profile: Profile; active: boolean }) {
+export function LongTermChallenges({ profile, active, section }: { profile: Profile; active: boolean; section: "trials" | "seasons" }) {
   const [now, setNow] = useState(Date.now);
   const [starting, setStarting] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -47,7 +47,7 @@ export function LongTermChallenges({ profile, active }: { profile: Profile; acti
 
   return (
     <>
-      <section className="panel stack" aria-label="Promotion trials">
+      {section === "trials" && <section className="panel stack" aria-label="Promotion trials">
         <h2>Promotion trials</h2>
         {[profile.character.activeClassId, profile.character.alternateClassId].map(classId => {
           const path = content.promotions.get(classId);
@@ -67,9 +67,9 @@ export function LongTermChallenges({ profile, active }: { profile: Profile; acti
             </div>
           );
         })}
-      </section>
+      </section>}
 
-      <section className="panel stack" aria-label="Seasons">
+      {section === "seasons" && <section className="panel stack" aria-label="Seasons">
         <h2>{season?.name ?? "Seasons"}</h2>
         {season ? (
           <>
@@ -77,14 +77,14 @@ export function LongTermChallenges({ profile, active }: { profile: Profile; acti
             <p className="small">{season.rule.name}</p>
             <p className="small">{season.relicName} · Rank {rank} · +{pct(season.relicAttackBp[rank - 1] ?? 0)} Attack in this ladder</p>
             <p className="small muted">The Relic expires at season end. Earned titles remain in your season history.</p>
-            <div className="list" aria-label="Season rewards">
+            <details className="menu-disclosure"><summary>Season rewards</summary><div className="list" aria-label="Season rewards">
               {season.titles.map((title, index) => (
                 <div className="list-item row spread small" key={title}>
                   <span>Tier {index + 1} · {title}</span>
                   <span>{index < rank ? "Earned" : `+${pct(season.relicAttackBp[index]!)} Relic Attack`}</span>
                 </div>
               ))}
-            </div>
+            </div></details>
             <Result result={seasonProgress?.lastResult} />
             {!isCleared(season.boss.unlockZoneId) && <p className="small muted">Clear {content.zone(season.boss.unlockZoneId).name} to enter.</p>}
             {nextTier <= season.boss.tiers.length && (
@@ -98,8 +98,8 @@ export function LongTermChallenges({ profile, active }: { profile: Profile; acti
           const cleared = bossProgress(profile, s.boss.id)?.highestClearedTier ?? 0;
           return cleared > 0 && <p className="small" key={s.boss.id}>{s.name} · {s.titles.slice(0, cleared).join(", ")}</p>;
         })}
-        {error && <p className="small" role="alert">{error}</p>}
-      </section>
+      </section>}
+      {error && <p className="small" role="alert">{error}</p>}
     </>
   );
 }

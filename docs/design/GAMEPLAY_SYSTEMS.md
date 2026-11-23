@@ -26,6 +26,24 @@ Closing or suspending is not death. Checkpoints reconstruct the run; offline use
 
 Six slots: Weapon, Head, Chest, Gloves, Boots, Ring. Fixed named definitions and uniquely identified owned copies; UI groups duplicates. NEW status persists and comparison marks that group's copies reviewed. Loadout opens a slot-filtered item list, followed by in-place comparison; equip may be queued. Build summary describes stats/effects, not a universal rating. No Equip Best.
 
+## Skill trees and weekly Hunts
+
+Each playable class has two three-node branches. Mastery ranks 3, 6, 9 and 12
+each grant a point for that class. Nodes require their earlier branch nodes.
+Refunds are free, and refunding a node also refunds its descendants. Skills
+edited during combat take effect at the next fight boundary.
+
+Greenfields, Darkwood and Ashen Mountains each unlock a weekly Hunt on clear.
+Enter manually from Challenges. Combat is automatic and victories award XP,
+Mastery XP, gold and the participating class's exclusive drop. Each Hunt can pay
+once per character per week. A loss can be retried and a run that spans the
+Monday 00:00 UTC reset pays against its entry week. Forge and Adventure cannot
+award Hunt drops.
+
+The first skill edit or Hunt entry uses save schema 7. Older saves keep earned
+items and progression. The loader still accepts and retires the discontinued
+schema 6 Hunt state using the existing migration.
+
 Monks wield wraps, Mages wield staves, Warriors wield swords, and Rangers wield
 bows. All six slots, including rings, have class-specific gear at every rarity.
 Formerly shared armor and rings have one version per class with identical stats

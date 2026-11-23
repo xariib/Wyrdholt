@@ -4,6 +4,7 @@ import type {
   DungeonDef,
   EnemyArchetypeDef,
   ItemDef,
+  HuntDef,
   LootTableDef,
   MasteryTrackDef,
   ProgressionDef,
@@ -14,9 +15,10 @@ import type {
   SeasonDef,
   SoloBossDef,
   SoloBossTierDef,
+  TalentTreeDef,
   ZoneDef,
 } from "@emberbound/shared-types";
-import { validateKits } from "./kits";
+import { checkMechanic, validateKits } from "./kits";
 import { canonicalJson } from "../hash/canonical";
 import { sha256Hex } from "../hash/sha256";
 import { geometricCurveTotals, stepTotals } from "../math/fixed";
@@ -37,6 +39,8 @@ export class ContentIndex {
   readonly socialHash: string;
   readonly promotions = new Map<string, PromotionDef>();
   readonly seasons = new Map<string, SeasonDef>();
+  readonly hunts = new Map<string, HuntDef>();
+  readonly talentTrees = new Map<string, TalentTreeDef>();
   readonly seasonHashes = new Map<string, string>();
   readonly dungeons = new Map<string, DungeonDef>();
   readonly raids = new Map<string, RaidDef>();
@@ -68,6 +72,11 @@ export class ContentIndex {
     for (const i of snapshot.items) addUnique(this.items, i.id, i, "item");
     for (const e of snapshot.enemies) addUnique(this.enemies, e.id, e, "enemy");
     for (const b of soloBosses) addUnique(this.soloBosses, b.id, b, "solo boss");
+    for (const hunt of snapshot.hunts ?? []) {
+      addUnique(this.hunts, hunt.boss.id, hunt, "hunt");
+      addUnique(this.soloBosses, hunt.boss.id, hunt.boss, "solo boss");
+    }
+    for (const tree of snapshot.talentTrees ?? []) addUnique(this.talentTrees, tree.classId, tree, "talent tree");
     for (const z of snapshot.zones) addUnique(this.zones, z.id, z, "zone");
     for (const l of snapshot.lootTables) addUnique(this.lootTables, l.id, l, "loot table");
     for (const r of snapshot.rules) addUnique(this.rules, r.id, r, "rule");
@@ -128,6 +137,26 @@ export class ContentIndex {
   }
 
   private validate(): void {
+    const playable = [...this.classes.values()].filter(cls => cls.implemented && cls.tier === 1);
+    const talentIds = new Set<string>();
+    for (const tree of this.talentTrees.values()) {
+      if (!playable.some(cls => cls.id === tree.classId) || tree.branches.length !== 2
+        || tree.branches.some(branch => branch.nodes.length !== 3)) throw new Error(`Invalid talent tree ${tree.classId}`);
+      for (const node of tree.branches.flatMap(branch => branch.nodes)) {
+        if (!node.id.startsWith(`${tree.classId}_`) || talentIds.has(node.id)
+          || Object.values(node.stats ?? {}).some(value => !Number.isSafeInteger(value) || value < 0)) throw new Error(`Invalid talent ${node.id}`);
+        talentIds.add(node.id);
+        if (node.mechanic) checkMechanic(node.mechanic, `talent ${node.id}`);
+      }
+    }
+    for (const hunt of this.hunts.values()) {
+      if (!hunt.boss.id.startsWith("hunt_") || hunt.boss.tiers.length !== 1
+        || [hunt.xp, hunt.mastery, hunt.gold].some(value => !Number.isSafeInteger(value) || value < 1)
+        || playable.some(cls => {
+          const reward = this.items.get(hunt.rewards[cls.id] ?? "");
+          return reward?.classId !== cls.id || reward.huntId !== hunt.boss.id;
+        })) throw new Error(`Invalid hunt ${hunt.boss.id}`);
+    }
     for (const dungeon of this.dungeons.values()) {
       if (!this.zone(dungeon.unlockZoneId).implemented || !dungeon.waves.length || dungeon.rewardGold < 1 || dungeon.guildMarks < 0) {
         throw new Error(`Invalid dungeon ${dungeon.id}`);
@@ -185,6 +214,7 @@ export class ContentIndex {
     for (const i of this.snapshot.items) {
       this.rarity(i.rarity);
       if (i.classId !== undefined) this.classDef(i.classId);
+      if (i.huntId && (!i.classId || this.hunts.get(i.huntId)?.rewards[i.classId] !== i.id)) throw new Error(`Invalid hunt reward ${i.id}`);
       if (i.classVariants) {
         if (i.classId !== undefined) throw new Error(`Class variant template ${i.id} cannot be wearable`);
         for (const cls of this.classes.values()) {

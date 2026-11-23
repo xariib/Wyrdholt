@@ -200,6 +200,10 @@ try {
     await app.locator('.class-option').filter({ hasText: new RegExp(cls, 'i') }).click();
     await app.getByText('Begin in Greenfields', { exact: true }).click();
     await app.waitForFunction(() => window.__emberRenderer?.heroAppearance);
+    await app.waitForFunction(async () => {
+      const { session } = await import('/src/game/session.ts');
+      return session.getSnapshot().phase === 'playing' && session.canPlay() && !session.catchingUp;
+    });
     const before = await app.evaluate(() => window.__emberRenderer.heroAppearance);
     const baseId = `cinder_crown_${cls}`;
     await app.evaluate(async baseId => {
@@ -241,7 +245,9 @@ try {
         }; check();
       });
     });
-    await app.waitForFunction(id => document.querySelector('.loadout-hero [data-appearance]')?.dataset.appearance.includes(id), baseId);
+    await app.getByRole('button', { name: 'Appearance', exact: true }).click();
+    await app.waitForFunction(id => document.querySelector('.gear-appearance [data-appearance]')?.dataset.appearance.includes(id), baseId);
+    await app.getByRole('button', { name: 'Close appearance', exact: true }).click();
     await app.getByRole('navigation').getByRole('button', { name: 'Adventure', exact: true }).click();
     await app.waitForFunction(id => window.__emberRenderer.heroAppearance.slots.head?.id.endsWith(id), baseId);
     await app.waitForFunction(() => window.__emberRenderer.actors.get('hero')?.tex.normal.source.resolution === 2);

@@ -3,6 +3,7 @@ import { session } from "../../game/session";
 import { Bar } from "../components/Common";
 import { SpriteImage } from "../components/icons";
 import { number, pct } from "../format";
+import { SkillTree } from "./SkillTree";
 
 const COMBAT_CUES: Record<string, string> = {
   warrior: "In combat: red marks and ticks show Bleed. Red pulses show Retaliation; Execute strengthens hits against weakened enemies.",
@@ -17,12 +18,6 @@ export function CharacterScreen({ profile }: { profile: Profile }) {
   const crown = ashenCrownAt(profile.ashenKing?.highestClearedTier ?? 0);
   return (
     <>
-      <section className="panel stack">
-        <div className="panel-title">Your classes</div>
-        <div className="small muted">
-          One character, two learned classes. Character Level is shared; each class has its own Class Mastery.
-        </div>
-      </section>
       <ClassCard profile={profile} classId={c.activeClassId} role="Active" queued={false} />
       <ClassCard profile={profile} classId={c.alternateClassId} role="Alternate" queued={queuedClass === c.alternateClassId} />
       {crown && (
@@ -67,6 +62,8 @@ function ClassCard({ profile, classId, role, queued }: { profile: Profile; class
   const rank = progress.level;
   const next = nextMilestone(content, classId, rank);
   const promotion = promotionCleared(profile, classId) ? content.promotions.get(classId) : undefined;
+  const tree = content.talentTrees.get(classId);
+  const [treeOpen, setTreeOpen] = useState(false);
   return (
     <section
       className="panel class-card"
@@ -75,15 +72,14 @@ function ClassCard({ profile, classId, role, queued }: { profile: Profile; class
       style={role === "Active" ? { borderColor: "rgba(124,200,98,0.5)" } : undefined}
     >
       <div className="class-head">
-        <div className="class-art production-class-art">
-          <SpriteImage name={cls.sprite} profile={profile} portrait />
+        <div className="class-art compact-class-art">
+          <SpriteImage name={cls.sprite} profile={profile} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="row spread">
             <h2 style={{ fontSize: 20 }}>{cls.name}</h2>
             <span className={`tag ${role === "Active" ? "gold" : ""}`}>{role}</span>
           </div>
-          <div className="small muted">{cls.tagline}</div>
           <div className="row small" style={{ marginTop: 4, color: "var(--green-bright)", fontWeight: 700 }}>
             Mastery {rank} / {progress.maxLevel}
           </div>
@@ -93,13 +89,20 @@ function ClassCard({ profile, classId, role, queued }: { profile: Profile; class
           </div>
         </div>
       </div>
-      <div className="chips">
-        {cls.identity.map((t) => (
-          <span key={t} className="tag">
-            {t}
-          </span>
-        ))}
+      {promotion && <div className="small gold">{promotion.name} promotion · +{pct(promotion.attackBp)} Attack</div>}
+      <div className={role === "Alternate" && tree ? "class-actions" : ""}>
+        {tree && <button className="btn block" aria-label={`${cls.name} skill tree`} onClick={() => setTreeOpen(true)}>Skill tree</button>}
+        {role === "Alternate" && (
+          <button className="btn block" disabled={queued} onClick={() => session.dispatch({ type: "setActiveClass", classId })}>
+            {queued ? "Switch queued" : `Make ${cls.name} active`}
+          </button>
+        )}
       </div>
+      {tree && treeOpen && <SkillTree profile={profile} tree={tree} rank={rank} onClose={() => setTreeOpen(false)} />}
+      <details className="menu-disclosure">
+        <summary>Techniques & combat effects</summary>
+        <div className="chips">{cls.identity.map(tag => <span key={tag} className="tag">{tag}</span>)}</div>
+        <p className="small muted">{cls.tagline}</p>
       {next && (
         <div className="small">
           <span className="muted">Next technique at M{next.unlockRank}: </span>
@@ -107,17 +110,9 @@ function ClassCard({ profile, classId, role, queued }: { profile: Profile; class
         </div>
       )}
       <TechniqueList classId={classId} rank={rank} nextId={next?.id ?? null} />
-      {promotion && <div className="small gold">{promotion.name} promotion · +{pct(promotion.attackBp)} Attack</div>}
       <div className="small muted">{COMBAT_CUES[classId]} Techniques become available at the Mastery ranks shown above.</div>
-      {role === "Alternate" && (
-        <button
-          className="btn block"
-          disabled={queued}
-          onClick={() => session.dispatch({ type: "setActiveClass", classId })}
-        >
-          {queued ? "Switch queued — after this fight" : `Make ${cls.name} active`}
-        </button>
-      )}
+      </details>
     </section>
   );
 }
+import { useState } from "react";

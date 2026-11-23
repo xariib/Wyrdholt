@@ -27,11 +27,16 @@ export class ProductionMotion {
     this.durations = attackDurations(this.actor.animations.attack, interval);
     this.impactSeen = false; this.impactUntil = 0; this.attackSerial++;
   }
-  /** A prepared log owns visual cadence; never queue this behind an obsolete reaction. */
-  scheduledAttack(now: number, interval: number): void {
-    if (this.pose === "death") return;
+  /** Start a logged wind-up unless a deliberately slower full-body trip is still playing. */
+  scheduledAttack(now: number, interval: number): boolean {
+    if (this.pose === "death") return false;
+    // Fast hits still resolve on the log. Do not restart an unfinished full-body
+    // unarmed trip for each one, which would snap the hero back into anticipation.
+    if (this.actor.animations.attack.min_cycle_ms && this.pose === "attack"
+      && now < this.start + this.durations.reduce((sum, ms) => sum + ms, 0)) return false;
     this.pose = "idle"; this.pendingHit = null; this.pendingAttack = null;
     this.attack(now, interval);
+    return true;
   }
   crit(): void {
     this.critical = true;

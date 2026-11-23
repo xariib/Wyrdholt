@@ -5,17 +5,23 @@ import { UNARMED_ATTACK, unarmedApproach } from "../src/render/characterMotion";
 import { validateArt } from "../src/art/types";
 
 describe("approved Darkwood presentation", () => {
-  it.each([350, 500, 714])("finishes a critical unarmed recovery before the next %d ms attack", interval => {
+  it.each([350, 500, 714])("keeps a readable unarmed trip at %d ms hit cadence", interval => {
     const m = new ProductionMotion({ ...actorPack.monk!, animations: { ...actorPack.monk!.animations, attack: UNARMED_ATTACK } }, true);
     m.scheduledAttack(0, interval);
     const windup = m.windupMs;
     m.sample(windup); m.crit();
-    expect(m.attackTiming.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(interval);
+    const cycle = m.attackTiming.reduce((a, b) => a + b, 0);
+    expect(cycle).toBe(960);
+    m.scheduledAttack(interval, interval);
+    expect(m.start).toBe(0);
+    expect(m.attackSerial).toBe(1);
     const frames = new Set([0]);
-    for (let t = windup; t < interval; t += 10) frames.add(m.sample(t).index);
+    for (let t = windup; t < cycle; t += 10) frames.add(m.sample(t).index);
     expect([...frames]).toEqual([0, 1, 2, 3]);
-    expect(unarmedApproach(100, interval, m.attackTiming)).toBe(0);
-    expect(m.sample(interval).pose).toBe("idle");
+    expect(unarmedApproach(100, cycle, m.attackTiming)).toBe(0);
+    expect(m.sample(cycle).pose).toBe("idle");
+    m.scheduledAttack(cycle, interval);
+    expect(m.attackSerial).toBe(2);
   });
   it("finishes every bare-handed pose and a smooth return despite repeated incoming hits", () => {
     const m = new ProductionMotion({ ...actorPack.monk!, animations: { ...actorPack.monk!.animations, attack: UNARMED_ATTACK } }, true);

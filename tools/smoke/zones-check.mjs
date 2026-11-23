@@ -154,7 +154,7 @@ const firstItem = await inventory.locator(".inventory-item").first().boundingBox
 assert(firstItem && firstItem.y < page.viewportSize().height, "New drops should start within the first screen");
 await inventory.getByText(/duplicates? of equipped/).first().waitFor();
 await shot("06-review-new");
-await inventory.getByText("Inventory filters", { exact: true }).tap();
+await inventory.getByText(/^More filters/).tap();
 assert(await inventory.getByRole("checkbox", { name: "Only NEW" }).isChecked());
 await inventory.getByLabel("Rarity", { exact: true }).selectOption("uncommon");
 const gearCard = inventory.locator(".inventory-item").filter({ has: page.locator(".delta-up") }).first();

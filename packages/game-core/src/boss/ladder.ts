@@ -3,13 +3,15 @@ import { applyPendingBuild, leaveCurrentRun, offlineFallback, startRun } from ".
 import type { ContentIndex } from "../content";
 import { masteryRank } from "../character/progression";
 import type { BossEncounterSetup } from "../encounter/budget";
+import { createInstance } from "../items/inventory";
 import { canonicalJson } from "../hash/canonical";
 import { sha256Hex } from "../hash/sha256";
 import type { BossAttempt, BossProgress, BossResult, Profile } from "../profile/types";
 import { checkRecordCompatibility, executeRecord, ReplayMismatchError, type ExecutedFight } from "../replay/replay";
-import { BOSS_SAVE_SCHEMA_VERSION, LONG_TERM_SAVE_SCHEMA_VERSION } from "../rules/version";
+import { grantRewards } from "../progression/rewards";
+import { BOSS_SAVE_SCHEMA_VERSION, LONG_TERM_SAVE_SCHEMA_VERSION, TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION } from "../rules/version";
 import { createBossFightRecord } from "./attempt";
-import { ASHEN_KING_ID, activeBossAttempt, bossProgress, seasonTierOpenAt } from "./progress";
+import { ASHEN_KING_ID, activeBossAttempt, bossProgress, huntWeekAt, seasonTierOpenAt } from "./progress";
 
 export interface PreparedBossFight extends ExecutedFight<BossEncounterSetup> {
   key: string;
@@ -40,7 +42,8 @@ export function prepareBossFight(
 
 export function startBossAttempt(profile: Profile, content: ContentIndex, tier: number, autoPush: boolean, bossId = ASHEN_KING_ID, atMs = 0): string | null {
   const boss = content.soloBosses.get(bossId);
-  if (!boss || (bossId !== ASHEN_KING_ID && !bossId.startsWith("trial_") && !content.seasons.has(bossId))) return "Unknown challenge.";
+  const hunt = content.hunts.get(bossId);
+  if (!boss || (bossId !== ASHEN_KING_ID && !bossId.startsWith("trial_") && !content.seasons.has(bossId) && !hunt)) return "Unknown challenge.";
   const progress = bossProgress(profile, bossId);
   if (!profile.adventure.zones[boss.unlockZoneId]?.cleared) return `Clear ${content.zone(boss.unlockZoneId).name} to challenge ${boss.name}.`;
   if (activeBossAttempt(profile)) return "A challenge attempt is already in progress.";
@@ -58,6 +61,12 @@ export function startBossAttempt(profile: Profile, content: ContentIndex, tier: 
   }
   const season = content.seasons.get(bossId);
   const time = Math.max(atMs, profile.clock.lastSettledWallMs);
+  const huntWeek = hunt ? huntWeekAt(time) : undefined;
+  if (hunt && (huntWeek === undefined || !Number.isSafeInteger(time) || huntWeek < 0)) return "The Hunt clock is unavailable.";
+  if (huntWeek !== undefined && ((progress?.huntCompletedWeek ?? -1) >= huntWeek || (progress?.huntWeek ?? -1) > huntWeek)) {
+    return "This Hunt has already been claimed for the week.";
+  }
+  if (hunt && (!hunt.rewards[classId] || !Number.isSafeInteger(profile.inventory.nextInstanceId + 1))) return "The Hunt reward cannot be added.";
   if (season && (!Number.isSafeInteger(time) || time < seasonTierOpenAt(season, tier) || time >= season.endMs)) {
     return "This seasonal tier is currently closed.";
   }
@@ -72,8 +81,9 @@ export function startBossAttempt(profile: Profile, content: ContentIndex, tier: 
   } else {
     const longTerm = profile.longTerm ??= { version: 1, ladders: {} };
     longTerm.ladders[bossId] = state;
-    profile.schema = LONG_TERM_SAVE_SCHEMA_VERSION;
+    profile.schema = Math.max(profile.schema, hunt ? TALENTS_AND_HUNTS_SAVE_SCHEMA_VERSION : LONG_TERM_SAVE_SCHEMA_VERSION);
   }
+  if (huntWeek !== undefined) state.huntWeek = huntWeek;
   beginAttempt(profile, content, state, bossId, tier, autoPush);
   return null;
 }
@@ -117,7 +127,15 @@ export function advanceBoss(profile: Profile, content: ContentIndex, deltaMs: nu
       profile.stats.fights += 1;
       if (outcome === "victory") {
         profile.stats.victories += 1;
-        state.highestClearedTier = tier;
+        const hunt = content.hunts.get(bossId);
+        if (!hunt) state.highestClearedTier = tier;
+        else if (state.huntWeek !== undefined && (state.huntCompletedWeek ?? -1) < state.huntWeek) {
+          const classId = attempt.record.build.classId;
+          grantRewards(profile, content, { ...hunt, gold: Math.min(hunt.gold, Number.MAX_SAFE_INTEGER - profile.gold) }, classId);
+          result.huntRewardId = createInstance(profile, hunt.rewards[classId]!, { isNew: true, provenance: { source: bossId } }).id;
+          profile.stats.itemsFound += 1;
+          state.huntCompletedWeek = state.huntWeek;
+        }
       } else {
         profile.stats.defeats += 1;
       }

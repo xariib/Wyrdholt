@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { ASHEN_CROWN, ASHEN_KING_ID, activeBossAttempt, ashenCrownAt, type Profile } from "@emberbound/game-core";
 import { session } from "../../game/session";
+import { registerBackAction } from "../../platform/backNavigation";
 import { Bar } from "../components/Common";
 import { CombatView } from "../components/CombatView";
 import { bossResultLabel, hp, pct } from "../format";
 import { LongTermChallenges } from "./LongTermChallenges";
+import { Hunts } from "./Hunts";
+
+const SECTIONS = [["boss", "Solo boss"], ["hunts", "Hunts"], ["trials", "Trials"], ["seasons", "Seasons"]] as const;
+type Section = typeof SECTIONS[number][0];
 
 export function ChallengesScreen({ profile, active, onReviewGear }: { profile: Profile; active: boolean; onReviewGear: () => void }) {
   const [autoPush, setAutoPush] = useState(false);
@@ -15,6 +20,22 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
   const unlocked = profile.adventure.zones[zone.id]?.cleared === true;
   const progress = profile.ashenKing;
   const currentAttempt = activeBossAttempt(profile);
+  const currentBossId = currentAttempt?.record.encounter.bossId;
+  const [sections, setSections] = useState<Section[]>([currentBossId && session.content.hunts.has(currentBossId) ? "hunts" : "boss"]);
+  const section = sections.at(-1)!;
+  function selectSection(next: Section) {
+    setSections(previous => previous.at(-1) === next ? previous : [...previous.slice(-15), next]);
+  }
+  useEffect(() => registerBackAction(() => {
+    if (sections.length <= 1) return false;
+    setSections(previous => previous.slice(0, -1));
+    return true;
+  }, 1), [sections.length]);
+  useEffect(() => {
+    if (currentBossId) selectSection(currentBossId === ASHEN_KING_ID ? "boss"
+      : session.content.hunts.has(currentBossId) ? "hunts"
+      : [...session.content.promotions.values()].some(path => path.boss.id === currentBossId) ? "trials" : "seasons");
+  }, [currentBossId]);
   const attempt = progress?.active;
   const result = progress?.lastResult;
   const cleared = progress?.highestClearedTier ?? 0;
@@ -40,7 +61,12 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
 
   return (
     <>
+      <div className="menu-sections" role="group" aria-label="Challenge categories">
+        {SECTIONS.map(([id, label]) =>
+          <button key={id} className="btn" aria-pressed={section === id} onClick={() => selectSection(id)}>{label}</button>)}
+      </div>
       {currentAttempt && currentAttempt !== attempt && <LongTermCombat profile={profile} active={active} attempt={currentAttempt} />}
+      {section === "boss" && <>
       <section className="panel stack" aria-label="Ashen King ladder">
         <div className="row spread">
           <h2>{boss.name}</h2>
@@ -101,16 +127,17 @@ export function ChallengesScreen({ profile, active, onReviewGear }: { profile: P
         <div className="row spread"><div className="panel-title">{ASHEN_CROWN.name}</div><span className="tag gold">Artifact</span></div>
         <div className="small">{crown ? `Rank ${crown.rank} · +${pct(crown.attackBp)} Attack` : "Unlocks at Tier 1"}</div>
         <div className="small muted">A permanent Attack bonus for both classes. Its rank increases as you clear the ladder.</div>
-        <div className="list">
+        <details className="menu-disclosure"><summary>Artifact milestones</summary><div className="list">
           {ASHEN_CROWN.milestones.map(m => (
             <div key={m.tier} className="list-item row spread small">
               <span>Tier {m.tier} · Rank {m.rank}</span><span className={cleared >= m.tier ? "" : "muted"}>+{pct(m.attackBp)} Attack</span>
             </div>
           ))}
-        </div>
+        </div></details>
       </section>
-
-      <LongTermChallenges profile={profile} active={active} />
+      </>}
+      {section === "hunts" && (!currentBossId || !session.content.hunts.has(currentBossId)) && <Hunts profile={profile} />}
+      {(section === "trials" || section === "seasons") && <LongTermChallenges profile={profile} active={active} section={section} />}
     </>
   );
 }
@@ -128,7 +155,7 @@ function LongTermCombat({ profile, active, attempt }: { profile: Profile; active
     <section className="adventure-world" aria-label={`${boss.name} combat`}>
       <div ref={combatRef} className="combat-frame boss-combat" data-background={content.zone(boss.unlockZoneId).background}>
         <CombatView active={active} heroSprite={content.classDef(attempt.record.build.classId).sprite} background={content.zone(boss.unlockZoneId).background} />
-        <div className="combat-banner boss">{boss.name} · Tier {tier}</div>
+        <div className="combat-banner boss">{boss.name}{content.hunts.has(bossId) ? "" : ` · Tier ${tier}`}</div>
       </div>
       <div className="combat-names"><span className="hero-name">{profile.character.name}</span><span>{boss.name}</span></div>
       <p className="small muted">Combat runs automatically. Adventure farming resumes after the attempt.</p>

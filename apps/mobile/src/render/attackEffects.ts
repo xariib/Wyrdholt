@@ -60,6 +60,20 @@ export function drawAttackCharge(g: Graphics, p: number, style: AttackStyle, poi
   pixel(g, x - 1, y - 1, 2, core, p);
 }
 
+/** A short smear between the actual previous and current blade-tip positions. */
+export function drawBladeTrail(g: Graphics, previous: EffectPoint, tip: EffectPoint, opacity: number): void {
+  g.clear();
+  if (Math.hypot(tip[0] - previous[0], tip[1] - previous[1]) < 1) return;
+  const [color, core] = PALETTES.slash;
+  for (let i = 0; i < 8; i++) {
+    const t = i / 8;
+    const x = previous[0] + (tip[0] - previous[0]) * t;
+    const y = previous[1] + (tip[1] - previous[1]) * t;
+    pixel(g, x, y + 1, 2, color, opacity * t * .55);
+    pixel(g, x, y, 1, core, opacity * t);
+  }
+}
+
 /** Neutral travel trail: no critical/proc information is revealed before the logged HIT. */
 export function drawAttackTrail(g: Graphics, p: number, style: AttackStyle, from: EffectPoint, to: EffectPoint): void {
   g.clear();

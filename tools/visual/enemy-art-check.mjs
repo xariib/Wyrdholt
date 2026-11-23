@@ -78,10 +78,16 @@ try {
           for (const a of r.actors.values()) if (!a.isHero) {
             if (pose === 'attack') { a.motion.scheduledAttack(now - 180, 1000); a.targetId = 'hero'; }
             if (pose === 'hit') a.motion.hit(now - 60, false);
-            if (pose === 'death') { a.motion.death(now - 300); a.alive = false; }
+            if (pose === 'death') r.apply({ type: 'death', actor: a.id, t: 0 }, now - 300, false);
           }
           r.animate(now); r.app.renderer.render(r.app.stage);
-          return { ...r.presentationSnapshot(), memory: r.info().artDecodedBytes };
+          const dying = pose === 'death' ? [...r.actors.values()].filter(a => !a.isHero).map(a => ({
+            alpha: a.root.alpha, hud: a.hud.visible, art: a.tex.asset.id,
+          })) : [];
+          const snapshot = r.presentationSnapshot();
+          if (dying.length) r.animate(now + 1000);
+          const cleared = dying.length ? [...r.actors.values()].filter(a => !a.isHero).map(a => a.root.alpha) : [];
+          return { ...snapshot, memory: r.info().artDecodedBytes, dying, cleared };
         }, { scene, pose });
         for (const a of state.actors) {
           assert(a.production, `${a.name}: legacy art`); assert.deepEqual(a.scale, [1, 1]);
@@ -96,6 +102,12 @@ try {
           assert(Math.abs(a.barX - b.barX) >= (a.barWidth + b.barWidth) / 2 + 2, `${width}/${count}/${a.name}/${b.name}: overlapping health bars`);
         }
         assert(state.memory <= 32 * 1024 * 1024);
+        for (const dying of state.dying) {
+          assert(dying.alpha > 0 && dying.alpha < 0.2, 'Defeated enemy should be fading away');
+          assert.equal(dying.hud, false, 'Defeated enemy retained its health bar');
+          assert(dying.art.endsWith('/hit'), 'Defeated enemy used a rotated corpse illustration');
+        }
+        assert(state.cleared.every(alpha => alpha === 0), 'Corpse remained after defeat');
         compositions.push({ width, hero, enemies, pose, decodedBytes: state.memory });
       }
       if (width === 390 && count === 3 && [0, 6, 11, 14].includes(index)) {
@@ -105,7 +117,55 @@ try {
     }
     }
   }
+  // The reported three-enemy formation: recoil, fade, then no lingering corpses.
+  const deaths = [];
+  for (const width of [320, 390, 768]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const scene = { hero: 'mage', enemies: ['wolf', 'boar_elite', 'wolf'], pose: 'idle', effect: 'none', timeMs: 0 };
+    await page.evaluate(scene => window.__emberRenderer.renderPreview(scene), scene);
+    // Texture-ready callbacks reconstruct DEV previews; settle every pending pose
+    // before advancing a synthetic clock across separate browser calls.
+    await page.waitForFunction(() => {
+      const bank = window.__emberRenderer.sprites;
+      return [...bank.pending].every(id => bank.optional(id)?.asset);
+    });
+    for (const elapsed of [0, 60, 120, 210, 300, 360, 1000]) {
+      const state = await page.evaluate(elapsed => {
+        const r = window.__emberRenderer;
+        if (elapsed === 0) for (const a of r.actors.values()) if (!a.isHero) {
+          r.apply({ type: 'death', actor: a.id, t: 0 }, 10000, false);
+        }
+        r.animate(10000 + elapsed); r.app.renderer.render(r.app.stage);
+        return [...r.actors.values()].map(a => ({ id: a.id, alpha: a.root.alpha, hud: a.hud.visible,
+          scale: [a.body.scale.x, a.body.scale.y], ground: a.root.y === r.ground(), art: a.tex.asset.id }));
+      }, elapsed);
+      assert.equal(state[0].alpha, 1, 'Enemy defeat faded the hero');
+      assert.equal(state[0].hud, true, 'Enemy defeat hid the hero HUD');
+      for (const a of state.slice(1)) {
+        assert.equal(a.hud, false, `${width}/${elapsed}/${a.id}: dead enemy health bar`);
+        assert.equal(a.ground, true); assert.deepEqual(a.scale, [1, 1]);
+        assert(a.art.endsWith('/hit'));
+        if (elapsed <= 60) assert.equal(a.alpha, 1);
+        else if (elapsed < 360) assert(a.alpha > 0 && a.alpha < 1);
+        else assert.equal(a.alpha, 0);
+      }
+      deaths.push({ width, elapsed, actors: state });
+      if (width === 390) await page.locator('.combat-canvas').screenshot({ path: resolve(out, `defeat-${elapsed}ms.png`) });
+    }
+    // Reconstructed logs should settle historical deaths without replaying them.
+    const settled = await page.evaluate(() => {
+      const r = window.__emberRenderer;
+      for (const a of r.actors.values()) if (!a.isHero) r.apply({ type: 'death', actor: a.id, t: 0 }, 11000, true);
+      r.animate(11000);
+      return [...r.actors.values()].filter(a => !a.isHero).every(a => a.root.alpha === 0 && !a.hud.visible);
+    });
+    assert(settled, 'Historical deaths replayed on renderer reconstruction');
+    await page.evaluate(scene => window.__emberRenderer.renderPreview(scene), scene);
+    assert(await page.evaluate(() => [...window.__emberRenderer.actors.values()].every(a => a.root.alpha === 1 && a.hud.visible)),
+      'Next formation inherited faded sprites or hidden health bars');
+  }
   assert.deepEqual(errors, []);
-  writeFileSync(resolve(out, 'report.json'), JSON.stringify({ pixels, compositions }, null, 2));
-  console.log(`PASS: ${pixels.distinctEnemies} distinct enemies, ${pixels.frames} pixel frames, ${compositions.length} native-scale combat compositions; shared atlases and disposal verified.`);
+  writeFileSync(resolve(out, 'report.json'), JSON.stringify({ pixels, compositions, deaths }, null, 2));
+  console.log(`PASS: ${pixels.distinctEnemies} distinct enemies, ${pixels.frames} pixel frames, ${compositions.length} native-scale combat compositions; clean enemy defeat, historical deaths, new formations, shared atlases and disposal verified.`);
 } finally { await browser?.close(); await web.close(); }

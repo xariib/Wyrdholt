@@ -2,11 +2,12 @@ import { CopyControls } from "./GearCopies";
 import { InventorySheet, type InventorySelection } from "./Inventory";
 import { ForgeSheet } from "./Forge";
 import { SalvageConfirmation, BulkSalvageConfirmation } from "./Salvage";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ItemDef, SlotId } from "@emberbound/shared-types";
 import { canUseItem, findInstance, isFightActive, isItemLocked, previewSalvage, previewBulkSalvage, type BulkSalvageReceipt, type Profile, type SalvageReceipt } from "@emberbound/game-core";
 import { session } from "../../game/session";
-import { Sheet } from "../components/Common";
+import { MenuPages, Sheet } from "../components/Common";
+import { inventoryPage } from "../inventoryModel";
 import { ItemIcon, SpriteImage } from "../components/icons";
 import { buildSummary, classInventory, filterGearGroups, groupsForSlot, pickInstance, slotViews, statRows, type GearFilters, type ItemGroup } from "../gearModel";
 import { SLOT_LABELS, number, pct, rarityColor, rate } from "../format";
@@ -22,6 +23,8 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
 }) {
   const [inventory, setInventory] = useState<{ newOnly: boolean; key: number } | null>(null);
   const [forgeOpen, setForgeOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
   const content = session.content;
   const [openSlot, setOpenSlot] = useState<SlotId | null>(null);
   const [initialBase, setInitialBase] = useState<string | undefined>(undefined);
@@ -29,13 +32,14 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
   const slots = slotViews(profile, content);
   const summary = buildSummary(profile, content);
   const s = summary.stats.display;
-  const summaryRef = useRef<HTMLElement>(null);
   const equippedCount = slots.filter(slot => slot.equipped).length;
   const hasQueuedChanges = !!profile.pending?.activeClassId || Object.keys(profile.pending?.equipment ?? {}).length > 0;
 
   useEffect(() => {
     if (!focus) return;
     setForgeOpen(false);
+    setSummaryOpen(false);
+    setAppearanceOpen(false);
     if (focus === "new") {
       setOpenSlot(null);
       setInventory(current => ({ newOnly: true, key: (current?.key ?? 0) + 1 }));
@@ -53,19 +57,20 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
       <section className="hero-loadout stack">
         <div className="row spread">
           <h2 style={{ fontSize: 20 }}>Loadout</h2>
-          <button className="btn" onClick={() => setForgeOpen(true)}>Forge</button>
+          <span className="small muted">{content.classDef(profile.character.activeClassId).name}</span>
         </div>
         {!inventory && !forgeOpen && !openSlot && retryAction}
-        <button className="btn gold block inventory-entry" onClick={() => setInventory({ newOnly: false, key: 0 })}>Inventory · {number(classInventory(profile, content).length)} copies · {content.classDef(profile.character.activeClassId).name}</button>
+        <div className="gear-shortcuts">
+          <button className="btn gold inventory-entry" aria-label={`Inventory · ${number(classInventory(profile, content).length)} copies`} onClick={() => setInventory({ newOnly: false, key: 0 })}>Inventory · {number(classInventory(profile, content).length)}</button>
+          <button className="btn" onClick={() => setForgeOpen(true)}>Forge</button>
+          <button className="btn" onClick={() => setSummaryOpen(true)}>Build summary</button>
+          <button className="btn" onClick={() => setAppearanceOpen(true)}>Appearance</button>
+        </div>
         <div className="loadout-overview">
           <span className="small muted">{equippedCount} / {slots.length} slots equipped</span>
-          <button className="btn small ghost" onClick={() => summaryRef.current?.scrollIntoView({ block: "start" })}>Build summary ↓</button>
+          <span className="small muted">Tap a slot to compare</span>
         </div>
-        <p className="small muted">From Rare onward, mix Precision for critical hits, Tempo for faster attacks, and Bulwark for health and armor. Compare each piece's tradeoffs.</p>
-        <div className="loadout-stage">
-          <svg className="loadout-links" viewBox="0 0 360 320" preserveAspectRatio="none" aria-hidden="true"><g stroke="currentColor" fill="none"><path d="M95 55H145L180 85 M265 55H215L195 120 M95 155H145L165 160 M265 155H215L200 160 M95 265H145L180 230 M265 265H225L204 178"/></g></svg>
-          <div className="loadout-hero"><SpriteImage name={content.classDef(profile.character.activeClassId).sprite} profile={profile} portrait/><span>Lv. {profile.character.level} · {content.classDef(profile.character.activeClassId).name}</span></div>
-        <div className="loadout">
+        <div className="loadout compact-loadout">
           {slots.map((v) => {
             const item = v.equipped?.item ?? null;
             return (
@@ -73,6 +78,7 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
                 key={v.slot}
                 data-slot={v.slot}
                 className="slot-card"
+                aria-label={`${SLOT_LABELS[v.slot]}: ${item ? `${content.rarity(item.rarity).name} ${item.name}` : "Empty"}${v.newCount ? ` · ${v.newCount} new` : ""}`}
                 onClick={() => {
                   setInitialBase(undefined);
                   setInitialInstance(undefined);
@@ -84,11 +90,6 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
                 <span style={{ minWidth: 0 }}>
                   <div className="slot-label">{SLOT_LABELS[v.slot]}</div>
                   <div className="item-name">{item?.name ?? "Empty"}</div>
-                  {item && (
-                    <div className="rarity" style={{ color: rarityColor(content, item.rarity) }}>
-                      {content.rarity(item.rarity).name}
-                    </div>
-                  )}
                   {item?.effect && <div className="slot-effect" title={item.effect.name}>{item.effect.name}</div>}
                   {v.queued && <div className="queued-slot" title={v.queued.item.name}>Change queued</div>}
                   {v.equipped && isItemLocked(profile, v.equipped.instance.id) && <span className="tag locked">Locked</span>}
@@ -98,12 +99,17 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
             );
           })}
         </div>
-        </div>
       </section>
 
-      <section className="build-summary stack" ref={summaryRef} aria-label="Build summary">
+      {appearanceOpen && <Sheet label="Appearance" onClose={() => setAppearanceOpen(false)}>
+        <div className="row spread"><h2>Appearance</h2><button className="btn ghost sheet-close" aria-label="Close appearance" onClick={() => setAppearanceOpen(false)}>×</button></div>
+        <div className="gear-appearance"><SpriteImage name={content.classDef(profile.character.activeClassId).sprite} profile={profile} portrait /></div>
+        <p className="small muted">Lv. {profile.character.level} · {content.classDef(profile.character.activeClassId).name} · Current equipment</p>
+      </Sheet>}
+      {summaryOpen && <Sheet label="Build summary" onClose={() => setSummaryOpen(false)}>
+        <div className="row spread"><h2>Build summary</h2><button className="btn ghost sheet-close" aria-label="Close build summary" onClick={() => setSummaryOpen(false)}>×</button></div>
+      <section className="build-summary stack" aria-label="Build summary">
         <div className="build-summary-heading">
-          <h2 className="panel-title">Build summary</h2>
           <span className="small muted">{content.classDef(profile.character.activeClassId).name} · Current loadout</span>
         </div>
         <div className="stat-grid">
@@ -124,7 +130,7 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
           </div>
         )}
         <section className="active-effects" aria-label="Active effects">
-          <h3 className="small muted">Active effects</h3>
+          <details className="menu-disclosure"><summary>Class effects · {summary.classEffects.length}</summary>
           <ul className="active-effect-list class-effect-list" aria-label="Class effects">
             {summary.classEffects.map(effect => (
               <li key={effect.id} className="active-effect class-effect" data-source="class">
@@ -133,10 +139,8 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
               </li>
             ))}
           </ul>
-          <div className="gear-effects-heading">
-            <h3 className="small">Gear effects</h3>
-            <span className="small muted">{summary.activeEffects.length} active</span>
-          </div>
+          </details>
+          <details className="menu-disclosure"><summary>Gear effects · {summary.activeEffects.length} active</summary>
           {summary.activeEffects.length === 0 && <p className="small muted effects-empty">No gear effects equipped yet. Inspect gear in Inventory to find effects for your build.</p>}
           <ul className="active-effect-list" aria-label="Gear effects">
             {summary.activeEffects.map(effect => {
@@ -144,6 +148,7 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
               return (
                 <li key={effect.id} className="active-effect" data-source={effect.source}>
                   <button className="active-effect-source" aria-label={`Inspect ${effect.sourceLabel}`} onClick={() => {
+                    setSummaryOpen(false);
                     setInitialBase(effect.baseId);
                     setInitialInstance(undefined);
                     setOpenSlot(effect.slot);
@@ -160,8 +165,11 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
               );
             })}
           </ul>
+          </details>
         </section>
+        <details className="menu-disclosure"><summary>About build traits</summary><p className="small muted">Mix Precision for critical hits, Tempo for faster attacks, and Bulwark for health and armor. Compare each piece's tradeoffs.</p></details>
       </section>
+      </Sheet>}
 
       {inventory && <InventorySheet key={inventory.key} profile={profile} initiallyNewOnly={inventory.newOnly} retryAction={retryAction}
         onClose={() => setInventory(null)} renderComparison={(focus, selection, back, equipped) =>
@@ -199,7 +207,9 @@ function SlotSheet({ profile, slot, initialBaseId, initialInstanceId, selection,
   const content = session.content;
   const groups = groupsForSlot(profile, content, slot);
   const [filters, setFilters] = useState<GearFilters>({ search: "", rarityId: "", newOnly: false });
+  const [page, setPage] = useState(0);
   const visibleGroups = filterGearGroups(groups, filters);
+  const pagination = inventoryPage(visibleGroups, page, 6);
   const hasFilters = filters.search.trim() !== "" || filters.rarityId !== "" || filters.newOnly;
   const equipped = groups.find((g) => g.equippedHere) ?? null;
   const [selected, setSelected] = useState<string | null>(
@@ -232,7 +242,7 @@ function SlotSheet({ profile, slot, initialBaseId, initialInstanceId, selection,
   }, [candidate, profile, selectedInstance]);
 
   return (
-    <Sheet onClose={onClose} label="Equipment" scrollKey={bulkQuote ? "bulk-salvage" : salvage ? `salvage-${salvage.instanceId}` : selected}>
+    <Sheet onClose={onClose} label="Equipment" scrollKey={bulkQuote ? "bulk-salvage" : salvage ? `salvage-${salvage.instanceId}` : `${selected}-${pagination.page}`}>
       <div className="row spread">
         <h2 style={{ fontSize: 22 }}>{candidate && !candidate.equippedHere ? `Compare ${(SLOT_LABELS[slot] ?? slot).toLowerCase()}` : SLOT_LABELS[slot]}</h2>
         <button className="btn small ghost sheet-close" aria-label="Close equipment" onClick={onClose}>
@@ -260,7 +270,7 @@ function SlotSheet({ profile, slot, initialBaseId, initialInstanceId, selection,
           )}
         </div>
       )}
-      <section className="stack" aria-label="Bulk salvage selection">
+      {bulkIds.size > 0 && <section className="stack" aria-label="Bulk salvage selection">
         <p className="small">{bulkIds.size.toLocaleString()} copies selected for salvage. Select copies manually in Manage copies; selection stays across pages and item types{selection ? " and slots in Inventory" : " in this slot"}.</p>
         {selection && <p className="small">{selection.hiddenCount.toLocaleString()} selected copies outside current Inventory filters.</p>}
         <button className="btn gold block" disabled={!bulkIds.size} onClick={() => {
@@ -270,7 +280,7 @@ function SlotSheet({ profile, slot, initialBaseId, initialInstanceId, selection,
         }}>Review selected salvage</button>
         <button className="btn ghost block" disabled={!bulkIds.size} onClick={() => { setBulkIds(new Set()); setBulkError(""); }}>Clear salvage selection</button>
         {bulkError && <p role="alert">{bulkError}</p>}
-      </section>
+      </section>}
       {(group ?? equipped) && <CopyControls key={(group ?? equipped)!.baseId} profile={profile} slot={slot}
         group={(group ?? equipped)!} selectedInstance={selectedInstance}
         bulkIds={bulkIds} onToggleSalvage={id => setBulkIds(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next; })}
@@ -280,26 +290,27 @@ function SlotSheet({ profile, slot, initialBaseId, initialInstanceId, selection,
         <div className="gear-filters">
           <label className="gear-search">
             <span>Search gear</span>
-            <input type="search" value={filters.search} placeholder="Name, effect or build trait" onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
+            <input type="search" value={filters.search} placeholder="Name, effect or build trait" onChange={(e) => { setPage(0); setFilters({ ...filters, search: e.target.value }); }} />
           </label>
           <label>
             <span>Rarity</span>
-            <select aria-label="Rarity" value={filters.rarityId} onChange={(e) => setFilters({ ...filters, rarityId: e.target.value })}>
+            <select aria-label="Rarity" value={filters.rarityId} onChange={(e) => { setPage(0); setFilters({ ...filters, rarityId: e.target.value }); }}>
               <option value="">All rarities</option>
               {content.raritiesByOrder.map((rarity) => <option key={rarity.id} value={rarity.id}>{rarity.name}</option>)}
             </select>
           </label>
           <label className="gear-new-filter">
-            <input type="checkbox" checked={filters.newOnly} onChange={(e) => setFilters({ ...filters, newOnly: e.target.checked })} />
+            <input type="checkbox" checked={filters.newOnly} onChange={(e) => { setPage(0); setFilters({ ...filters, newOnly: e.target.checked }); }} />
             <span>Only NEW</span>
           </label>
-          {hasFilters && <button className="btn ghost gear-clear" onClick={() => setFilters({ search: "", rarityId: "", newOnly: false })}>Clear filters</button>}
+          {hasFilters && <button className="btn ghost gear-clear" onClick={() => { setPage(0); setFilters({ search: "", rarityId: "", newOnly: false }); }}>Clear filters</button>}
         </div>
         <div className="small muted gear-result-count" role="status">
           {visibleGroups.length} of {groups.length} item types · {number(visibleGroups.reduce((sum, g) => sum + g.ids.length, 0))} copies
         </div>
+      <MenuPages page={pagination.page} pages={pagination.pages} onChange={setPage} />
       <div className="list slot-inventory">
-        {visibleGroups.map((g) => (
+        {pagination.rows.map((g) => (
           <GroupRow key={g.baseId} profile={profile} group={g} selected={g.baseId === selected} onSelect={() => { setSelected(g.baseId); setSelectedInstance(undefined); }} />
         ))}
         {groups.length === 0 && <div className="small muted">No items for this slot yet.</div>}

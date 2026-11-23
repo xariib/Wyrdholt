@@ -47,9 +47,10 @@ async function storage(raw){return page.evaluate(async raw=>{const db=await new 
 async function profile(){const r=parseSave(await page.evaluate(()=>window.__ember.exportSave()));assert(r.ok);return r.profile;}
 const state=p=>({inventory:p.inventory,gold:p.gold,equipment:p.equipment,pending:p.pending,itemLocks:p.itemLocks,forge:p.forge,schema:p.schema});
 async function snapshot(name){const value=await profile();writeFileSync(join(out,name+'.json'),JSON.stringify(value,null,2)+'\n');return value;}
-async function inventory(){await page.getByRole('button',{name:/^Gear/}).last().click();await page.getByRole('button',{name:/^Inventory ·/}).click();return page.getByRole('dialog',{name:'Gear inventory',exact:true});}
+async function inventory(){await page.getByRole('button',{name:/^Gear/}).last().click();await page.getByRole('button',{name:/^Inventory ·/}).click();const sheet=page.getByRole('dialog',{name:'Gear inventory',exact:true});await sheet.getByText(/^More filters/).click();return sheet;}
 async function manage(sheet,base){const item=content.item(base);await sheet.getByLabel('Slot',{exact:true}).selectOption(item.slot);await sheet.getByLabel('Rarity',{exact:true}).selectOption(item.rarity);const back=sheet.getByRole('button',{name:'Back to inventory list',exact:true});if(await back.count())await back.click();await sheet.getByRole('button',{name:`Manage copies of ${item.name}`,exact:true}).click();}
-async function lock(sheet,id,locked){await sheet.getByRole('button',{name:`${locked?'Lock':'Unlock'} copy #${id}`,exact:true}).click();await expect(sheet.getByRole('status').filter({hasText:`Copy #${id} ${locked?'locked':'unlocked'} and saved.`})).toBeVisible();}
+async function revealCopy(sheet,id){const row=sheet.locator(`[data-instance-id="${id}"]`);const previous=sheet.getByRole('button',{name:'Previous copies',exact:true});while(!await row.count()&&await previous.count()&&await previous.isEnabled())await previous.click();while(!await row.count())await sheet.getByRole('button',{name:'Next copies',exact:true}).click();}
+async function lock(sheet,id,locked){await revealCopy(sheet,id);await sheet.getByRole('button',{name:`${locked?'Lock':'Unlock'} copy #${id}`,exact:true}).click();await expect(sheet.getByRole('status').filter({hasText:`Copy #${id} ${locked?'locked':'unlocked'} and saved.`})).toBeVisible();}
 function removed(before,after,ids,gold){assert.equal(after.gold,before.gold+gold);assert.deepEqual(after.inventory.instances,before.inventory.instances.filter(i=>!ids.includes(i.id)));assert.equal(after.inventory.nextInstanceId,before.inventory.nextInstanceId);for(const key of ['equipment','pending','itemLocks','forge','schema'])assert.deepEqual(after[key],before[key]);}
 try{
   const raw=serializeSave(p,Date.now());assert(parseSave(raw).ok);writeFileSync(join(out,'fixture.json'),raw+'\n');
@@ -64,6 +65,7 @@ try{
   await sheet.getByLabel('Only NEW',{exact:true}).check();
   await sheet.getByLabel('Search inventory',{exact:true}).fill(content.item(effect.baseId).effect.name);
   const effectCard=sheet.locator(`[data-base-id="${effect.baseId}"]`);
+  await effectCard.getByText('Stat changes & effects',{exact:true}).click();
   await expect(effectCard.getByRole('region',{name:'Differences from equipped gear'})).toContainText(`Gains ${content.item(effect.baseId).effect.name}`);
   await expect(effectCard.getByRole('button',{name:`Manage copies of ${content.item(effect.baseId).name}`,exact:true})).toBeVisible();
   await effectCard.getByRole('button',{name:`Compare ${content.item(effect.baseId).name}`,exact:true}).click();
@@ -107,7 +109,7 @@ try{
   const singleRetry=structuredClone(single);assert(!salvageItem(singleRetry,content,{instanceId:receipt.outputInstanceId,rulesVersion:singleQuote.salvage.rulesVersion,expectedGold:reward}).ok);assert.deepEqual(singleRetry,single);assert(fuse(singleRetry,content,FORGE_V1,input).repeated);assert.deepEqual(singleRetry,single);
   report.cases.push({step:'Forge-output/NEW/lock/unlock/single',output:receipt.outputInstanceId,reward,receiptPreservedAfterConsumption:true});
   await manage(sheet,starter.id);const ids=weapon.slice(-2).map(i=>i.id);
-  for(const id of ids)await sheet.getByRole('checkbox',{name:`Select for salvage copy #${id}`,exact:true}).check();
+  for(const id of ids){await revealCopy(sheet,id);await sheet.getByRole('checkbox',{name:`Select for salvage copy #${id}`,exact:true}).check();}
   await lock(sheet,ids[1],true);await sheet.getByLabel('Salvage eligibility',{exact:true}).selectOption('eligible');
   const staleBytes=await storage(),stale=await profile();await sheet.getByRole('button',{name:'Review selected salvage',exact:true}).click();await expect(sheet.getByRole('alert')).toContainText('Locked copies');assert.deepEqual(await storage(),staleBytes);assert.deepEqual(state(await profile()),state(stale));
   await expect(sheet.getByRole('region',{name:'Inventory salvage selection'}).getByRole('status')).toContainText('2 copies selected');

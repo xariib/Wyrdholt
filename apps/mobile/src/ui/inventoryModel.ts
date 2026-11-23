@@ -68,8 +68,8 @@ export function inventorySelectionCounts(ids: ReadonlySet<number>, visible: Inve
   return { total: ids.size, matching, hidden: ids.size - matching };
 }
 
-export function inventoryPage<T>(rows: T[], requested: number) {
-  const pages = Math.max(1, Math.ceil(rows.length / INVENTORY_PAGE_SIZE));
+export function inventoryPage<T>(rows: T[], requested: number, pageSize = INVENTORY_PAGE_SIZE) {
+  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
   const page = Math.max(0, Math.min(requested, pages - 1));
-  return { page, pages, rows: rows.slice(page * INVENTORY_PAGE_SIZE, (page + 1) * INVENTORY_PAGE_SIZE) };
+  return { page, pages, rows: rows.slice(page * pageSize, (page + 1) * pageSize) };
 }

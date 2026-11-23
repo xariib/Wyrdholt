@@ -131,6 +131,27 @@ function profileHash(profile: Profile, extra: unknown): string {
 
 export const SELF_TEST_CASES: readonly SelfTestCase[] = [
   {
+    id: "hunt-warrior-bloodsteel",
+    description: "A Warrior Hunt with Bloodsteel skills and specialist Epic gear settles offline",
+    run(content) {
+      const p = baseProfile(content, 901, "warrior", "mage");
+      const at = 1_795_392_000_000;
+      setLevel(content, p, 18);
+      setMastery(content, p, "warrior", 12);
+      zoneProgress(p, "greenfields").cleared = true;
+      equipNew(content, p, ["precision_iron_vow", "tempo_venom_grips_warrior", "bulwark_ironbark_mantle_warrior"]);
+      const chosen = applyCommand(p, content, { type: "setTalents", classId: "warrior",
+        talentIds: ["warrior_honed_edge", "warrior_find_weakness", "warrior_headsman"] }, { contentTimeMs: at });
+      if (!chosen.ok) throw new Error(chosen.error);
+      const started = applyCommand(p, content, { type: "startBoss", bossId: "hunt_brambleback", tier: 1, autoPush: false }, { contentTimeMs: at });
+      if (!started.ok) throw new Error(started.error);
+      const record = p.longTerm!.ladders.hunt_brambleback!.active!.record;
+      const replay = replayFight(content, record);
+      const summary = simulateOffline(p, content, replay.summary.durationMs, at);
+      return { hash: profileHash(p, { replay: replay.hash, summary }), detail: `${replay.summary.outcome}, ${summary.itemsFound} drop, ${summary.mastery} mastery XP` };
+    },
+  },
+  {
     id: "fight-c5-season-tier-1",
     description: "Mage M20 against the Hollow Frost season rule",
     run(content) {
