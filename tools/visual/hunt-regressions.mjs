@@ -43,7 +43,8 @@ try {
   for (const next of [weak, strong, weak]) {
     const beforeFrame = await page.evaluate(() => window.__emberRenderer.lastFrame.frameId);
     await page.getByRole('navigation').getByRole('button', { name: 'Menu', exact: true }).click();
-    await page.getByText('Restore backup', { exact: true }).click();
+    await page.getByRole('button', { name: 'Save management', exact: true }).click();
+    await page.getByRole('dialog', { name: 'Save management', exact: true }).getByText('Restore backup', { exact: true }).click();
     next.clock.lastSettledWallMs = Date.now();
     await page.getByLabel('Or paste backup text').fill(serializeSave(next, Date.now()));
     await page.getByRole('button', { name: 'Review backup text', exact: true }).click();
