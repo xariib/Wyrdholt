@@ -21,6 +21,11 @@ try {
     const context = await browser.newContext({ viewport: { width, height }, isMobile: true, hasTouch: true });
     try {
       const page = await context.newPage();
+      if (width === 390) {
+        const now = Date.now();
+        await page.clock.install({ time: now });
+        await page.clock.pauseAt(now + 1000);
+      }
       page.on('pageerror', error => report.errors.push(error.message));
       const profile = createProfile(content, { name: 'Menus', activeClassId: 'monk', alternateClassId: 'mage', masterSeed: 42, nowWallMs: Date.now() });
       profile.character.masteryXp.monk = content.masteryTotals(content.classDef('monk').masteryTrackId)[5];
@@ -105,6 +110,8 @@ try {
       if (height >= 568) await expect(page.getByRole('button', { name: 'Make Mage active', exact: true })).toBeInViewport();
       await page.getByRole('button', { name: 'Monk skill tree', exact: true }).click();
       const skills = page.getByRole('dialog', { name: 'Monk skill tree', exact: true });
+      await page.keyboard.press('Shift+Tab');
+      assert(await skills.evaluate(el => el.contains(document.activeElement)), 'Keyboard focus left the skill tree');
       await expect(skills).toContainText('2 of 2 points available');
       await skills.getByRole('button', { name: 'Centered Strike', exact: true }).click();
       await expect(skills.getByRole('button', { name: 'Spend 1 point' })).toBeDisabled();
@@ -112,7 +119,8 @@ try {
       await skills.getByRole('button', { name: 'Spend 1 point' }).click();
       await skills.getByRole('button', { name: 'Apply skills' }).click();
       await expect(skills.getByRole('status')).toHaveText('Skills applied.');
-      await skills.getByRole('button', { name: 'Close skill tree' }).click();
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('button', { name: 'Monk skill tree', exact: true })).toBeFocused();
       await page.locator('.class-card').first().getByText('Techniques & combat effects', { exact: true }).click();
       await expect(page.locator('.class-card').first().locator('.technique').first()).toBeVisible();
       await nav.getByRole('button', { name: 'Challenges', exact: true }).click();
@@ -138,6 +146,20 @@ try {
       await expect(page.locator('.encyclopedia-entry')).toHaveCount(1);
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Horizontal page overflow');
       assert(await page.locator('.encyclopedia-screen').evaluate(el => el.scrollWidth <= el.clientWidth), 'Horizontal menu overflow');
+      if (width === 390) {
+        await nav.getByRole('button', { name: 'Adventure', exact: true }).click();
+        await page.getByRole('button', { name: /^Push Greenfields$/ }).click();
+        await page.clock.runFor(content.snapshot.config.restMs + 32);
+        await nav.getByRole('button', { name: 'Character', exact: true }).click();
+        await page.getByRole('button', { name: 'Make Mage active', exact: true }).click();
+        await expect(page.getByRole('button', { name: 'Switch queued', exact: true })).toBeVisible();
+        await page.getByRole('button', { name: 'Monk skill tree', exact: true }).click();
+        await skills.getByRole('button', { name: 'Centered Strike', exact: true }).click();
+        for (let seconds = 0; seconds < 60 && await page.locator('[data-role="Active"][data-class="monk"]').count(); seconds++)
+          await page.clock.runFor(1000);
+        await expect(page.locator('[data-role="Active"][data-class="mage"]')).toBeVisible();
+        await expect(skills.getByRole('button', { name: 'Centered Strike', exact: true })).toHaveAttribute('aria-pressed', 'true');
+      }
       report.cases.push({ width, height, gearScroll: scroll, gearActions: true, retainedSelectionAndFilters: true, classes: true, challengeCategories: true, saveMenu: true, encyclopedia: true });
       console.log(`PASS ${width}×${height}: gear ${scroll}px scroll, inventory/copy pages, equip, classes, challenges, save menu and encyclopedia.`);
     } finally { await context.close(); }

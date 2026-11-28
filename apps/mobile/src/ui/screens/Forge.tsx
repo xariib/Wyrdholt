@@ -21,7 +21,7 @@ export function ForgeSheet({ profile, onClose, onCompare }: { profile: Profile; 
   const [error, setError] = useState(""); const working = useRef(false);
   const [page, setPage] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const recipe = FORGE_V1.recipes[rarity], index = FORGE_V1.rarities.indexOf(rarity), cap = forgeCeiling(profile, FORGE_V1);
+  const recipe = FORGE_V1.recipes[rarity], index = FORGE_V1.rarities.indexOf(rarity), cap = forgeCeiling(profile, FORGE_V1, DEV_TOOLS);
   const classItems = classInventory(profile, content), classIds = new Set(classItems.map(i => i.id));
   const eligible = eligibleForgeIds(profile, content, slot, rarity).filter(id => classIds.has(id)), valid = new Set(eligible);
   const selected = ids.filter(id => valid.has(id));

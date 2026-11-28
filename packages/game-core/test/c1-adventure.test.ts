@@ -9,7 +9,9 @@ import {
   characterLevelFromXp,
   createProfile,
   lootChanceScaleBp,
+  parseSave,
   rollLoot,
+  serializeSave,
   simulateOffline,
   stageReward,
   stepTotals,
@@ -102,6 +104,19 @@ describe("C1 progression tables", () => {
 });
 
 describe("C1 stage rewards", () => {
+  it("finishes a first clear at the gold and item ID limits with a writable save", () => {
+    const p = hero(content, 42, 30, 20, EPIC_SET);
+    p.gold = Number.MAX_SAFE_INTEGER - 2;
+    p.inventory.nextInstanceId = Number.MAX_SAFE_INTEGER;
+    const items = p.inventory.instances.length;
+    expect(applyCommand(p, content, { type: "startPush", zoneId: "greenfields" }, { contentTimeMs: 0 }).ok).toBe(true);
+    const events = advanceUntil(content, p, events => cleared(events).length > 0);
+    expect(cleared(events)[0]?.firstClear).toBe(true);
+    expect(p.adventure.lastResult?.totals.gold).toBe(2);
+    expect(p.gold).toBe(Number.MAX_SAFE_INTEGER);
+    expect(p.inventory.instances).toHaveLength(items);
+    expect(parseSave(serializeSave(p, 0)).ok).toBe(true);
+  });
   it("Elite stages multiply XP, gold and mastery; the Boss multiplies XP and gold by its own factor", () => {
     for (const zone of ["greenfields", "darkwood", "ashen_mountains"].map((id) => content.zone(id))) {
       const elite = zone.stages.find((s) => s.role === "elite")!;

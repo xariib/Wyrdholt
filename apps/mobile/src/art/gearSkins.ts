@@ -1,4 +1,4 @@
-import { canUseItem, type ContentIndex, type Profile } from "@emberbound/game-core";
+import { canUseItem, findInstance, type ContentIndex, type Profile } from "@emberbound/game-core";
 import type { ItemDef, SlotId } from "@emberbound/shared-types";
 import { namedGearDesign, type GearDesign } from "./gearDesigns";
 
@@ -57,7 +57,9 @@ export function equippedAppearance(profile: Profile, content: ContentIndex,
   const hero = isHeroClass(classId) ? classId : "monk";
   const slots: HeroAppearance["slots"] = {};
   for (const slot of GEAR_SLOTS) {
-    const instance = profile.inventory.instances.find(i => i.id === equipment[slot]);
+    const id = equipment[slot];
+    if (id === undefined) continue;
+    const instance = findInstance(profile, id);
     const item = instance && content.items.get(instance.baseId);
     if (!item || item.slot !== slot || !canUseItem(item, classId)) continue;
     slots[slot] = gearSkin(item, hero);

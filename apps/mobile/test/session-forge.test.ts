@@ -45,6 +45,14 @@ afterEach(async () => {
 });
 
 describe("Forge with the actual guarded session", () => {
+  it("uses the materials and recipe confirmed before the save task starts", async () => {
+    const { s, input } = await setup();
+    const confirmed = [...input.instanceIds];
+    const result = s.forge(input);
+    input.instanceIds.length = 0;
+    input.rarity = "epic";
+    expect(await result).toMatchObject({ ok: true, forge: { consumedIds: confirmed, rarity: "common" } });
+  });
   it("publishes only saved results, blocks duplicate/mutating commands, and waits on foreground", async () => {
     const { s, fs, input, before } = await setup();
     let release!: () => void; fs.pause = new Promise<void>(resolve => { release = resolve; });

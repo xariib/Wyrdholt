@@ -55,4 +55,13 @@ describe("attempt history", () => {
     expect(() => recordAttempt(p, content, boss, "online", 1)).not.toThrow();
     expect(attemptHistory(p, "darkwood")).toEqual([]);
   });
+  it("keeps recording earned progress when optional history contains malformed entries", () => {
+    const key = `${p.createdAtWallMs}-${p.masterSeed}`;
+    for (const value of [null, [], { [key]: "old" }, { [key]: { darkwood: {} } }, { [key]: { darkwood: [null, {}] } }]) {
+      localStorage.setItem("emberbound.attempts.v1", JSON.stringify(value));
+      expect(attemptHistory(p, "darkwood")).toEqual([]);
+      recordAttempt(p, content, boss, "online", 1);
+      expect(attemptHistory(p, "darkwood")).toHaveLength(1);
+    }
+  });
 });

@@ -3,7 +3,7 @@
  * Browser smoke test of the built app at portrait phone sizes (Chromium, touch emulation).
  * Early signal only — physical-device results decide pass/fail.
  *
- *   npm run build:web && npx vite preview --port 4173 (in apps/mobile)
+ *   npm run build:web:qa && npx vite preview --port 4173 (in apps/mobile)
  *   node tools/smoke/ui-smoke.mjs [baseUrl]
  */
 import { mkdirSync, writeFileSync } from "node:fs";

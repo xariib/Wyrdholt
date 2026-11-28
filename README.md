@@ -47,6 +47,7 @@ In the browser app terminal, set `$env:VITE_WYRDHOLT_ONLINE_PLAY = 'true'` and r
 
 ```sh
 npx playwright install chromium
+npm run build:web:qa
 npm run test:save:web
 ```
 
@@ -55,6 +56,8 @@ The tests serve the built game locally and use disposable browser contexts. They
 Run `node --import tsx tools/smoke/online-check.mjs` against a build made with `VITE_WYRDHOLT_ONLINE_PLAY=true` to check the local authority flow.
 
 ## Visual regression checks
+
+Use `npm run build:web:qa` for browser diagnostics that inspect the renderer or saved game. The development server also enables the DEV panel. `npm run build:web` creates the player build with developer commands and inspection hooks disabled.
 
 Menus use a compact six-slot Gear overview, separate build/appearance sheets,
 collapsed descriptions and category buttons in Challenges. Inventory and slot lists
@@ -137,7 +140,7 @@ disposable browser saves; evidence stays in ignored `tools/smoke/out/active-effe
 
 ## Mobile performance checks
 
-After `npm run build:web`, run `node tools/perf/combat-profile.mjs`. It serves the build locally and checks all four classes at 360 × 640 with six-times CPU throttling. The report records combat-art decoded bytes, health/status geometry rebuilds, HUD mutations, and renderer timings while Adventure is visible and hidden. Set `CHROMIUM_EXECUTABLE_PATH` to use an installed Chromium browser. Reports stay in ignored `tools/perf/out`.
+After `npm run build:web:qa`, run `node tools/perf/combat-profile.mjs`. It serves the build locally and checks all four classes at 360 × 640 with six-times CPU throttling. The report records combat-art decoded bytes, health/status geometry rebuilds, HUD mutations, and renderer timings while Adventure is visible and hidden. Set `CHROMIUM_EXECUTABLE_PATH` to use an installed Chromium browser. Reports stay in ignored `tools/perf/out`.
 
 For before/after comparisons, preserve the earlier build and pass its directory and a report name: `node tools/perf/combat-profile.mjs artifacts/performance/before-dist before`. Startup profiling is available through `node tools/perf/startup-profile.mjs http://127.0.0.1:4173/ --rate=6 --runs=3` against a running preview.
 

@@ -7,7 +7,7 @@
  * - Push in Darkwood and in Ashen Mountains renders the zone's scene and enemies
  * - a level-1 Push in Ashen fails and the result recommends safe Farm and keeps the same zone available to retry
  *
- *   npm run build:web && (cd apps/mobile && npx vite preview --port 4173)
+ *   npm run build:web:qa && (cd apps/mobile && npx vite preview --port 4173)
  *   node tools/smoke/zones-check.mjs [baseUrl]
  * Exits non-zero when a check fails. Screenshots: tools/smoke/out/zones-*.png
  */

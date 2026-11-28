@@ -32,12 +32,12 @@ export function Hunts({ profile }: { profile: Profile }) {
       const cleared = (state?.huntCompletedWeek ?? -1) >= week;
       const latest = state?.huntWeek === week ? state.lastResult : null;
       const won = latest?.huntRewardId === undefined ? undefined : findInstance(profile, latest.huntRewardId);
-      const reward = content.item(won?.baseId ?? rewards[classId]!);
+      const reward = won ? content.item(won.baseId) : cleared ? undefined : content.item(rewards[classId]!);
       return <article className="hunt-row stack" key={boss.id}>
         <div className="row spread"><h3>{boss.name}</h3>
           <span className="small muted">{cleared ? "Claimed" : locked ? zone.name : latest ? bossResultLabel(latest) : zone.name}</span>
         </div>
-        <p className="small"><b style={{ color: content.rarity(reward.rarity).color }}>{reward.name}</b></p>
+        <p className="small">{reward ? <b style={{ color: content.rarity(reward.rarity).color }}>{reward.name}</b> : "Weekly gear reward collected"}</p>
         <p className="small muted">{number(xp)} XP · {number(mastery)} Mastery XP · {number(gold)} Gold</p>
         <button className="btn block" disabled={locked || cleared || !!starting || !!activeBossAttempt(profile)} onClick={() => void start(boss.id)}>
           {locked ? `Clear ${zone.name}` : cleared ? "Reward earned this week" : starting === boss.id ? "Starting…" : latest ? "Retry Hunt" : "Start Hunt"}

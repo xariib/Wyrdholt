@@ -66,7 +66,7 @@ export function OfflineOverlay({
   const after = pushIndex >= 0 ? s.segments.slice(pushIndex + 1).filter((x) => x.mode !== "push") : [];
   const safeFarm = after.length > 0 ? { zoneId: after[after.length - 1]!.zoneId, mode: after[after.length - 1]!.mode, ms: after.reduce((a, x) => a + x.ms, 0) } : null;
   return (
-    <Modal onClose={() => session.dismissOffline()}>
+    <Modal label="Offline rewards" onClose={() => session.dismissOffline()}>
       <div>
         <h2 style={{ fontSize: 22 }}>While you were away…</h2>
         <div className="muted small">
@@ -248,7 +248,7 @@ export function RunResultOverlay({ result, profile, newCount, onReview, onRetry 
     onReview(focus);
   };
   return (
-    <Modal>
+    <Modal label={result.kind === "timeout" ? "Out of time" : "Defeated"}>
       <div>
         <h2 style={{ fontSize: 22 }}>{result.kind === "timeout" ? "Out of time" : "Defeated"}</h2>
         <div className="muted small">

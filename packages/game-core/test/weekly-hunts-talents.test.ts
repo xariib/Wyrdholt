@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { FORGE_V1 } from "@emberbound/game-content";
 import {
-  activeBossAttempt, applyCommand, bossProgress, cloneProfile, currentBuild, huntResetAt, huntWeekAt,
+  activeBossAttempt, applyCommand, bossProgress, cloneProfile, createInstance, currentBuild, fuse, huntResetAt, huntWeekAt,
   parseSave, prepareBossFight, replayFight, resolveHeroStats, rollLoot, serializeSave, simulateOffline,
 } from "@emberbound/game-core";
 import { content, newProfile, run, setLevel, setMastery } from "./helpers";
@@ -18,6 +19,23 @@ function reload(profile: ReturnType<typeof newProfile>) {
 }
 
 describe("weekly Hunts", () => {
+  it("reserves the final allocatable item ID for an active Hunt reward", () => {
+    const p = newProfile(888, "warrior", "ranger");
+    p.adventure.zones.greenfields!.cleared = true;
+    setLevel(p, 25);
+    setMastery(p, "warrior", 12);
+    p.gold = 500;
+    const instanceIds = Array.from({ length: 5 }, () => createInstance(p, "wayfarer_blade", { isNew: false }).id);
+    p.inventory.nextInstanceId = Number.MAX_SAFE_INTEGER - 1;
+    expect(start(p, sunday).ok).toBe(true);
+    const before = cloneProfile(p);
+    expect(fuse(p, content, FORGE_V1, { transactionId: 1, configVersion: FORGE_V1.version,
+      slot: "weapon", rarity: "common", instanceIds }).ok).toBe(false);
+    expect(p).toEqual(before);
+    const fight = prepareBossFight(content, activeBossAttempt(p)!, false)!;
+    simulateOffline(p, content, fight.summary.durationMs, sunday);
+    expect(bossProgress(reload(p), bramble)?.lastResult?.huntRewardId).toBe(Number.MAX_SAFE_INTEGER - 1);
+  });
   it("unlocks by region and pays one exclusive drop at the entry week's reset boundary", () => {
     const p = newProfile(888, "warrior", "ranger");
     expect(huntResetAt(huntWeekAt(sunday))).toBe(monday);

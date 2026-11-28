@@ -48,7 +48,8 @@ export function grantRewards(
   const cap = content.levelTotals[content.levelTotals.length - 1] ?? 0;
   character.xp = Math.min(cap, character.xp + reward.xp);
   character.level = characterLevelFromXp(content, character.xp);
-  profile.gold += reward.gold;
+  const gold = Math.min(reward.gold, Number.MAX_SAFE_INTEGER - profile.gold);
+  profile.gold += gold;
   const cls = content.classDef(masteryClassId);
   const masteryTotals = content.masteryTotals(cls.masteryTrackId);
   const masteryCap = masteryTotals[masteryTotals.length - 1] ?? 0;
@@ -58,7 +59,7 @@ export function grantRewards(
   );
   if (totals) {
     totals.xp += reward.xp;
-    totals.gold += reward.gold;
+    totals.gold += gold;
     totals.mastery += reward.mastery;
   }
   return character.level - before;

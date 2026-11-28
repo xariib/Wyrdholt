@@ -497,7 +497,7 @@ export function validateProfile(profile: Profile): string | null {
   if (!Number.isSafeInteger(profile.masterSeed)) return "seed";
   if (!isRecord(profile.character) || typeof profile.character.activeClassId !== "string") return "character";
   if (!Number.isSafeInteger(profile.gold) || profile.gold < 0) return "gold";
-  if (!Number.isSafeInteger(profile.inventory.nextInstanceId)) return "inventory";
+  if (!Number.isSafeInteger(profile.inventory.nextInstanceId) || profile.inventory.nextInstanceId < 1) return "inventory";
   if (!huntTalentClassesValid(profile) || !talentsValid(profile, profile.character.talents)
     || !talentsValid(profile, profile.pending?.talents)) return "talents";
   let last = 0;

@@ -33,6 +33,23 @@ beforeEach(() => { files.clear(); vi.useFakeTimers(); vi.setSystemTime(180000000
 afterEach(async () => { for (const s of sessions.splice(0)) { s.handleBackground(); await s.saveNow(); } vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe("session lifecycle races and persistence", () => {
+  it("preserves the whole absence when pause arrives after the last frame", async () => {
+    const s = await fresh();
+    const original = cloneProfile(s.profile!);
+    vi.setSystemTime(Date.now() + 5 * 60_000);
+    s.handleBackground();
+    vi.setSystemTime(Date.now() + 2 * 60_000);
+    s.handleBackground();
+    const release = delayCatchUp();
+    const resume = s.handleForeground();
+    release();
+    await resume;
+    const reference = cloneProfile(original);
+    simulateOffline(reference, s.content, 7 * 60_000, Date.now());
+    expect(s.profile!.clock.simulatedMs).toBe(reference.clock.simulatedMs);
+    expect(s.profile!.gold).toBe(reference.gold);
+    expect(s.profile!.inventory).toEqual(reference.inventory);
+  });
   it.each(["live frame", "background"])("does not replay settled offline time after a clock rollback during %s", async (boundary) => {
     const s = await fresh();
     const settledAt = Date.now();

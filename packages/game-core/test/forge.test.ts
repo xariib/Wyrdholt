@@ -13,6 +13,16 @@ function setup(rarity = "common", slot = "weapon") {
 }
 function rejected(s: ReturnType<typeof setup>) { const before = cloneProfile(s.p); expect(fuse(s.p, content, FORGE_V1, s.input, true).ok).toBe(false); expect(s.p).toEqual(before); }
 describe("Forge V1 authoritative transaction", () => {
+  it("requires a zone clear in player builds even when a test save has the Forge unlocked", () => {
+    const { p, input } = setup();
+    const configured = { ...input, mode: "configured" as const };
+    const before = cloneProfile(p);
+    expect(forgeCeiling(p, FORGE_V1)).toBe(-1);
+    expect(fuse(p, content, FORGE_V1, configured).ok).toBe(false);
+    expect(p).toEqual(before);
+    p.adventure.zones.greenfields!.cleared = true;
+    expect(fuse(p, content, FORGE_V1, configured).ok).toBe(true);
+  });
   it.each(["common", "uncommon", "rare", "epic"])("valid %s recipe consumes exact inputs, Gold once and creates +1", rarity => {
     const { p, input } = setup(rarity); const expectedId = p.inventory.nextInstanceId;
     const spare = createInstance(p, content.item(p.inventory.instances.at(-1)!.baseId).id, { isNew: false });
@@ -52,8 +62,26 @@ describe("Forge V1 authoritative transaction", () => {
   it.each(["common", "uncommon", "rare"])("forced critical %s gives +2", rarity => { const { p, input } = setup(rarity); const r = fuse(p, content, FORGE_V1, { ...input, mode: "critical" }, true); expect(r.ok && r.forge.critical).toBe(true); expect(r.ok && r.forge.outputRarity).toBe(FORGE_V1.rarities[FORGE_V1.rarities.indexOf(rarity) + 2]); });
   it("caps Epic at Legendary; Legendary cannot fuse", () => { const { p, input } = setup("epic"); const r = fuse(p, content, FORGE_V1, { ...input, mode: "critical" }, true); expect(r.ok && r.forge.outputRarity).toBe("legendary"); expect(r.ok && r.forge.critical).toBe(false); rejected(setup("legendary")); });
   it("uses progression clears and caps critical at unlocked output", () => { const s = setup("uncommon"); delete s.p.forge; expect(forgeCeiling(s.p, FORGE_V1)).toBe(-1); rejected(s); s.p.adventure.zones.greenfields!.cleared = true; expect(forgeCeiling(s.p, FORGE_V1)).toBe(2); const r = fuse(s.p, content, FORGE_V1, { ...s.input, mode: "critical" }, true); expect(r.ok && r.forge.outputRarity).toBe("rare"); expect(r.ok && r.forge.critical).toBe(false); s.p.adventure.zones.darkwood!.cleared = true; expect(forgeCeiling(s.p, FORGE_V1)).toBe(3); s.p.adventure.zones.ashen_mountains!.cleared = true; expect(forgeCeiling(s.p, FORGE_V1)).toBe(4); });
-  it("configured outcome and PRNG replay are deterministic", () => { const a = setup("rare"), b = cloneProfile(a.p); const input = { ...a.input, mode: "configured" as const }; expect(fuse(a.p, content, FORGE_V1, input)).toEqual(fuse(b, content, FORGE_V1, { ...input, instanceIds: [...input.instanceIds].reverse() })); expect(a.p).toEqual(b); });
-  it("configured 100% and 0% test odds follow the authoritative PRNG path", () => { for (const bp of [0, 10000]) { const s = setup(); const cfg = JSON.parse(JSON.stringify(FORGE_V1)); cfg.recipes.common.criticalBp = bp; const r = fuse(s.p, content, cfg, { ...s.input, mode: "configured" }); expect(r.ok && r.forge.critical).toBe(bp === 10000); } });
+  it("configured outcome and PRNG replay are deterministic", () => {
+    const a = setup("rare");
+    a.p.adventure.zones.darkwood!.cleared = true;
+    const b = cloneProfile(a.p);
+    const input = { ...a.input, mode: "configured" as const };
+    const result = fuse(a.p, content, FORGE_V1, input);
+    expect(result.ok).toBe(true);
+    expect(result).toEqual(fuse(b, content, FORGE_V1, { ...input, instanceIds: [...input.instanceIds].reverse() }));
+    expect(a.p).toEqual(b);
+  });
+  it("configured 100% and 0% test odds follow the authoritative PRNG path", () => {
+    for (const bp of [0, 10000]) {
+      const s = setup();
+      s.p.adventure.zones.greenfields!.cleared = true;
+      const cfg = structuredClone(FORGE_V1);
+      cfg.recipes.common!.criticalBp = bp;
+      const r = fuse(s.p, content, cfg, { ...s.input, mode: "configured" });
+      expect(r.ok && r.forge.critical).toBe(bp === 10000);
+    }
+  });
   it("rejects forced production outcomes, future tx, stale config and missing output", () => { const s = setup(); expect(fuse(s.p, content, FORGE_V1, s.input).ok).toBe(false); s.input.transactionId = 2; rejected(s); s.input.transactionId = 1; s.input.configVersion = "old"; rejected(s); const t = setup(); const snap = { ...CONTENT, items: CONTENT.items.filter(i => i.rarity !== "uncommon") }; const before = cloneProfile(t.p); expect(fuse(t.p, new ContentIndex(snap), FORGE_V1, t.input, true).ok).toBe(false); expect(t.p).toEqual(before); });
   it("schema1 remains byte-compatible; Forge schema2 round trips and deduplicates", () => { const old = newProfile(); expect(JSON.parse(serializeSave(old, 1)).schema).toBe(1); expect(parseSave(serializeSave(old, 1)).ok).toBe(true); const s = setup(); const result = fuse(s.p, content, FORGE_V1, s.input, true); const saved = serializeSave(s.p, 10); expect(JSON.parse(saved).schema).toBe(2); const reloaded = parseSave(saved); expect(reloaded.ok).toBe(true); if (!reloaded.ok) return; const before = cloneProfile(reloaded.profile); expect(fuse(reloaded.profile, content, FORGE_V1, s.input, true)).toEqual({ ...result, repeated: true }); expect(reloaded.profile).toEqual(before); advanceAdventure(reloaded.profile, content, 60000, { contentTimeMs: 0, offline: true }); expect(reloaded.profile.forge).toEqual(before.forge); expect(new Set(reloaded.profile.inventory.instances.map(i => i.id)).size).toBe(reloaded.profile.inventory.instances.length); });
   it.each(["write", "remove", "rename"] as const)("crash during %s recovers a complete pre/post transaction", async op => {

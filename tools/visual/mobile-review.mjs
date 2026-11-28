@@ -1,4 +1,4 @@
-// node --import tsx tools/visual/mobile-review.mjs [output-directory]
+// node --import tsx tools/visual/mobile-review.mjs [output-directory] [dist-directory]
 // Disposable local fixture, screenshots and geometry checks; never player storage.
 import {mkdirSync,writeFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
@@ -15,7 +15,7 @@ for(const item of CONTENT.items)for(let i=0;i<2;i++)createInstance(p,item.id,{is
 applyCommand(p,content,{type:'devUnlockZones'},{contentTimeMs:Date.now()});
 Object.assign(p.adventure.zones.ashen_mountains,{unlocked:true,cleared:true,bestStage:10,completions:1});
 applyCommand(p,content,{type:'startPush',zoneId:'darkwood'},{contentTimeMs:Date.now()});
-const web=await preview({root:resolve('apps/mobile'),configFile:false,preview:{host:'127.0.0.1',port:0}});
+const web=await preview({root:resolve('apps/mobile'),configFile:false,build:{outDir:resolve(process.argv[3]??'apps/mobile/dist')},preview:{host:'127.0.0.1',port:0}});
 const url=`http://127.0.0.1:${web.httpServer.address().port}`;
 const report=[];let browser;
 try{
@@ -59,7 +59,10 @@ try{
    await nav('Challenges');
    await page.getByRole('button',{name:'Challenge Tier 1',exact:true}).click();
    await page.locator('.boss-combat .combat-canvas').waitFor();await page.waitForTimeout(1000);
-   await page.locator('.boss-combat').scrollIntoViewIfNeeded();await shot('boss');
+   await shot('boss');
+   const banner = await page.locator('.boss-combat .combat-banner').boundingBox();
+   const tabs = await page.locator('.menu-sections:visible').boundingBox();
+   assert(banner && tabs && banner.y >= tabs.y + tabs.height - 1, `${width}×${height}: challenge tabs obscure the boss banner`);
    console.log(`Captured ${width}x${height}`);
   }finally{await context.close();}
  }

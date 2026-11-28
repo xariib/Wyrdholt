@@ -909,10 +909,18 @@ export class CombatRenderer {
       node.addChild(s);
     });
     node.scale.set(size);
-    const width = text.length * 4 * size;
-    const jitter = (this.floaters.length % 3) * 3 - 3;
-    const x = -Math.floor(width / 2) + jitter;
+    const width = (text.length * 4 + 1) * size;
+    const x = -Math.floor(width / 2);
     const y = -13 - (size - 1) * 4;
+    // Stack earlier hits above the newest hit on the same target. Include the
+    // pixel outline and critical-hit scale so simultaneous ward and HP text fit.
+    let ceiling = y;
+    for (let i = this.floaters.length - 1; i >= 0; i--) {
+      const earlier = this.floaters[i]!;
+      if (earlier.actor !== a) continue;
+      earlier.y = Math.min(earlier.y, ceiling - 7 * earlier.node.scale.y - 4);
+      ceiling = earlier.y;
+    }
     const [headX, headY] = this.actorHead(a);
     node.position.set(headX + x, headY + y);
     this.uiLayer.addChild(node);

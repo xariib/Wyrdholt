@@ -7,7 +7,7 @@
  *   with lock states; only the two learned classes appear and trials are in Challenges
  * - switching to Ranger works
  *
- *   npm run build:web && (cd apps/mobile && npx vite preview --port 4173)
+ *   npm run build:web:qa && (cd apps/mobile && npx vite preview --port 4173)
  *   node tools/smoke/classes-check.mjs [baseUrl]
  * Exits non-zero when a check fails. Screenshots: tools/smoke/out/classes-*.png
  */

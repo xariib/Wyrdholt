@@ -69,7 +69,8 @@ export function retryTarget(profile: Profile, content: ContentIndex): RetryTarge
 function read(): Store {
   try {
     const raw = globalThis.localStorage?.getItem(KEY);
-    return raw ? (JSON.parse(raw) as Store) : {};
+    const store = raw && JSON.parse(raw);
+    return store && typeof store === "object" && !Array.isArray(store) ? store : {};
   } catch {
     return {};
   }
@@ -103,8 +104,10 @@ export function recordAttempt(
   state: Pick<Attempt, "classId" | "level" | "rank" | "gear"> = buildState(profile, content),
 ): void {
   const store = read();
-  const byZone = (store[characterKey(profile)] ??= {});
-  const list = (byZone[result.zoneId] ??= []);
+  const key = characterKey(profile);
+  const saved = store[key];
+  const byZone = saved && typeof saved === "object" && !Array.isArray(saved) ? saved : (store[key] = {});
+  const list = Array.isArray(byZone[result.zoneId]) ? byZone[result.zoneId]! : (byZone[result.zoneId] = []);
   list.push({
     atWallMs,
     zoneId: result.zoneId,
@@ -121,7 +124,14 @@ export function recordAttempt(
 }
 
 export function attemptHistory(profile: Profile, zoneId: string): Attempt[] {
-  return read()[characterKey(profile)]?.[zoneId] ?? [];
+  const list = read()[characterKey(profile)]?.[zoneId];
+  if (!Array.isArray(list)) return [];
+  return list.slice(-PER_ZONE).filter(a => a && a.zoneId === zoneId
+    && (a.outcome === "cleared" || a.outcome === "failed")
+    && (a.classId === profile.character.activeClassId || a.classId === profile.character.alternateClassId)
+    && Number.isSafeInteger(a.stage) && Number.isSafeInteger(a.enemyLeftBp)
+    && Number.isSafeInteger(a.rank) && Number.isSafeInteger(a.level)
+    && a.gear && typeof a.gear === "object" && !Array.isArray(a.gear));
 }
 
 /** What changed in the build between two attempts, in player terms. */

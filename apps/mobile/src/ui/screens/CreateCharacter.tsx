@@ -32,11 +32,6 @@ export function CreateCharacterScreen({ onOnline }: { onOnline?: () => void }) {
 
   const choose = (id: string) => {
     if (id === active) return;
-    if (id === alternate) {
-      setAlternate(active);
-      setActive(id);
-      return;
-    }
     setAlternate(active);
     setActive(id);
   };
@@ -45,9 +40,6 @@ export function CreateCharacterScreen({ onOnline }: { onOnline?: () => void }) {
     <div className="create" aria-busy={pending}>
       <div className="logo">
         <h1 className="brand-title"><img className="brand-wordmark" src="./brand/A3_2x.png" width="206" height="84" alt="Wyrdholt: Idle" /></h1>
-        <div className="small muted" style={{ letterSpacing: "0.18em" }}>
-          TECHNICAL TEST BUILD
-        </div>
         {notice && (
           <div className="panel small" style={{ marginTop: 12, textAlign: "left", borderColor: "rgba(234,122,59,0.5)" }}>
             {notice}
@@ -71,13 +63,13 @@ export function CreateCharacterScreen({ onOnline }: { onOnline?: () => void }) {
       <section className="panel stack">
         <div className="panel-title">Choose your two classes</div>
         <div className="small muted">
-          Tap a class to make it Active; the other becomes your Alternate. Both stay equal options and can be swapped later.
+          Choose your alternate first, then your active class. You can switch between them during your adventure.
         </div>
         <div className="class-pick">
           {classes.map((c) => {
             const role = c.id === active ? "active" : c.id === alternate ? "alt" : "";
             return (
-              <button key={c.id} className={`class-option ${role}`} disabled={pending || !c.implemented} onClick={() => choose(c.id)}>
+              <button key={c.id} className={`class-option ${role}`} aria-pressed={c.id === active} disabled={pending || !c.implemented} onClick={() => choose(c.id)}>
                 <span className="class-art">
                   <SpriteImage name={c.sprite} />
                 </span>

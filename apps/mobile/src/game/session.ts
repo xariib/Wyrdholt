@@ -11,6 +11,7 @@ import {
   canUseItem,
   canonicalJson,
   createProfile,
+  findInstance,
   heroStatsFor,
   parseSave,
   prepareBossFight,
@@ -30,7 +31,7 @@ import {
   type RunState,
   type SaveFileAdapter,
 } from "@emberbound/game-core";
-import type { CombatRecord, ForgeInput } from "@emberbound/shared-types";
+import { SLOT_ORDER, type CombatRecord, type ForgeInput } from "@emberbound/shared-types";
 import { perfMonitor } from "../platform/perfMonitor";
 import { randomSeed, DEV_TOOLS } from "../platform/device";
 import { CapacitorSaveFs, storageDescription, withStorageOwnership, type SaveOwnership } from "../platform/storage";
@@ -263,6 +264,25 @@ export class GameSession {
       || this.ui.phase === "storage-blocked" || this.ui.phase === "error") this.resolveReady();
   }
 
+  /** Saves can parse structurally while referencing content this client cannot display. */
+  private supportsProfile(profile: Profile): boolean {
+    const { character, adventure } = profile;
+    const zone = this.content.zones.get(adventure.zoneId);
+    if (character.activeClassId === character.alternateClassId || !this.content.classes.get(character.activeClassId)?.implemented
+      || !this.content.classes.get(character.alternateClassId)?.implemented
+      || !zone?.stages.length || !profile.equipment || typeof profile.equipment !== "object" || Array.isArray(profile.equipment)) return false;
+    const run = adventure.run;
+    if (run && (run.zoneId !== zone.id || !zone.stages[run.stageIndex])) return false;
+    if (profile.inventory.instances.some(item => !this.content.items.has(item.baseId))) return false;
+    for (const slot of SLOT_ORDER) {
+      const id = profile.equipment[slot];
+      if (id === undefined) continue;
+      const item = findInstance(profile, id);
+      if (!item || this.content.item(item.baseId).slot !== slot) return false;
+    }
+    return true;
+  }
+
   async init(): Promise<void> {
     const request = ++this.initRequest;
     this.pauseLive();
@@ -277,6 +297,10 @@ export class GameSession {
       if (inspected.gate.mode === "blocked") return;
       if (loaded?.status === "loaded") {
         const profile = loaded.result.profile;
+        if (!this.supportsProfile(profile)) {
+          this.guard.block("profile");
+          return;
+        }
         this.bump({
           profile,
           save: { ...this.ui.save, loadedFrom: loaded.source, problems: loaded.problems },
@@ -341,12 +365,14 @@ export class GameSession {
 
   /** App went to the background: stop the clock and persist immediately. */
   handleBackground(): void {
+    if (!this.foreground) return;
     this.foreground = false;
     this.stopClock();
     perfMonitor.pause();
     const profile = this.profile;
     if (!profile || this.catchingUp || !this.canPlay()) return;
-    profile.clock.lastSettledWallMs = Math.max(profile.clock.lastSettledWallMs, Date.now());
+    // The last simulated frame owns the settlement timestamp. A late pause
+    // notification can arrive after the WebView has already stopped rendering.
     void this.saveNow();
   }
 
@@ -683,7 +709,7 @@ export class GameSession {
 
   /** Stage the entire fusion; publish only after guarded main-file readback. */
   forge(input: ForgeInput): Promise<CommandResult> {
-    return this.saveItemCommand({ type: "forge", input });
+    return this.saveItemCommand({ type: "forge", input: { ...input, instanceIds: Array.isArray(input.instanceIds) ? [...input.instanceIds] : input.instanceIds } });
   }
 
   /** The visible lock state is committed only after durable readback, like Forge. */
@@ -693,7 +719,7 @@ export class GameSession {
 
   /** Removal and reward become visible together, only after durable main readback. */
   salvage(input: import("@emberbound/game-core").SalvageInput): Promise<CommandResult> {
-    return this.saveItemCommand({ type: "salvage", input });
+    return this.saveItemCommand({ type: "salvage", input: { ...input } });
   }
 
   bulkSalvage(input: import("@emberbound/game-core").BulkSalvageInput): Promise<CommandResult> {
@@ -722,11 +748,12 @@ export class GameSession {
   }
 
   saveTalents(classId: string, talentIds: string[]): Promise<CommandResult> {
+    const selection = Array.isArray(talentIds) ? [...talentIds] : talentIds;
     return this.saveProfileAction({
       name: "Skill selection",
       busy: "Saving skills…",
       preserveLiveTime: true,
-      apply: candidate => applyCommand(candidate, this.content, { type: "setTalents", classId, talentIds }, { contentTimeMs: Date.now() }),
+      apply: candidate => applyCommand(candidate, this.content, { type: "setTalents", classId, talentIds: selection }, { contentTimeMs: Date.now() }),
     });
   }
 
@@ -790,6 +817,9 @@ export class GameSession {
   }
 
   dispatch(command: Command): CommandResult {
+    if (!DEV_TOOLS && (command.type.startsWith("dev") || command.type === "advance")) {
+      return { ok: false, error: "Developer commands are disabled." };
+    }
     if (command.type === "forge") return { ok: false, error: "Use the saved Forge confirmation flow." };
     if (command.type === "salvage" || command.type === "bulkSalvage") return { ok: false, error: "Use the saved salvage confirmation flow." };
     if (command.type === "setItemLock") return { ok: false, error: "Use the saved item lock flow." };
@@ -871,6 +901,7 @@ export class GameSession {
 
   /** P3 benchmark. keep=false measures without changing the character. */
   async simulateOfflineReturn(hours: number, keep: boolean): Promise<void> {
+    if (!DEV_TOOLS) return;
     const profile = this.profile;
     if (!profile || this.catchingUp || !this.canPlay()) return;
     const epoch = this.beginAction();
@@ -966,6 +997,9 @@ export class GameSession {
       // This delegates to existing simulation; it is not a new Profile validator.
       const result = await runOfflineCatchUp(candidate, elapsed, now, { content: this.content, mainThreadUpToMs: MAIN_THREAD_CATCH_UP_MS });
       if (epoch !== this.ownerEpoch) return { status: "skipped", reason: "stale-generation" };
+      if (!this.supportsProfile(result.profile)) {
+        return { status: "rejected", reason: "invalid", message: "This backup references unavailable character, equipment or zone data." };
+      }
       result.profile.clock.lastSettledWallMs = Math.max(result.profile.clock.lastSettledWallMs, now);
       const receipt = await this.track(this.guard.write(() => serializeSave(result.profile, now), {
         intent: replaceIntent, importText: text, isCurrent: () => epoch === this.ownerEpoch,

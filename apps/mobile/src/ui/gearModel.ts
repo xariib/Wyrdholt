@@ -40,8 +40,10 @@ export function filterGearGroups(groups: ItemGroup[], filters: GearFilters): Ite
 export function slotViews(profile: Profile, content: ContentIndex): SlotView[] {
   const newBySlot = new Map<SlotId, number>();
   for (const inst of profile.inventory.instances) {
-    if (!inst.isNew || !canUseItem(content.item(inst.baseId), profile.character.activeClassId)) continue;
-    const slot = content.item(inst.baseId).slot;
+    if (!inst.isNew) continue;
+    const item = content.item(inst.baseId);
+    if (!canUseItem(item, profile.character.activeClassId)) continue;
+    const slot = item.slot;
     newBySlot.set(slot, (newBySlot.get(slot) ?? 0) + 1);
   }
   return SLOT_ORDER.map((slot) => {
@@ -74,7 +76,11 @@ export function classInventory(profile: Profile, content: ContentIndex): ItemIns
 }
 
 export function totalNew(profile: Profile, content: ContentIndex): number {
-  return classInventory(profile, content).filter(i => i.isNew).length;
+  let count = 0;
+  for (const item of profile.inventory.instances) {
+    if (item.isNew && canUseItem(content.item(item.baseId), profile.character.activeClassId)) count++;
+  }
+  return count;
 }
 
 /** Identical catalog items share one card with a copy count (LOOT_FORGE behaviour). */

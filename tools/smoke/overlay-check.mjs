@@ -5,7 +5,7 @@
  * - F4: the overlay does not block taps on what it covers (Developer tools Close).
  *   A negative control re-applies the old CSS and expects the tap to be intercepted.
  *
- *   npm run build:web && npx vite preview --port 4173 (in apps/mobile)
+ *   npm run build:web:qa && npx vite preview --port 4173 (in apps/mobile)
  *   node tools/smoke/overlay-check.mjs [baseUrl]
  */
 import { mkdirSync } from "node:fs";

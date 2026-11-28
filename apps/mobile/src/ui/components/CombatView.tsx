@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { session } from "../../game/session";
 import type { CombatRenderer } from "../../render/CombatRenderer";
 import { perfMonitor } from "../../platform/perfMonitor";
+import { DEV_TOOLS } from "../../platform/device";
 import { equippedAppearance, GEAR_SLOTS } from "../../art/gearSkins";
 
 /**
@@ -43,6 +44,8 @@ export function CombatView({ active, heroSprite, background }: { active: boolean
     const host = hostRef.current;
     if (!host) return;
     let disposed = false;
+    let rebuildTimer: ReturnType<typeof setTimeout> | undefined;
+    const debug = window as Window & { __emberRenderer?: CombatRenderer };
     let unsubscribe: (() => void) | null = null;
     session.ready
       .then(() => loadRendererModule())
@@ -57,10 +60,11 @@ export function CombatView({ active, heroSprite, background }: { active: boolean
         renderer.setHeroSprite(heroRef.current);
         renderer.setBackground(backgroundRef.current);
         perfMonitor.mark("combatDrawn");
-        (window as unknown as { __emberRenderer?: CombatRenderer }).__emberRenderer = renderer;
+        if (DEV_TOOLS) debug.__emberRenderer = renderer;
         renderer.onContextLost = () => {
           // Rebuild the whole renderer; the simulation is unaffected.
-          setTimeout(() => setGeneration((g) => g + 1), 250);
+          clearTimeout(rebuildTimer);
+          rebuildTimer = setTimeout(() => setGeneration((g) => g + 1), 250);
         };
         const hud = vitalsRef.current;
         const label = hud?.querySelector<HTMLElement>(".vitals-label");
@@ -102,10 +106,12 @@ export function CombatView({ active, heroSprite, background }: { active: boolean
         setFailed(null);
       })
       .catch((error: unknown) => {
-        if (!(error instanceof DisposedError)) setFailed(String(error));
+        if (!disposed && !(error instanceof DisposedError)) setFailed(String(error));
       });
     return () => {
       disposed = true;
+      clearTimeout(rebuildTimer);
+      if (DEV_TOOLS && debug.__emberRenderer === rendererRef.current) delete debug.__emberRenderer;
       unsubscribe?.();
       rendererRef.current?.destroy();
       rendererRef.current = null;

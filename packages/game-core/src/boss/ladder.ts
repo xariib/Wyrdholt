@@ -131,7 +131,7 @@ export function advanceBoss(profile: Profile, content: ContentIndex, deltaMs: nu
         if (!hunt) state.highestClearedTier = tier;
         else if (state.huntWeek !== undefined && (state.huntCompletedWeek ?? -1) < state.huntWeek) {
           const classId = attempt.record.build.classId;
-          grantRewards(profile, content, { ...hunt, gold: Math.min(hunt.gold, Number.MAX_SAFE_INTEGER - profile.gold) }, classId);
+          grantRewards(profile, content, hunt, classId);
           result.huntRewardId = createInstance(profile, hunt.rewards[classId]!, { isNew: true, provenance: { source: bossId } }).id;
           profile.stats.itemsFound += 1;
           state.huntCompletedWeek = state.huntWeek;

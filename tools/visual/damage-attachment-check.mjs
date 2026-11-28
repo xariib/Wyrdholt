@@ -48,6 +48,11 @@ try {
       const effect = r.effects.at(-1), bounds = effect.node.getLocalBounds();
       result.impactCenter = bounds.x + bounds.width / 2;
       result.heroX = hero.root.x;
+      r.floatDamage(hero, 1800, 500, '#f06055', start + 350, true);
+      r.animate(start + 350);
+      const labels = r.floaters.filter(f => f.actor === hero).map(f => f.node.getBounds());
+      result.labelsSeparated = labels.length >= 3 && labels.every((bounds, index) =>
+        index === 0 || labels[index - 1].maxY < bounds.minY);
       r.app.renderer.render(r.app.stage);
       // Leave the real WebGL frame on screen for the screenshot.
       return result;
@@ -57,6 +62,7 @@ try {
     assert.equal(result.cycleMs, 960);
     assert(result.hpApplied && result.flashMatches && result.anchorMatches && result.scaleMatches);
     assert(result.flashAlpha > 0, `${cls}: no immediate damage flash`);
+    assert(result.labelsSeparated, `${cls}: stacked ward and critical damage labels overlap`);
     assert(Math.abs(result.impactCenter - result.heroX) < 15, `${cls}: detached damage effect`);
     await page.locator('.combat-canvas').screenshot({ path: resolve(out, `${cls}-moving-hit.png`) });
     assert.deepEqual(errors, []);

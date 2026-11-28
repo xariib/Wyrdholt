@@ -8,7 +8,7 @@
  * - startup phase marks from the app (js / saveLoaded / catchUpDone / ready / combatDrawn)
  * - a CPU profile of the load, summarised by script URL and by top self-time functions
  *
- *   npm run build:web && npx vite preview --port 4173 (in apps/mobile)
+ *   npm run build:web:qa && npx vite preview --port 4173 (in apps/mobile)
  *   node tools/perf/startup-profile.mjs [baseUrl] [--rate=6] [--runs=3] [--no-webgl]
  *
  * Headless numbers are for comparing builds, not for pass/fail. P2 is decided on the phone.

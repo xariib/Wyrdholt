@@ -408,7 +408,9 @@ function settleFight(
   if (summary.outcome === "victory") {
     profile.stats.victories += 1;
     const reward = stageReward(content, zone, stage);
+    const goldBefore = profile.gold;
     const levels = grantRewards(profile, content, reward, fightClassId, run.totals);
+    const stageGold = profile.gold - goldBefore;
     const itemIds: number[] = [];
     const table = stage.role === "boss" ? zone.bossLootTableId : zone.lootTableId;
     const drop = rollLoot(
@@ -439,7 +441,7 @@ function settleFight(
       cacheLevels = grantRewards(
         profile,
         content,
-        { xp: cache.xp, gold: cache.gold, mastery: cache.mastery },
+        { xp: cache.xp, gold: cache.gold + (zp.cleared ? 0 : zone.firstClearGold), mastery: cache.mastery },
         fightClassId,
         run.totals,
       );
@@ -470,8 +472,6 @@ function settleFight(
       const firstClear = !zp.cleared;
       const unlocked: string[] = [];
       if (firstClear) {
-        profile.gold += zone.firstClearGold;
-        run.totals.gold += zone.firstClearGold;
         zp.cleared = true;
         for (const next of zone.unlocks) {
           const np = zoneProgress(profile, next);
@@ -514,7 +514,7 @@ function settleFight(
       mode: run.mode,
       outcome: summary.outcome,
       xp: reward.xp,
-      gold: reward.gold,
+      gold: stageGold,
       mastery: reward.mastery,
       levelsGained: levels + cacheLevels,
       itemIds,

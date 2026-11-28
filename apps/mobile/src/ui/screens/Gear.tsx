@@ -30,10 +30,11 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
   const [initialBase, setInitialBase] = useState<string | undefined>(undefined);
   const [initialInstance, setInitialInstance] = useState<number | undefined>(undefined);
   const slots = slotViews(profile, content);
-  const summary = buildSummary(profile, content);
-  const s = summary.stats.display;
+  const summary = summaryOpen ? buildSummary(profile, content) : null;
+  const inventoryCount = number(classInventory(profile, content).length);
   const equippedCount = slots.filter(slot => slot.equipped).length;
-  const hasQueuedChanges = !!profile.pending?.activeClassId || Object.keys(profile.pending?.equipment ?? {}).length > 0;
+  const hasQueuedChanges = !!profile.pending?.activeClassId || Object.keys(profile.pending?.equipment ?? {}).length > 0
+    || Object.keys(profile.pending?.talents ?? {}).length > 0;
 
   useEffect(() => {
     if (!focus) return;
@@ -61,7 +62,7 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
         </div>
         {!inventory && !forgeOpen && !openSlot && retryAction}
         <div className="gear-shortcuts">
-          <button className="btn gold inventory-entry" aria-label={`Inventory · ${number(classInventory(profile, content).length)} copies`} onClick={() => setInventory({ newOnly: false, key: 0 })}>Inventory · {number(classInventory(profile, content).length)}</button>
+          <button className="btn gold inventory-entry" aria-label={`Inventory · ${inventoryCount} copies`} onClick={() => setInventory({ newOnly: false, key: 0 })}>Inventory · {inventoryCount}</button>
           <button className="btn" onClick={() => setForgeOpen(true)}>Forge</button>
           <button className="btn" onClick={() => setSummaryOpen(true)}>Build summary</button>
           <button className="btn" onClick={() => setAppearanceOpen(true)}>Appearance</button>
@@ -106,18 +107,18 @@ export function GearScreen({ profile, focus, onFocusHandled, retryAction }: {
         <div className="gear-appearance"><SpriteImage name={content.classDef(profile.character.activeClassId).sprite} profile={profile} portrait /></div>
         <p className="small muted">Lv. {profile.character.level} · {content.classDef(profile.character.activeClassId).name} · Current equipment</p>
       </Sheet>}
-      {summaryOpen && <Sheet label="Build summary" onClose={() => setSummaryOpen(false)}>
+      {summary && <Sheet label="Build summary" onClose={() => setSummaryOpen(false)}>
         <div className="row spread"><h2>Build summary</h2><button className="btn ghost sheet-close" aria-label="Close build summary" onClick={() => setSummaryOpen(false)}>×</button></div>
       <section className="build-summary stack" aria-label="Build summary">
         <div className="build-summary-heading">
           <span className="small muted">{content.classDef(profile.character.activeClassId).name} · Current loadout</span>
         </div>
         <div className="stat-grid">
-          <Stat label="Health" value={number(s.hp)} />
-          <Stat label="Attack" value={number(s.attack)} />
-          <Stat label="Armor" value={number(s.armor)} />
-          <Stat label="Attack rate" value={rate(s.attackRateMilli)} />
-          <Stat label="Crit" value={pct(s.critBp)} />
+          <Stat label="Health" value={number(summary.stats.display.hp)} />
+          <Stat label="Attack" value={number(summary.stats.display.attack)} />
+          <Stat label="Armor" value={number(summary.stats.display.armor)} />
+          <Stat label="Attack rate" value={rate(summary.stats.display.attackRateMilli)} />
+          <Stat label="Crit" value={pct(summary.stats.display.critBp)} />
           <Stat label="Mastery" value={`M${summary.stats.masteryRank}`} />
         </div>
         {hasQueuedChanges && <p className="build-queue-note small">Showing current equipment. Queued changes apply after this fight.</p>}

@@ -12,8 +12,10 @@ export interface LifecycleHandlers {
  */
 export function watchLifecycle(handlers: LifecycleHandlers): () => void {
   let active = document.visibilityState === "visible";
+  if (!active) handlers.onBackground();
+  let disposed = false;
   const set = (next: boolean): void => {
-    if (next === active) return;
+    if (disposed || next === active) return;
     active = next;
     if (next) handlers.onForeground();
     else handlers.onBackground();
@@ -27,11 +29,18 @@ export function watchLifecycle(handlers: LifecycleHandlers): () => void {
 
   const removers: Array<() => void> = [];
   if (Capacitor.isNativePlatform()) {
-    void App.addListener("appStateChange", ({ isActive }) => set(isActive)).then((h) => removers.push(() => void h.remove()));
-    void App.addListener("pause", () => set(false)).then((h) => removers.push(() => void h.remove()));
-    void App.addListener("resume", () => set(true)).then((h) => removers.push(() => void h.remove()));
+    const register = (handle: Promise<{ remove(): Promise<void> }>) => {
+      void handle.then(h => {
+        if (disposed) void h.remove();
+        else removers.push(() => void h.remove());
+      }).catch(error => console.warn("Could not register app lifecycle listener.", error));
+    };
+    register(App.addListener("appStateChange", ({ isActive }) => set(isActive)));
+    register(App.addListener("pause", () => set(false)));
+    register(App.addListener("resume", () => set(true)));
   }
   return () => {
+    disposed = true;
     document.removeEventListener("visibilitychange", onVisibility);
     window.removeEventListener("pagehide", onPageHide);
     window.removeEventListener("pageshow", onPageShow);

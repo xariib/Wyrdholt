@@ -31,6 +31,7 @@
     "sim:multi-target": "bun tools/sim/multi-target-report.ts",
     "dev": "npm run dev -w @emberbound/mobile",
     "build:web": "npm run build -w @emberbound/mobile && node tools/check-web-compat.mjs",
+    "build:web:qa": "npm run build -w @emberbound/mobile -- --mode qa && node tools/check-web-compat.mjs",
     "preview:web": "npm run preview -w @emberbound/mobile",
     "cap:sync": "npm run build:web && npm run cap:sync -w @emberbound/mobile",
     "android:apk": "npm run cap:sync && npm run android:apk -w @emberbound/mobile",

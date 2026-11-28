@@ -15,7 +15,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const stamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}.${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}`;
 const buildId = process.env.EMBERBOUND_BUILD_ID ?? `EMB-0.1.0-${stamp}`;
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   // Relative asset paths: the same build works inside Capacitor and on any private host path.
   base: "./",
   plugins: [react()],
@@ -24,8 +24,9 @@ export default defineConfig({
     __BUILD_TIME__: JSON.stringify(now.toISOString()),
     __GIT_COMMIT__: JSON.stringify(commit),
     __GIT_BRANCH__: JSON.stringify(branch || "detached"),
-    // Developer tools ship in spike test builds; set EMBERBOUND_DEV_TOOLS=false for a clean build.
-    __DEV_TOOLS__: JSON.stringify(process.env.EMBERBOUND_DEV_TOOLS !== "false"),
+    __DEV_TOOLS__: JSON.stringify(process.env.EMBERBOUND_DEV_TOOLS === undefined
+      ? mode === "development" || mode === "qa"
+      : process.env.EMBERBOUND_DEV_TOOLS === "true"),
   },
   worker: { format: "es" },
   build: {
@@ -36,4 +37,4 @@ export default defineConfig({
     chunkSizeWarningLimit: 1200,
   },
   server: { host: true },
-});
+}));

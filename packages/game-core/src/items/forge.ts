@@ -5,10 +5,11 @@ import { canonicalJson } from "../hash/canonical";
 import { deriveSeed, Prng } from "../math/prng";
 import { canUseItem, createInstance, findInstance, reservedInstanceIds } from "./inventory";
 import { isItemLocked, ITEM_LOCK_SAVE_SCHEMA_VERSION } from "./locks";
+import { activeBossAttempt } from "../boss/progress";
 
 export const FORGE_RULES_VERSION = "wyrdholt-forge-rules/1";
-export function forgeCeiling(profile: Profile, config: ForgeConfig): number {
-  if (profile.forge?.devUnlocked) return config.rarities.length - 1;
+export function forgeCeiling(profile: Profile, config: ForgeConfig, allowDev = false): number {
+  if (allowDev && profile.forge?.devUnlocked) return config.rarities.length - 1;
   return config.gates.reduce((cap, gate) => profile.adventure.zones[gate.zoneId]?.cleared ? Math.max(cap, config.rarities.indexOf(gate.maxRarity)) : cap, -1);
 }
 export function forgeState(profile: Profile): ForgeState {
@@ -37,7 +38,7 @@ export function fuse(profile: Profile, content: ContentIndex, config: ForgeConfi
   if (!["configured", "normal", "critical"].includes(mode) || (mode !== "configured" && !allowDev)) return fail("Forced outcomes are DEV-only.");
   if (!SLOT_ORDER.includes(input.slot)) return fail("Invalid equipment slot.");
   const recipe = config.recipes[input.rarity];
-  const index = config.rarities.indexOf(input.rarity), cap = forgeCeiling(profile, config);
+  const index = config.rarities.indexOf(input.rarity), cap = forgeCeiling(profile, config, allowDev);
   if (!recipe || index < 0 || index >= config.rarities.length - 1) return fail("This rarity has no fusion recipe.");
   if (cap < index + 1) return fail("Clear more Adventure content to unlock this Forge tier.");
   if (ids.length !== recipe.count || new Set(ids).size !== ids.length || ids.some(id => !Number.isSafeInteger(id))) return fail(`Select exactly ${recipe.count} different item copies.`);
@@ -61,7 +62,9 @@ export function fuse(profile: Profile, content: ContentIndex, config: ForgeConfi
     .sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
   if (!pool.length) return fail("No valid output exists for this recipe. Nothing was spent.");
   const output = pool[rng.nextInt(pool.length)]!;
-  if (!Number.isSafeInteger(profile.inventory.nextInstanceId + 1) || !Number.isSafeInteger(next + 1)) return fail("Inventory counter exhausted.");
+  const active = activeBossAttempt(profile);
+  const requiredIds = active && content.hunts.has(active.record.encounter.bossId) ? 2 : 1;
+  if (!Number.isSafeInteger(profile.inventory.nextInstanceId + requiredIds) || !Number.isSafeInteger(next + 1)) return fail("Inventory counter exhausted.");
   // All validation and random resolution precede this synchronous atomic mutation.
   const selected = new Set(ids);
   profile.inventory.instances = profile.inventory.instances.filter(i => !selected.has(i.id));

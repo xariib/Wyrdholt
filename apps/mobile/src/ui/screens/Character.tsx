@@ -1,4 +1,5 @@
 import { ASHEN_CROWN, ashenCrownAt, masteryProgress, nextMilestone, promotionCleared, techniqueStatuses, type Profile } from "@emberbound/game-core";
+import { useState } from "react";
 import { session } from "../../game/session";
 import { Bar } from "../components/Common";
 import { SpriteImage } from "../components/icons";
@@ -18,8 +19,8 @@ export function CharacterScreen({ profile }: { profile: Profile }) {
   const crown = ashenCrownAt(profile.ashenKing?.highestClearedTier ?? 0);
   return (
     <>
-      <ClassCard profile={profile} classId={c.activeClassId} role="Active" queued={false} />
-      <ClassCard profile={profile} classId={c.alternateClassId} role="Alternate" queued={queuedClass === c.alternateClassId} />
+      <ClassCard key={c.activeClassId} profile={profile} classId={c.activeClassId} role="Active" queued={false} />
+      <ClassCard key={c.alternateClassId} profile={profile} classId={c.alternateClassId} role="Alternate" queued={queuedClass === c.alternateClassId} />
       {crown && (
         <section className="panel stack" aria-label="Artifact">
           <div className="row spread"><div className="panel-title">{ASHEN_CROWN.name}</div><span className="tag gold">Rank {crown.rank}</span></div>
@@ -83,7 +84,7 @@ function ClassCard({ profile, classId, role, queued }: { profile: Profile; class
           <div className="row small" style={{ marginTop: 4, color: "var(--green-bright)", fontWeight: 700 }}>
             Mastery {rank} / {progress.maxLevel}
           </div>
-          <Bar value={progress.intoLevel} max={progress.levelSize || 1} kind="mastery" />
+          <Bar value={progress.intoLevel} max={progress.levelSize} kind="mastery" />
           <div className="small faint" style={{ marginTop: 2 }}>
             {progress.levelSize ? `${number(progress.intoLevel)} / ${number(progress.levelSize)} mastery XP` : "Mastery complete"}
           </div>
@@ -115,4 +116,3 @@ function ClassCard({ profile, classId, role, queued }: { profile: Profile; class
     </section>
   );
 }
-import { useState } from "react";

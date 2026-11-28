@@ -27,7 +27,8 @@ vi.mock("@capacitor/filesystem", () => ({
     rename: async ({ from, to }: { from: string; to: string }) => { bridge.operations.push("rename"); bridge.files.set(to, bridge.files.get(from)!); bridge.files.delete(from); },
   },
 }));
-vi.mock("../src/platform/device", () => ({ randomSeed: () => 1042, DEV_TOOLS: false }));
+const device = vi.hoisted(() => ({ randomSeed: () => 1042, DEV_TOOLS: true }));
+vi.mock("../src/platform/device", () => device);
 vi.mock("../src/platform/perfMonitor", () => ({ perfMonitor: { mark: vi.fn(), markStartup: vi.fn(), start: vi.fn(), pause: vi.fn(), recordCatchUp: vi.fn() } }));
 vi.mock("../src/game/offlineRunner", () => ({ runOfflineCatchUp: vi.fn() }));
 import { GameSession } from "../src/game/session";
@@ -94,6 +95,22 @@ beforeEach(() => {
 afterEach(async () => {
   for (const s of sessions.splice(0)) { s.handleBackground(); await privateApi(s).saveChain; }
   vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals();
+});
+
+it("disables developer progression commands and benchmark rewards in a player build", async () => {
+  device.DEV_TOOLS = false;
+  try {
+    const fs = new ProbeFs();
+    fs.files.set(paths.main, text());
+    const s = session(fs);
+    await s.init();
+    const before = cloneProfile(s.profile!);
+    expect(s.dispatch({ type: "devGrant", baseIds: ["wayfarer_blade"] }).ok).toBe(false);
+    expect(s.dispatch({ type: "devUnlockZones" }).ok).toBe(false);
+    expect(s.dispatch({ type: "advance", ms: 60_000 }).ok).toBe(false);
+    await s.simulateOfflineReturn(1, true);
+    expect(s.profile).toEqual(before);
+  } finally { device.DEV_TOOLS = true; }
 });
 
 describe("SG01–SG07 strict refusal preserves every slot", () => {
@@ -264,6 +281,27 @@ describe("SG18–SG22 receipts and partial failures", () => {
         original, after: filesSnapshot(fs), oldProfileBytes: oldBytes, afterProfileBytes: serializeSave(s.profile!, NOW), publications: publications.length,
         runnerCalls: vi.mocked(runOfflineCatchUp).mock.calls.length - runnerStart, mutations: fs.mutations.slice(mutationStart), gate: s.getSnapshot().save.gate }) + "\n");
     }
+  });
+  it("keeps an idle backup with unknown bag items out of live play and preserves the current save", async () => {
+    const fs = new ProbeFs();
+    fs.files.set(paths.main, text());
+    const s = session(fs);
+    await s.init();
+    const original = filesSnapshot(fs);
+    const candidate = profile("Unavailable");
+    candidate.inventory = { nextInstanceId: 2, instances: [{ id: 1, baseId: "missing-item", acquiredSeq: 1, isNew: false }] };
+    const raw = serializeSave(candidate, NOW);
+    const preview = s.prepareImport(raw);
+    if (preview.status !== "ready") throw new Error("Expected a structural preview");
+    expect(await s.importSave(raw, preview.intent)).toMatchObject({ status: "rejected", reason: "invalid" });
+    expect(s.profile?.character.name).toBe("Original");
+    expect(filesSnapshot(fs)).toEqual(original);
+    const other = new ProbeFs();
+    other.files.set(paths.main, raw);
+    const restored = session(other);
+    await restored.init();
+    expect(restored.getSnapshot().phase).toBe("storage-blocked");
+    expect(other.files.get(paths.main)).toBe(raw);
   });
   it.each(["unknown-zone", "stage999"])("SG26 parse-valid %s actually throws in import staging before write", async kind => {
     const fs = new ProbeFs(); fs.files.set(paths.main, text()); const s = session(fs); await s.init();

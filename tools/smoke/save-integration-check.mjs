@@ -89,6 +89,7 @@ async function storage(page, slots, readOnly = false) {
 }
 async function setup(slots, fault = null) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, acceptDownloads: true });
+  context.setDefaultTimeout(30_000);
   contexts.add(context);
   if (externalBase) await context.route(base + "__observer__", route => route.fulfill({
     status: 200, contentType: "text/html", body: "<!doctype html><title>Fixture observer</title>",
@@ -206,7 +207,13 @@ try {
 
   // Real cross-tab repair observation: Retry is read only; explicit Continue
   // starts one actual worker settlement and persists that result once.
-  const recovery = await setup({ main: legacySave }); await recovery.page.goto(base);
+  const recovery = await setup({ main: legacySave });
+  // Count only the recovery commit, even when software rendering takes long
+  // enough for later live combat or an autosave to run.
+  const recoveryTime = Date.now();
+  await recovery.page.clock.install({ time: recoveryTime });
+  await recovery.page.clock.pauseAt(recoveryTime + 500);
+  await recovery.page.goto(base);
   await refused(recovery, "A saved adventure belongs to a different game version.");
   const farming = changed(fixture("Recovered", true), (profile, envelope) => {
     profile.contentVersion = envelope.contentVersion = "emberbound-content/0.4.0-c2";
@@ -238,7 +245,12 @@ try {
 
   // Positive calibration: create really writes to the observed backend. Two
   // synchronous DOM clicks cannot create two characters; no private session API.
-  const creation = await setup({}); await creation.page.goto(base);
+  const creation = await setup({});
+  // Count creation writes independently of combat rewards and periodic autosaves.
+  const creationTime = Date.now();
+  await creation.page.clock.install({ time: creationTime });
+  await creation.page.clock.pauseAt(creationTime + 500);
+  await creation.page.goto(base);
   const begin = creation.page.getByRole("button", { name: "Begin in Greenfields", exact: true }); await begin.waitFor();
   await begin.evaluate(button => { button.click(); button.click(); });
   await creation.page.locator(".combat-canvas").waitFor({ timeout: 20_000 });
@@ -252,6 +264,7 @@ try {
   await creation.page.getByRole("button", { name: "Adventure", exact: true }).tap();
   await creation.page.getByRole("button", { name: "Developer tools", exact: true }).tap();
   await creation.page.getByRole("button", { name: "Run determinism self-test", exact: true }).tap();
+  await creation.page.clock.runFor(100);
   await creation.page.getByText("ALL PASS", { exact: true }).waitFor();
   const goldens = await creation.page.locator(".selftest-row").allInnerTexts(); assert.equal(goldens.length, SELF_TEST_CASES.length); assert(goldens.every(row => row.startsWith("PASS")));
   report.checks.push({ name: "explicit-create-double-submit-readback-and-browser-goldens", passed: true, goldenCases: goldens.length });
@@ -270,6 +283,8 @@ try {
   const beforeImport = await storage(creation.observer, {}, true);
   const mutationsBeforeImport = (await audit(creation.page)).mutations.length;
   await creation.page.getByRole("button", { name: "Confirm replacement", exact: true }).tap();
+  // A rejected worker simulation yields to a real timer before the local retry.
+  await creation.page.clock.resume();
   await refused(creation, "The saved adventure could not be loaded safely.");
   assert.deepEqual(await storage(creation.observer, {}, true), beforeImport);
   assert.equal((await audit(creation.page)).mutations.length, mutationsBeforeImport);

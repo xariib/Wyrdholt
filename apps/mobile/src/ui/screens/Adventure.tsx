@@ -111,12 +111,6 @@ export function AdventureScreen({ profile, active, retryZoneId, nextAttempt, onC
         )}
       </section>
 
-      {showAshenKing && (
-        <section aria-label={`${ashenKing.name} unlocked`}>
-          <button className="btn small block" onClick={onChallenges}>View {ashenKing.name} challenge</button>
-        </section>
-      )}
-
       <section className="activity" aria-label="Adventure actions">
         <button
           className={`activity-btn ${adv.activity === "farm" && run?.zoneId === farmZone.id ? "active" : ""}`}
@@ -144,6 +138,12 @@ export function AdventureScreen({ profile, active, retryZoneId, nextAttempt, onC
           <span className="title">Change Zone</span>
         </button>
       </section>
+
+      {showAshenKing && (
+        <section aria-label={`${ashenKing.name} unlocked`}>
+          <button className="btn small block" onClick={onChallenges}>View {ashenKing.name} challenge</button>
+        </section>
+      )}
 
       {canShowZones && zonesOpen && (
         <Sheet label="Change Zone" onClose={() => setZonesOpen(false)}>

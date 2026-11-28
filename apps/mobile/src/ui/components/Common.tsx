@@ -31,7 +31,7 @@ export function Header({ profile, onDebug }: { profile: Profile; onDebug?: () =>
         </div>
         <div className="row" style={{ gap: 6 }}>
           <div style={{ flex: 1 }}>
-            <Bar value={progress.intoLevel} max={progress.levelSize || 1} />
+            <Bar value={progress.intoLevel} max={progress.levelSize} />
           </div>
           <span className="small faint" style={{ fontVariantNumeric: "tabular-nums" }}>
             {progress.levelSize ? `${number(progress.intoLevel)} / ${number(progress.levelSize)} XP` : "MAX"}
@@ -51,25 +51,65 @@ export function Header({ profile, onDebug }: { profile: Profile; onDebug?: () =>
   );
 }
 
-export function Sheet({ children, onClose, label = "Dialog", scrollKey }: { children: ReactNode; onClose: () => void; label?: string; scrollKey?: string | null }) {
+const openDialogs: HTMLDivElement[] = [];
+const tabStops = 'button:enabled, input:enabled, textarea:enabled, select:enabled, summary, a[href], [tabindex="0"]';
+
+function useDialog(onClose?: () => void, priority = 10) {
   const ref = useRef<HTMLDivElement>(null);
-  const start = useRef<number | null>(null);
   const close = useRef(onClose);
   close.current = onClose;
-  useEffect(() => { if (ref.current) ref.current.scrollTop = 0; }, [scrollKey]);
-  useEffect(() => registerBackAction(() => { close.current(); return true; }, 10), []);
-
   useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
     const previous = document.activeElement as HTMLElement | null;
-    const screens = Array.from(document.querySelectorAll<HTMLElement>(".screen"));
-    const saved = screens.map(el => el.style.overflowY);
-    screens.forEach(el => { el.style.overflowY = "hidden"; });
-    ref.current?.querySelector<HTMLButtonElement>("button")?.focus();
-    return () => {
-      screens.forEach((el, i) => { el.style.overflowY = saved[i] ?? ""; });
-      previous?.focus();
+    openDialogs.push(dialog);
+    const app = dialog.closest(".app");
+    app?.classList.add("dialog-open");
+    dialog.focus({ preventScroll: true });
+    const unregister = registerBackAction(() => { close.current?.(); return true; }, priority);
+    const onFocus = (event: FocusEvent) => {
+      if (openDialogs.at(-1) === dialog && event.target instanceof Node && !dialog.contains(event.target)) {
+        dialog.focus({ preventScroll: true });
+      }
     };
-  }, []);
+    const onKey = (event: KeyboardEvent) => {
+      if (openDialogs.at(-1) !== dialog) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close.current?.();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const nodes = Array.from(dialog.querySelectorAll<HTMLElement>(tabStops)).filter(el => el.getClientRects().length);
+      const edge = event.shiftKey ? nodes[0] : nodes.at(-1);
+      if (document.activeElement === edge || document.activeElement === dialog || !dialog.contains(document.activeElement)) {
+        event.preventDefault();
+        ((event.shiftKey ? nodes.at(-1) : nodes[0]) ?? dialog).focus();
+      }
+    };
+    document.addEventListener("focusin", onFocus);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      const top = openDialogs.at(-1) === dialog;
+      openDialogs.splice(openDialogs.indexOf(dialog), 1);
+      if (!openDialogs.length) app?.classList.remove("dialog-open");
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("focusin", onFocus);
+      unregister();
+      if (top) {
+        const parent = openDialogs.at(-1);
+        const target = previous?.isConnected && (!parent || parent.contains(previous)) ? previous : parent;
+        target?.focus({ preventScroll: true });
+      }
+    };
+  }, [priority]);
+  return ref;
+}
+
+export function Sheet({ children, onClose, label = "Dialog", scrollKey }: { children: ReactNode; onClose: () => void; label?: string; scrollKey?: string | null }) {
+  const ref = useDialog(onClose);
+  const start = useRef<number | null>(null);
+  useEffect(() => { if (ref.current) ref.current.scrollTop = 0; }, [scrollKey]);
 
   return (
     <div className="scrim" onClick={onClose}>
@@ -77,21 +117,10 @@ export function Sheet({ children, onClose, label = "Dialog", scrollKey }: { chil
         className="sheet"
         ref={ref}
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-label={label}
         onClick={e => e.stopPropagation()}
-        onKeyDown={e => {
-          if (e.key === "Escape") close.current();
-          if (e.key !== "Tab") return;
-          const nodes = Array.from(ref.current?.querySelectorAll<HTMLElement>(
-            'button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), a[href], [tabindex="0"]',
-          ) ?? []).filter(el => el.getClientRects().length > 0);
-          const first = nodes[0], last = nodes[nodes.length - 1];
-          if (first && last) {
-            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-          }
-        }}
       >
         {/* Only this handle owns a drag. Content retains native vertical scrolling. */}
         <div
@@ -99,7 +128,7 @@ export function Sheet({ children, onClose, label = "Dialog", scrollKey }: { chil
           aria-label="Swipe down to close"
           onPointerDown={e => { start.current = e.clientY; e.currentTarget.setPointerCapture(e.pointerId); }}
           onPointerUp={e => {
-            if (start.current !== null && e.clientY - start.current > 60) close.current();
+            if (start.current !== null && e.clientY - start.current > 60) onClose();
             start.current = null;
           }}
           onPointerCancel={() => { start.current = null; }}
@@ -128,12 +157,11 @@ export function MenuPages({ page, pages, onChange, noun = "items" }: {
   </nav>;
 }
 
-export function Modal({ children, onClose }: { children: ReactNode; onClose?: () => void }) {
-  const close = useRef(onClose); close.current = onClose;
-  useEffect(() => registerBackAction(() => { close.current?.(); return true; }, 10), []);
+export function Modal({ children, onClose, label }: { children: ReactNode; onClose?: () => void; label: string }) {
+  const ref = useDialog(onClose);
   return (
     <div className="scrim center" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal" ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={label} onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>
@@ -156,10 +184,10 @@ export function ToastView({ toast }: { toast: Toast | null }) {
 }
 
 export function Busy({ text }: { text: string }) {
-  useEffect(() => registerBackAction(() => true, 20), []);
+  const ref = useDialog(undefined, 20);
   return (
     <div className="scrim center" style={{ zIndex: 70 }}>
-      <div className="modal" style={{ alignItems: "center", textAlign: "center" }}>
+      <div className="modal" ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={text} style={{ alignItems: "center", textAlign: "center" }}>
         <div className="spinner" />
         <div>{text}</div>
       </div>

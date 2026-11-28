@@ -109,7 +109,7 @@ A run's checkpoint is the stage start (stage, HP, seed) plus the progress into t
 
 ## Developer tools (spike builds)
 
-Open with the **DEV** button in the header. It is compiled in unless `EMBERBOUND_DEV_TOOLS=false`.
+Open with the **DEV** button in the header during development or in a `build:web:qa` build. Production builds disable developer tools by default. Set `EMBERBOUND_DEV_TOOLS=true` or `false` to override the build mode.
 
 - **Build info:** build id, platform, engine/WebView version, rules and content versions and hash, renderer size and scale, memory (where exposed), save storage and size.
 - **Performance overlay:**

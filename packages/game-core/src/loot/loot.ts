@@ -37,6 +37,7 @@ export function rollLoot(
   chanceScaleBp: number = BP,
   classId = profile.character.activeClassId,
 ): ItemInstance | null {
+  if (!Number.isSafeInteger(profile.inventory.nextInstanceId + 1)) return null;
   const table = content.lootTable(tableId);
   const rng = new Prng(seed);
   if (!rng.rollBp(mulDivFloor(table.dropChanceBp, chanceScaleBp, BP))) return null;
